@@ -219,6 +219,41 @@ header .subtitle { font-size: 12px; color: #777; }
 .prize-text { font-size:13px; font-weight:500; color:#1a1a1a; margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .prize-empty { font-size:12px; color:#ccc; font-style:italic; }
 
+/* ── LIVE WIDGET ─────────────────────────────────── */
+.live-card {
+  background:#fff; border-radius:14px; border:1px solid #e8e6e0;
+  overflow:hidden; margin-bottom:16px;
+}
+.live-card-header {
+  display:flex; align-items:center; gap:8px;
+  padding:10px 14px; border-bottom:1px solid #f0ede6;
+}
+.live-dot {
+  width:8px; height:8px; border-radius:50%; background:#e63946; flex-shrink:0;
+  animation: pulse 1.2s infinite;
+}
+.live-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:#e63946; }
+.live-video-wrap {
+  width:100%; position:relative; padding-top:56.25%; background:#000;
+}
+.live-video-wrap iframe {
+  position:absolute; top:0; left:0; width:100%; height:100%; border:none;
+}
+.live-offline {
+  padding:18px 14px; text-align:center;
+  font-size:12px; color:#bbb;
+}
+
+/* MOBILE LIVE BUTTON (tab bar) */
+.tab-btn-live {
+  position:relative;
+}
+.tab-btn-live .live-pip {
+  position:absolute; top:6px; right:calc(50% - 18px);
+  width:7px; height:7px; border-radius:50%; background:#e63946;
+  animation: pulse 1.2s infinite;
+}
+
 /* ── GRAFICO ─────────────────────────────────────── */
 .chart-card {
   background:#fff; border-radius:14px; border:1px solid #e8e6e0;
@@ -450,6 +485,11 @@ input[type="text"]:focus, select:focus { border-color:#1a1a1a; }
       <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
       Gare
     </button>
+    <button class="tab-btn tab-btn-live" id="tab-live-btn" onclick="switchTab('live')">
+      <span class="live-pip" id="live-pip" style="display:none"></span>
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none"/></svg>
+      Live
+    </button>
     <button class="tab-btn" id="tab-standings-btn" onclick="switchTab('standings')">
       <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
       Classifica
@@ -469,9 +509,18 @@ input[type="text"]:focus, select:focus { border-color:#1a1a1a; }
     <div class="races-grid" id="races-grid"></div>
   </div>
 
-  <!-- COL DESTRA — classifica + premi (desktop right, mobile tab) -->
+  <!-- COL DESTRA — LIVE + classifica + premi (desktop right, mobile tab) -->
   <div class="col-right page" id="page-standings">
-    <div class="section-header">
+
+    <!-- LIVE WIDGET (desktop: sempre visibile; mobile: solo in tab Live) -->
+    <div id="live-section-desktop">
+      <div class="section-header">
+        <span class="section-title">Live</span>
+      </div>
+      <div class="live-card" id="live-card-desktop"></div>
+    </div>
+
+    <div class="section-header" style="margin-top:16px;">
       <span class="section-title">Classifica</span>
       <span id="races-progress" style="font-size:11px;color:#bbb;"></span>
     </div>
@@ -501,7 +550,13 @@ input[type="text"]:focus, select:focus { border-color:#1a1a1a; }
 
 </div>
 
-<!-- ═══ MANAGE PANEL ═══ -->
+<!-- MOBILE LIVE PAGE -->
+<div class="page" id="page-live" style="padding:16px;">
+  <div class="section-header">
+    <span class="section-title">Live</span>
+  </div>
+  <div class="live-card" id="live-card-mobile"></div>
+</div>
 <div class="manage-panel" id="manage-panel">
   <div class="manage-inner">
     <div class="manage-drag-bar"></div>
@@ -513,6 +568,7 @@ input[type="text"]:focus, select:focus { border-color:#1a1a1a; }
       <button class="manage-tab active" onclick="switchManageTab('players')">👤 Utenti</button>
       <button class="manage-tab" onclick="switchManageTab('races')">🏁 Circuiti</button>
       <button class="manage-tab" onclick="switchManageTab('prizes')">🏆 Premi</button>
+      <button class="manage-tab" onclick="switchManageTab('live')">📡 Live</button>
     </div>
     <div class="manage-body" id="manage-body"></div>
   </div>
@@ -668,6 +724,7 @@ function render() {
   document.getElementById('hdr-season').textContent = state.season;
   renderStandings();
   renderPrizes();
+  renderLive();
   renderChart();
   renderRaces();
 }
@@ -912,14 +969,15 @@ function switchManageTab(tab) {
 }
 function updateManageTabs() {
   document.querySelectorAll('.manage-tab').forEach((btn,i)=>{
-    const tabs=['players','races','prizes'];
+    const tabs=['players','races','prizes','live'];
     btn.classList.toggle('active', tabs[i]===currentManageTab);
   });
 }
 function renderManageBody() {
   if(currentManageTab==='players') renderManagePlayers();
   else if(currentManageTab==='races') renderManageRaces();
-  else renderManagePrizes();
+  else if(currentManageTab==='prizes') renderManagePrizes();
+  else renderManageLive();
 }
 
 // ── GESTIONE UTENTI ───────────────────────────────
@@ -1074,6 +1132,80 @@ function savePrize(idx,val) {
   if(!state.prizes) state.prizes=['','',''];
   state.prizes[idx]=val.trim();
   scheduleSave(); renderPrizes();
+}
+
+// ── LIVE ──────────────────────────────────────────
+function getLiveEmbedUrl(url) {
+  if (!url) return null;
+  // Direct channel live: youtube.com/@Channel/live or /channel/ID/live
+  // or a normal watch?v= or youtu.be link
+  let videoId = null;
+  // youtu.be/ID
+  let m = url.match(/youtu\.be\/([A-Za-z0-9_-]{11})/);
+  if (m) videoId = m[1];
+  // watch?v=ID
+  if (!videoId) { m = url.match(/[?&]v=([A-Za-z0-9_-]{11})/); if (m) videoId = m[1]; }
+  // embed/ID
+  if (!videoId) { m = url.match(/embed\/([A-Za-z0-9_-]{11})/); if (m) videoId = m[1]; }
+
+  if (videoId) return `https://www.youtube.com/embed/${videoId}?autoplay=0`;
+
+  // Channel live URL (pass through as src — YouTube allows embedding channel live pages)
+  // Convert https://www.youtube.com/@Channel/live → embed via channel
+  const chanMatch = url.match(/youtube\.com\/@([^/?#]+)/);
+  if (chanMatch) return `https://www.youtube.com/embed/live_stream?channel=${chanMatch[1]}`;
+
+  return null;
+}
+
+function renderLive() {
+  const url   = state.liveUrl || '';
+  const embed = getLiveEmbedUrl(url);
+  const html  = embed
+    ? `<div class="live-card-header"><span class="live-dot"></span><span class="live-label">In diretta</span></div>
+       <div class="live-video-wrap">
+         <iframe src="${embed}" allowfullscreen allow="autoplay; encrypted-media"></iframe>
+       </div>`
+    : `<div class="live-offline">Nessuna live attiva.<br>Imposta il link dal pannello Gestisci → 📡 Live</div>`;
+
+  ['live-card-desktop','live-card-mobile'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = html;
+  });
+
+  // Mostra/nasconde sezione desktop solo se c'è live
+  const desktopSection = document.getElementById('live-section-desktop');
+  if (desktopSection) desktopSection.style.display = embed ? 'block' : 'none';
+
+  // Mostra/nasconde pallino rosso sul tab mobile
+  const pip = document.getElementById('live-pip');
+  if (pip) pip.style.display = embed ? 'block' : 'none';
+}
+
+function renderManageLive() {
+  document.getElementById('manage-body').innerHTML = `
+    <p class="manage-hint">Inserisci il link YouTube della live o del canale</p>
+    <div class="prize-input-row">
+      <span class="prize-input-icon">📡</span>
+      <input class="prize-input-field" type="text"
+        id="live-url-input"
+        placeholder="https://youtube.com/@NomeCanale/live"
+        value="${state.liveUrl||''}"
+        onblur="saveLiveUrl(this.value)"
+        onkeydown="if(event.key==='Enter')this.blur()" />
+    </div>
+    <p style="font-size:11px;color:#bbb;margin-top:8px;line-height:1.6;">
+      Puoi usare:<br>
+      • Link diretto video: <em>youtube.com/watch?v=...</em><br>
+      • Link live canale: <em>youtube.com/@NomeCanale/live</em><br>
+      Lascia vuoto per nascondere il widget live.
+    </p>`;
+}
+
+function saveLiveUrl(url) {
+  state.liveUrl = url.trim();
+  scheduleSave();
+  renderLive();
 }
 
 // ── SORT LIST DRAG (desktop) ──────────────────────
