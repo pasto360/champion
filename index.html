@@ -118,11 +118,31 @@ header .subtitle { font-size: 12px; color: #777; }
   overflow: hidden; transition: box-shadow 0.2s;
 }
 .race-card:active { box-shadow: 0 2px 12px rgba(0,0,0,0.1); }
-.race-img-wrap { width: 100%; height: 100px; background: #e8e6e0; overflow: hidden; }
-.race-img-wrap img { width:100%; height:100%; object-fit:cover; display:block; pointer-events:none; }
-.race-img-placeholder {
-  width:100%;height:100%; display:flex; align-items:center;
-  justify-content:center; font-size:32px; background:#f0ede6;
+
+/* Banner stato gara (sostituisce immagine) */
+.race-banner {
+  width:100%; height:72px; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:4px;
+  font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1px;
+}
+.race-banner.pending {
+  background: #f5f4f0;
+  color: #bbb;
+}
+.race-banner.done {
+  background: #1a1a1a;
+  color: #fff;
+}
+.race-banner-icon { font-size:20px; }
+
+/* YouTube embed */
+.race-video-wrap {
+  width:100%; position:relative; padding-top:56.25%; /* 16:9 */
+  background:#000; overflow:hidden;
+}
+.race-video-wrap iframe {
+  position:absolute; top:0; left:0; width:100%; height:100%;
+  border:none;
 }
 .race-content { padding: 10px 11px; }
 .race-meta { display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; }
@@ -764,12 +784,35 @@ function renderChart() {
 }
 
 // ── GARE ──────────────────────────────────────────
+function getYouTubeId(url) {
+  if (!url) return null;
+  const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([A-Za-z0-9_-]{11})/);
+  return m ? m[1] : null;
+}
+
 function renderRaces() {
   document.getElementById('races-count').textContent = state.races.length+' circuiti';
   document.getElementById('races-grid').innerHTML = state.races.map((r,idx)=>{
-    const imgBlock=`<div class="race-img-wrap">
-      <img src="images/${r.img}" alt="${r.name}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-      <div class="race-img-placeholder" style="display:none">🏁</div></div>`;
+    const ytId = getYouTubeId(r.replayUrl);
+
+    // Top block: YouTube embed se disponibile, altrimenti banner
+    let topBlock;
+    if (ytId) {
+      topBlock = `<div class="race-video-wrap">
+        <iframe src="https://www.youtube.com/embed/${ytId}" allowfullscreen loading="lazy"></iframe>
+      </div>`;
+    } else if (r.result) {
+      topBlock = `<div class="race-banner done">
+        <span class="race-banner-icon">🏁</span>
+        <span>Disputata</span>
+      </div>`;
+    } else {
+      topBlock = `<div class="race-banner pending">
+        <span class="race-banner-icon">⏳</span>
+        <span>Da disputare</span>
+      </div>`;
+    }
+
     let resultBlock;
     if(r.result){
       resultBlock=`<div class="result-block">
@@ -790,23 +833,15 @@ function renderRaces() {
     } else {
       resultBlock=`<div class="result-block"><div class="no-result">Risultato non inserito</div></div>`;
     }
-    const badge=r.result
-      ?`<span class="status-badge status-done"><span class="status-dot"></span>OK</span>`
-      :`<span class="status-badge status-pending"><span class="status-dot"></span>—</span>`;
-    const replayBadge=r.replayUrl
-      ?`<a href="${r.replayUrl}" target="_blank" rel="noopener"
-          style="display:inline-flex;align-items:center;gap:4px;margin-top:7px;
-                 font-size:10px;font-weight:700;color:#e63946;text-decoration:none;
-                 text-transform:uppercase;letter-spacing:0.5px;">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>Replay</a>`:'';
+
     return `<div class="race-card">
-      ${imgBlock}
+      ${topBlock}
       <div class="race-content">
         <div class="race-meta">
-          <span class="race-num-label">#${idx+1}</span>${badge}
+          <span class="race-num-label">#${idx+1}</span>
         </div>
         <div class="race-name">${r.name}</div>
-        ${resultBlock}${replayBadge}
+        ${resultBlock}
       </div>
       <div class="race-footer">
         <button class="btn-result ${r.result?'has-result':''}" onclick="openResult('${r.id}')">
@@ -828,24 +863,33 @@ function openResult(id) {
   const positions = ['🥇 1° Posto','🥈 2° Posto'];
   // If > 2 players, show selects for 1st and 2nd only (rest get 0)
   selects.innerHTML = positions.map((label,i)=>{
-    const key = i===0?'first':'second';
-    const opts = state.players.map(p=>`<option value="${p}">${p}</option>`).join('');
+    const opts = `<option value="">— Nessuno —</option>` +
+      state.players.map(p=>`<option value="${p}">${p}</option>`).join('');
     return `<div class="field"><label>${label}</label>
       <select id="result-pos-${i}">${opts}</select></div>`;
   }).join('');
   if(r.result){
-    document.getElementById('result-pos-0').value=r.result.first;
-    document.getElementById('result-pos-1').value=r.result.second;
+    document.getElementById('result-pos-0').value=r.result.first||'';
+    document.getElementById('result-pos-1').value=r.result.second||'';
   } else {
-    document.getElementById('result-pos-0').value=state.players[0]||'';
-    document.getElementById('result-pos-1').value=state.players[1]||state.players[0]||'';
+    document.getElementById('result-pos-0').value='';
+    document.getElementById('result-pos-1').value='';
   }
   openModal('result-modal');
 }
 function saveResult() {
   const first  = document.getElementById('result-pos-0').value;
   const second = document.getElementById('result-pos-1').value;
-  if(first===second){showToast('1° e 2° non possono essere lo stesso');return;}
+  // Both empty = cancella risultato
+  if(!first && !second) {
+    const r=state.races.find(r=>r.id===resultingRaceId);
+    if(r) r.result=null;
+    scheduleSave(); render(); closeModal('result-modal'); showToast('Risultato rimosso');
+    return;
+  }
+  if(first && second && first===second){showToast('1° e 2° non possono essere lo stesso');return;}
+  if(!first){showToast('Seleziona il 1° posto');return;}
+  if(!second){showToast('Seleziona il 2° posto');return;}
   const r=state.races.find(r=>r.id===resultingRaceId);
   if(r) r.result={first,second};
   scheduleSave(); render(); closeModal('result-modal'); showToast('Risultato salvato!');
@@ -884,6 +928,15 @@ function renderManagePlayers() {
   const max20 = state.players.length>=20;
   body.innerHTML = `
     <p class="manage-hint">Max 20 utenti · ${state.players.length}/20</p>
+    <div class="prize-input-row" style="margin-bottom:14px;">
+      <span class="prize-input-icon">🏆</span>
+      <input class="prize-input-field" type="text"
+        placeholder="Nome campionato..."
+        value="${state.championship||''} ${state.season||''}"
+        id="champ-name-input"
+        onblur="saveChampionshipName(this.value)"
+        onkeydown="if(event.key==='Enter')this.blur()" />
+    </div>
     <div id="players-list">
       ${state.players.map((p,i)=>`
         <div class="player-item">
@@ -898,6 +951,22 @@ function renderManagePlayers() {
       <span style="font-size:18px">+</span> Aggiungi utente
     </button>`;
 }
+function saveChampionshipName(val) {
+  val = val.trim();
+  if (!val) return;
+  // Split last word as season if it's a 4-digit year
+  const parts = val.split(' ');
+  const last = parts[parts.length-1];
+  if (/^\d{4}$/.test(last)) {
+    state.season = last;
+    state.championship = parts.slice(0,-1).join(' ') || val;
+  } else {
+    state.championship = val;
+    state.season = '';
+  }
+  scheduleSave(); render();
+}
+
 function renamePlayer(idx, newName) {
   newName = newName.trim();
   if(!newName) { renderManagePlayers(); return; }
