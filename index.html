@@ -128,9 +128,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 @media(max-width:400px){.races-grid{grid-template-columns:1fr;}}
 .race-card{background:#fff;border-radius:14px;border:1px solid var(--border);overflow:hidden;}
 .race-banner{width:100%;height:68px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;}
-.race-banner.pending{background:#f5f4f0;color:#bbb;}
-.race-banner.done{background:#1a1a1a;color:#fff;}
-.race-banner-icon{font-size:18px;}
+.race-banner.pending{background:#fff;color:#bbb;border-bottom:1px solid #f0ede6;}
+.race-banner.done{background:#1e7e34;color:#fff;}
+.race-banner-icon{font-size:20px;}
+.race-banner-date{font-size:10px;font-weight:500;opacity:.75;letter-spacing:.3px;margin-top:1px;}
 .race-video-wrap{width:100%;position:relative;padding-top:56.25%;background:#000;}
 .race-video-wrap iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:none;}
 .race-content{padding:10px 11px;}
@@ -487,13 +488,10 @@ select:focus{border-color:#1a1a1a;}
     <button class="sheet-close" onclick="closeOverlay('add-race-overlay')">×</button>
     <h2>Nuovo Circuito</h2>
     <p style="margin-bottom:16px;font-size:13px;color:#aaa;">Aggiungi un circuito al campionato</p>
-    <div class="field"><label>Nome</label><input type="text" id="ar-name" placeholder="Es. Barcellona"/></div>
-    <div class="field">
-      <label>Immagine</label>
-      <div class="img-picker-grid" id="img-picker-grid"></div>
-      <input type="text" id="ar-img" placeholder="Oppure scrivi nome file: barcellona.png" style="margin-top:9px;width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:10px;font-size:14px;outline:none;" oninput="onManualImgInput()"/>
-    </div>
-    <button class="btn-primary" onclick="saveNewRace()">Aggiungi</button>
+    <div class="field"><label>Nome circuito</label><input type="text" id="ar-name" placeholder="Es. Barcellona"/></div>
+    <div class="field"><label>Data gara (opzionale)</label><input type="date" id="ar-date" style="width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:10px;font-size:15px;outline:none;background:#fff;"/></div>
+    <button class="btn-primary" onclick="saveNewRace()">Aggiungi circuito</button>
+    <div class="auth-err" id="ar-err" style="margin-top:10px;"></div>
   </div>
 </div>
 
@@ -916,10 +914,11 @@ function renderRaces() {
   document.getElementById('races-count').textContent=races.length+' circuiti';
   document.getElementById('races-grid').innerHTML=races.map((r,idx)=>{
     const ytId=getYtId(r.replayUrl);
+    const dateStr = r.date ? new Date(r.date).toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'}) : '';
     let top;
     if(ytId) top=`<div class="race-video-wrap"><iframe src="https://www.youtube.com/embed/${ytId}" allowfullscreen loading="lazy"></iframe></div>`;
-    else if(r.result) top=`<div class="race-banner done"><span class="race-banner-icon">🏁</span><span>Disputata</span></div>`;
-    else top=`<div class="race-banner pending"><span class="race-banner-icon">⏳</span><span>Da disputare</span></div>`;
+    else if(r.result) top=`<div class="race-banner done"><span class="race-banner-icon">🏁</span><span>Disputata</span>${dateStr?`<span class="race-banner-date">${dateStr}</span>`:''}</div>`;
+    else top=`<div class="race-banner pending"><span class="race-banner-icon">⏳</span><span>Da disputare</span>${dateStr?`<span class="race-banner-date">${dateStr}</span>`:''}</div>`;
 
     let res;
     if(r.result){
@@ -1058,6 +1057,9 @@ function renderManageRaces(){
             <input type="text" placeholder="Link YouTube replay..." value="${r.replayUrl||''}"
               onchange="saveReplayLink('${r.id}',this.value)" onclick="event.stopPropagation()"
               style="margin-top:4px;font-size:11px;padding:4px 7px;border:1px solid #e0ddd6;border-radius:6px;width:100%;outline:none;color:#666;background:#faf9f6;"/>
+            <input type="date" value="${r.date||''}"
+              onchange="saveRaceDate('${r.id}',this.value)" onclick="event.stopPropagation()"
+              style="margin-top:4px;font-size:11px;padding:4px 7px;border:1px solid #e0ddd6;border-radius:6px;width:100%;outline:none;color:#666;background:#faf9f6;"/>
           </div>
           <span class="sort-num">${idx+1}</span>
           <button class="sort-del" onclick="deleteRace('${r.id}')">×</button>
@@ -1068,6 +1070,7 @@ function renderManageRaces(){
 }
 function deleteRace(id){champData.races=(champData.races||[]).filter(r=>r.id!==id);scheduleSave();renderChamp();renderManageRaces();}
 function saveReplayLink(id,url){const r=(champData.races||[]).find(r=>r.id===id);if(r){r.replayUrl=url.trim();scheduleSave();renderChamp();}}
+function saveRaceDate(id,date){const r=(champData.races||[]).find(r=>r.id===id);if(r){r.date=date;scheduleSave();renderChamp();}}
 
 // PRIZES
 function renderManagePrizes(){
@@ -1159,29 +1162,27 @@ function doReorder(srcId,tgtId){const si=(champData.races||[]).findIndex(r=>r.id
 
 // ── ADD RACE ──────────────────────────────────────
 function openAddRaceModal(){
-  document.getElementById('ar-name').value='';document.getElementById('ar-img').value='';
-  selectedImg='';buildImgPicker();closeManagePanel();
+  document.getElementById('ar-name').value='';
+  document.getElementById('ar-date').value='';
+  document.getElementById('ar-err').textContent='';
+  closeManagePanel();
   setTimeout(()=>openOverlay('add-race-overlay'),180);
 }
-function buildImgPicker(){
-  const imgs=new Set(KNOWN_IMAGES);
-  (champData.races||[]).forEach(r=>{if(r.img)imgs.add(r.img);});
-  document.getElementById('img-picker-grid').innerHTML=[...imgs].map(img=>{
-    const label=img.replace(/\.(png|jpg|jpeg|webp)$/i,'');
-    return `<div class="img-picker-item" data-img="${img}" onclick="selectImg('${img}')">
-      <img src="images/${img}" alt="${label}" onerror="this.style.display='none'">
-      <div class="ipl">${label}</div><div class="img-picker-check">✓</div></div>`;}).join('');
-}
-function selectImg(img){selectedImg=img;document.getElementById('ar-img').value=img;document.querySelectorAll('.img-picker-item').forEach(el=>el.classList.toggle('selected',el.dataset.img===img));}
-function onManualImgInput(){const val=document.getElementById('ar-img').value.trim();selectedImg=val;document.querySelectorAll('.img-picker-item').forEach(el=>el.classList.toggle('selected',el.dataset.img===val));}
 function saveNewRace(){
   const name=document.getElementById('ar-name').value.trim();
-  const img=document.getElementById('ar-img').value.trim()||selectedImg;
-  if(!name){showToast('Inserisci il nome');return;}
+  const date=document.getElementById('ar-date').value;
+  if(!name){document.getElementById('ar-err').textContent='Inserisci il nome del circuito';return;}
   if(!champData.races)champData.races=[];
-  if(champData.races.length>=20){showToast('Max 20 gare');return;}
-  champData.races.push({id:'r_'+Date.now(),name,img:img||'lemans.png',result:null});
-  scheduleSave();renderChamp();closeOverlay('add-race-overlay');showToast('Circuito aggiunto!');
+  if(champData.races.length>=20){document.getElementById('ar-err').textContent='Massimo 20 gare';return;}
+  champData.races.push({id:'r_'+Date.now(),name,img:'',date:date||'',result:null,replayUrl:''});
+  scheduleSave();renderChamp();
+  // Rimani nel pannello: resetta form e torna alla tab circuiti
+  document.getElementById('ar-name').value='';
+  document.getElementById('ar-date').value='';
+  document.getElementById('ar-err').textContent='';
+  closeOverlay('add-race-overlay');
+  setTimeout(()=>{openManagePanel();switchManageTab('races');},180);
+  showToast('Circuito aggiunto!');
 }
 
 // ── TABS ──────────────────────────────────────────
