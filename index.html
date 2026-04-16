@@ -1313,7 +1313,7 @@ function doReorder(srcId,tgtId){
   const moved=champData.races.splice(si,1)[0];
   champData.races.splice(ti,0,moved);
   scheduleSave();renderChamp();renderManageRaces();showToast('Ordine aggiornato');
-}const si=(champData.races||[]).findIndex(r=>r.id===srcId),ti=(champData.races||[]).findIndex(r=>r.id===tgtId);if(si===-1||ti===-1)return;const moved=champData.races.splice(si,1)[0];champData.races.splice(ti,0,moved);scheduleSave();renderChamp();renderManageRaces();showToast('Ordine aggiornato');}
+}
 
 // ── ADD RACE ──────────────────────────────────────
 function openAddRaceModal(){
