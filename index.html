@@ -430,11 +430,6 @@ select:focus{border-color:#1a1a1a;}
     </div>
     <!-- RIGHT COL -->
     <div class="col-right c-page" id="c-page-standings">
-      <!-- live desktop -->
-      <div id="live-desktop-section">
-        <div class="sec-hdr"><span class="sec-lbl">Live</span></div>
-        <div class="live-card" id="live-card-desktop"></div>
-      </div>
       <!-- classifica -->
       <div class="sec-hdr" style="margin-top:14px;"><span class="sec-lbl">Classifica</span><span id="races-progress" style="font-size:11px;color:#bbb;"></span></div>
       <div class="standings-card" id="standings-container"></div>
@@ -684,7 +679,7 @@ async function showHome() {
 }
 
 // ── HOME ──────────────────────────────────────────
-let allOtherChamps = []; // cache for search+pagination
+let allChamps = []; // cache completa per search+pagination
 let currentPage = 1;
 const PAGE_SIZE = 10;
 
@@ -692,8 +687,8 @@ async function loadChampionshipsHome() {
   const {data:champs, error} = await sb.from('championships').select('id,name,season,access,owner_id,created_at').order('created_at',{ascending:false});
   if (error) { showToast('Errore caricamento campionati'); return; }
 
+  allChamps = champs;
   const mine   = champs.filter(c=>c.owner_id===currentUser.id);
-  allOtherChamps = champs.filter(c=>c.owner_id!==currentUser.id);
 
   const myGrid = document.getElementById('my-champs-grid');
   document.getElementById('my-champs-title').style.display = mine.length?'block':'none';
@@ -712,8 +707,8 @@ function onSearchInput() {
 function renderAllChamps() {
   const query = (document.getElementById('champ-search')?.value||'').toLowerCase().trim();
   const filtered = query
-    ? allOtherChamps.filter(c=>c.name.toLowerCase().includes(query))
-    : allOtherChamps;
+    ? allChamps.filter(c=>c.name.toLowerCase().includes(query))
+    : allChamps.filter(c=>c.owner_id!==currentUser.id);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   if (currentPage > totalPages) currentPage = totalPages;
@@ -963,9 +958,7 @@ function renderLive() {
     ?`<div class="live-hdr"><span class="live-dot"></span><span class="live-lbl">In diretta</span></div>
       <div class="live-video"><iframe src="${embed}" allowfullscreen allow="autoplay;encrypted-media"></iframe></div>`
     :`<div class="live-offline">Nessuna live attiva</div>`;
-  ['live-card-desktop','live-card-mobile'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=html;});
-  const ds=document.getElementById('live-desktop-section');
-  if(ds) ds.style.display=embed?'block':'none';
+  const mobile=document.getElementById('live-card-mobile');if(mobile)mobile.innerHTML=html;
   const pip=document.getElementById('live-pip');
   if(pip) pip.style.display=embed?'block':'none';
 }
@@ -1240,9 +1233,15 @@ function saveChampName(val){
 async function saveChampSettings(){
   const pass  =document.getElementById('set-champ-pass').value.trim();
   const access=document.getElementById('set-champ-access').value;
-  const {error}=await sb.from('championships').update({access,password_hash:pass}).eq('id',currentChamp.id);
+  // Sync name/season from champData (updated by saveChampName) to the top-level DB columns
+  const newName = [champData.championship, champData.season].filter(Boolean).join(' ') || currentChamp.name;
+  const newSeason = champData.season || '';
+  const {error}=await sb.from('championships').update({access,password_hash:pass,name:newName,season:newSeason}).eq('id',currentChamp.id);
   if(error){showToast('Errore salvataggio');return;}
-  currentChamp.access=access;currentChamp.password_hash=pass;
+  currentChamp.access=access;currentChamp.password_hash=pass;currentChamp.name=newName;currentChamp.season=newSeason;
+  // Aggiorna anche la cache home così la ricerca riflette il nuovo nome
+  const idx = allChamps.findIndex(c=>c.id===currentChamp.id);
+  if(idx!==-1){allChamps[idx].name=newName;allChamps[idx].season=newSeason;allChamps[idx].access=access;}
   showToast('Impostazioni salvate!');
 }
 
