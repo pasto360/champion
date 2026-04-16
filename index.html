@@ -450,7 +450,7 @@ select:focus{border-color:#1a1a1a;}
   </div>
 
   <!-- mobile live page -->
-  <div class="c-page" id="c-page-live" style="padding:16px;">
+  <div class="c-page" id="c-page-live" style="padding:16px;display:none;">
     <div class="sec-hdr"><span class="sec-lbl">Live</span></div>
     <div class="live-card" id="live-card-mobile"></div>
   </div>
@@ -954,11 +954,17 @@ function getLiveEmbed(url) {
 }
 function renderLive() {
   const embed=getLiveEmbed(champData.liveUrl||'');
-  const html=embed
-    ?`<div class="live-hdr"><span class="live-dot"></span><span class="live-lbl">In diretta</span></div>
-      <div class="live-video"><iframe src="${embed}" allowfullscreen allow="autoplay;encrypted-media"></iframe></div>`
-    :`<div class="live-offline">Nessuna live attiva</div>`;
-  const mobile=document.getElementById('live-card-mobile');if(mobile)mobile.innerHTML=html;
+  const mobile=document.getElementById('live-card-mobile');
+  const livePage=document.getElementById('c-page-live');
+  if(embed){
+    const html=`<div class="live-hdr"><span class="live-dot"></span><span class="live-lbl">In diretta</span></div>
+      <div class="live-video"><iframe src="${embed}" allowfullscreen allow="autoplay;encrypted-media"></iframe></div>`;
+    if(mobile)mobile.innerHTML=html;
+    if(livePage)livePage.style.display='';
+  } else {
+    if(mobile)mobile.innerHTML='';
+    if(livePage)livePage.style.display='none';
+  }
   const pip=document.getElementById('live-pip');
   if(pip) pip.style.display=embed?'block':'none';
 }
