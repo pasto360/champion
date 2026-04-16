@@ -178,14 +178,26 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .prize-text{font-size:13px;font-weight:500;color:#1a1a1a;margin-top:1px;}
 .prize-empty{font-size:12px;color:#ccc;font-style:italic;margin-top:1px;}
 
-/* live */
+/* live widget desktop — compact above standings */
 .live-card{background:#fff;border-radius:14px;border:1px solid var(--border);overflow:hidden;margin-bottom:14px;}
-.live-hdr{display:flex;align-items:center;gap:7px;padding:9px 13px;border-bottom:1px solid #f0ede6;}
+.live-hdr{display:flex;align-items:center;gap:7px;padding:8px 13px;border-bottom:1px solid #f0ede6;}
 .live-dot{width:8px;height:8px;border-radius:50%;background:var(--red);animation:pulse 1.2s infinite;}
 .live-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--red);}
 .live-video{width:100%;position:relative;padding-top:56.25%;background:#000;}
 .live-video iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:none;}
-.live-offline{padding:16px;text-align:center;font-size:12px;color:#bbb;}
+.live-offline{padding:14px;text-align:center;font-size:12px;color:#bbb;}
+
+/* home search */
+.search-bar{display:flex;gap:10px;margin:20px 0;align-items:center;}
+.search-input{flex:1;padding:11px 16px;border:1px solid var(--border);border-radius:12px;font-size:15px;outline:none;background:#fff;}
+.search-input:focus{border-color:#1a1a1a;}
+
+/* pagination */
+.pagination{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:16px;}
+.page-btn{padding:7px 13px;border-radius:8px;border:1px solid var(--border);background:#fff;font-size:13px;font-weight:600;cursor:pointer;color:#555;}
+.page-btn:disabled{opacity:.35;cursor:not-allowed;}
+.page-btn.active-pg{background:#1a1a1a;color:#fff;border-color:#1a1a1a;}
+.page-info{font-size:13px;color:#aaa;}
 
 /* chart */
 .chart-card{background:#fff;border-radius:14px;border:1px solid var(--border);padding:16px 18px 12px;}
@@ -331,8 +343,15 @@ select:focus{border-color:#1a1a1a;}
     </div>
     <div class="sec-title" id="my-champs-title">I miei campionati</div>
     <div class="champ-grid" id="my-champs-grid"></div>
+
+    <!-- SEARCH -->
+    <div class="search-bar">
+      <input class="search-input" type="text" id="champ-search" placeholder="🔍  Cerca campionato per nome..." oninput="onSearchInput()"/>
+    </div>
+
     <div class="sec-title">Tutti i campionati</div>
     <div class="champ-grid" id="all-champs-grid"></div>
+    <div class="pagination" id="pagination"></div>
   </div>
 </div>
 
@@ -350,6 +369,23 @@ select:focus{border-color:#1a1a1a;}
   <div class="dash-container">
     <div class="sec-title" style="margin-bottom:16px;">I miei campionati</div>
     <div class="dash-grid" id="dash-grid"></div>
+    <div class="sec-title" style="margin:28px 0 16px;">Account</div>
+    <div style="background:#fff;border-radius:14px;border:1px solid var(--border);padding:20px;max-width:420px;">
+      <div class="field">
+        <label>Nuova email</label>
+        <input type="email" id="acc-email" placeholder="nuova@email.com" style="width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:10px;font-size:15px;outline:none;background:#fff;"/>
+      </div>
+      <div class="field">
+        <label>Nuova password</label>
+        <input type="password" id="acc-pass" placeholder="min. 6 caratteri" style="width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:10px;font-size:15px;outline:none;background:#fff;"/>
+      </div>
+      <div class="field">
+        <label>Conferma password</label>
+        <input type="password" id="acc-pass2" placeholder="ripeti la password" style="width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:10px;font-size:15px;outline:none;background:#fff;"/>
+      </div>
+      <button class="btn-primary" onclick="saveAccountSettings()" style="margin-top:4px;">Salva modifiche account</button>
+      <div class="auth-err" id="acc-msg" style="margin-top:10px;"></div>
+    </div>
   </div>
 </div>
 
@@ -495,6 +531,21 @@ select:focus{border-color:#1a1a1a;}
   </div>
 </div>
 
+<!-- Edit race modal -->
+<div class="overlay" id="edit-race-overlay">
+  <div class="sheet">
+    <div class="drag-bar"></div>
+    <button class="sheet-close" onclick="closeOverlay('edit-race-overlay')">×</button>
+    <h2>Modifica Circuito</h2>
+    <p style="margin-bottom:16px;font-size:13px;color:#aaa;">Modifica nome e data della gara</p>
+    <input type="hidden" id="er-id"/>
+    <div class="field"><label>Nome circuito</label><input type="text" id="er-name" placeholder="Es. Barcellona"/></div>
+    <div class="field"><label>Data gara</label><input type="date" id="er-date" style="width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:10px;font-size:15px;outline:none;background:#fff;"/></div>
+    <button class="btn-primary" onclick="saveEditRace()">Salva modifiche</button>
+    <div class="auth-err" id="er-err" style="margin-top:10px;"></div>
+  </div>
+</div>
+
 <!-- Manage panel -->
 <div class="manage-panel" id="manage-panel">
   <div class="manage-inner">
@@ -541,6 +592,14 @@ let pendingAccessChamp = null;
 
 // ── BOOT ──────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async () => {
+  // Handle email confirmation redirect (token in URL hash)
+  const hash = window.location.hash;
+  if (hash && hash.includes('access_token')) {
+    // Supabase reads tokens from hash automatically via getSession
+    // Clean URL without reloading
+    history.replaceState(null, '', window.location.pathname);
+  }
+
   const {data:{session}} = await sb.auth.getSession();
   if (session) {
     currentUser = session.user;
@@ -624,20 +683,58 @@ async function showHome() {
   await loadDashboard();
 }
 
+// ── HOME ──────────────────────────────────────────
+let allOtherChamps = []; // cache for search+pagination
+let currentPage = 1;
+const PAGE_SIZE = 10;
+
 async function loadChampionshipsHome() {
   const {data:champs, error} = await sb.from('championships').select('id,name,season,access,owner_id,created_at').order('created_at',{ascending:false});
   if (error) { showToast('Errore caricamento campionati'); return; }
 
-  const mine = champs.filter(c=>c.owner_id===currentUser.id);
-  const others = champs.filter(c=>c.owner_id!==currentUser.id);
+  const mine   = champs.filter(c=>c.owner_id===currentUser.id);
+  allOtherChamps = champs.filter(c=>c.owner_id!==currentUser.id);
 
   const myGrid = document.getElementById('my-champs-grid');
-  const allGrid = document.getElementById('all-champs-grid');
   document.getElementById('my-champs-title').style.display = mine.length?'block':'none';
   myGrid.style.display = mine.length?'':'none';
+  myGrid.innerHTML = mine.map(champCard).join('');
 
-  myGrid.innerHTML  = mine.map(champCard).join('');
-  allGrid.innerHTML = others.length ? others.map(champCard).join('') : '<div class="empty-state"><div class="big">🏁</div><p>Nessun campionato ancora. Crea il primo!</p></div>';
+  currentPage = 1;
+  renderAllChamps();
+}
+
+function onSearchInput() {
+  currentPage = 1;
+  renderAllChamps();
+}
+
+function renderAllChamps() {
+  const query = (document.getElementById('champ-search')?.value||'').toLowerCase().trim();
+  const filtered = query
+    ? allOtherChamps.filter(c=>c.name.toLowerCase().includes(query))
+    : allOtherChamps;
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  if (currentPage > totalPages) currentPage = totalPages;
+  const start = (currentPage-1)*PAGE_SIZE;
+  const slice = filtered.slice(start, start+PAGE_SIZE);
+
+  const allGrid = document.getElementById('all-champs-grid');
+  allGrid.innerHTML = slice.length
+    ? slice.map(champCard).join('')
+    : `<div class="empty-state"><div class="big">🔍</div><p>${query?'Nessun campionato trovato':'Nessun campionato disponibile'}</p></div>`;
+
+  // Pagination
+  const pag = document.getElementById('pagination');
+  if (totalPages <= 1) { pag.innerHTML=''; return; }
+  let html = `<button class="page-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}>‹</button>`;
+  for (let i=1;i<=totalPages;i++) {
+    html+=`<button class="page-btn ${i===currentPage?'active-pg':''}" onclick="goPage(${i})">${i}</button>`;
+  }
+  html+=`<button class="page-btn" onclick="goPage(${currentPage+1})" ${currentPage===totalPages?'disabled':''}>›</button>`;
+  html+=`<span class="page-info">${currentPage}/${totalPages}</span>`;
+  pag.innerHTML = html;
 }
 
 function champCard(c) {
@@ -1062,6 +1159,7 @@ function renderManageRaces(){
               style="margin-top:4px;font-size:11px;padding:4px 7px;border:1px solid #e0ddd6;border-radius:6px;width:100%;outline:none;color:#666;background:#faf9f6;"/>
           </div>
           <span class="sort-num">${idx+1}</span>
+          <button class="sort-del" style="background:#e8f0fe;color:#1d7eda;" onclick="openEditRace('${r.id}')">✎</button>
           <button class="sort-del" onclick="deleteRace('${r.id}')">×</button>
         </li>`;}).join('')}
     </ul>
@@ -1158,7 +1256,64 @@ let sortTouchId=null,sortTouchClone=null;
 function sortTouchStart(e,id){e.stopPropagation();sortTouchId=id;const item=e.target.closest('.sort-item');const rect=item.getBoundingClientRect();sortTouchClone=item.cloneNode(true);sortTouchClone.style.cssText=`position:fixed;top:${rect.top}px;left:${rect.left}px;width:${rect.width}px;opacity:.75;pointer-events:none;z-index:999;border-radius:11px;box-shadow:0 6px 24px rgba(0,0,0,.18);`;document.body.appendChild(sortTouchClone);item.style.opacity='.3';}
 function sortTouchMove(e){if(!sortTouchClone)return;e.preventDefault();const t=e.touches[0];sortTouchClone.style.left=(t.clientX-sortTouchClone.offsetWidth/2)+'px';sortTouchClone.style.top=(t.clientY-sortTouchClone.offsetHeight/2)+'px';document.querySelectorAll('.sort-item').forEach(el=>el.classList.remove('drag-over-sort'));sortTouchClone.style.display='none';const el=document.elementFromPoint(t.clientX,t.clientY);sortTouchClone.style.display='';const target=el&&el.closest('.sort-item');if(target&&target.dataset.id!==sortTouchId)target.classList.add('drag-over-sort');}
 function sortTouchEnd(e){if(!sortTouchId)return;const t=e.changedTouches[0];if(sortTouchClone){sortTouchClone.remove();sortTouchClone=null;}document.querySelectorAll('.sort-item').forEach(el=>{el.style.opacity='';el.classList.remove('drag-over-sort','dragging-sort');});const el=document.elementFromPoint(t.clientX,t.clientY);const target=el&&el.closest('.sort-item');if(target&&target.dataset.id&&target.dataset.id!==sortTouchId)doReorder(sortTouchId,target.dataset.id);sortTouchId=null;}
-function doReorder(srcId,tgtId){const si=(champData.races||[]).findIndex(r=>r.id===srcId),ti=(champData.races||[]).findIndex(r=>r.id===tgtId);if(si===-1||ti===-1)return;const moved=champData.races.splice(si,1)[0];champData.races.splice(ti,0,moved);scheduleSave();renderChamp();renderManageRaces();showToast('Ordine aggiornato');}
+function goPage(n) { currentPage = n; renderAllChamps(); window.scrollTo(0,0); }
+
+// ── ACCOUNT SETTINGS ──────────────────────────────
+async function saveAccountSettings() {
+  const email = document.getElementById('acc-email').value.trim();
+  const pass  = document.getElementById('acc-pass').value;
+  const pass2 = document.getElementById('acc-pass2').value;
+  const msg   = document.getElementById('acc-msg');
+  msg.style.color = 'var(--red)'; msg.textContent = '';
+
+  if (!email && !pass) { msg.textContent = 'Inserisci email o password da modificare'; return; }
+  if (pass && pass !== pass2) { msg.textContent = 'Le password non coincidono'; return; }
+  if (pass && pass.length < 6) { msg.textContent = 'Password minimo 6 caratteri'; return; }
+
+  const updates = {};
+  if (email) updates.email = email;
+  if (pass)  updates.password = pass;
+
+  const {error} = await sb.auth.updateUser(updates);
+  if (error) { msg.textContent = error.message; return; }
+
+  msg.style.color = 'var(--green)';
+  msg.textContent = email ? 'Controlla la nuova email per confermare il cambio.' : 'Password aggiornata!';
+  document.getElementById('acc-email').value = '';
+  document.getElementById('acc-pass').value  = '';
+  document.getElementById('acc-pass2').value = '';
+}
+
+// ── EDIT RACE ─────────────────────────────────────
+function openEditRace(id) {
+  const r = (champData.races||[]).find(r=>r.id===id); if(!r) return;
+  document.getElementById('er-id').value   = id;
+  document.getElementById('er-name').value = r.name;
+  document.getElementById('er-date').value = r.date||'';
+  document.getElementById('er-err').textContent = '';
+  closeManagePanel();
+  setTimeout(()=>openOverlay('edit-race-overlay'),180);
+}
+function saveEditRace() {
+  const id   = document.getElementById('er-id').value;
+  const name = document.getElementById('er-name').value.trim();
+  const date = document.getElementById('er-date').value;
+  if (!name) { document.getElementById('er-err').textContent='Inserisci il nome'; return; }
+  const r = (champData.races||[]).find(r=>r.id===id); if(!r) return;
+  r.name = name; r.date = date;
+  scheduleSave(); renderChamp();
+  closeOverlay('edit-race-overlay');
+  setTimeout(()=>{ openManagePanel(); switchManageTab('races'); }, 180);
+  showToast('Gara aggiornata!');
+}
+
+function doReorder(srcId,tgtId){
+  const si=(champData.races||[]).findIndex(r=>r.id===srcId),ti=(champData.races||[]).findIndex(r=>r.id===tgtId);
+  if(si===-1||ti===-1)return;
+  const moved=champData.races.splice(si,1)[0];
+  champData.races.splice(ti,0,moved);
+  scheduleSave();renderChamp();renderManageRaces();showToast('Ordine aggiornato');
+}const si=(champData.races||[]).findIndex(r=>r.id===srcId),ti=(champData.races||[]).findIndex(r=>r.id===tgtId);if(si===-1||ti===-1)return;const moved=champData.races.splice(si,1)[0];champData.races.splice(ti,0,moved);scheduleSave();renderChamp();renderManageRaces();showToast('Ordine aggiornato');}
 
 // ── ADD RACE ──────────────────────────────────────
 function openAddRaceModal(){
@@ -1203,7 +1358,10 @@ window.addEventListener('resize',repositionChart);
 // ── OVERLAY UTILS ─────────────────────────────────
 function openOverlay(id){document.getElementById(id).classList.add('open');}
 function closeOverlay(id){document.getElementById(id).classList.remove('open');}
-document.querySelectorAll('.overlay').forEach(el=>el.addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');}));
+['result-overlay','add-race-overlay','edit-race-overlay','access-overlay','new-champ-overlay'].forEach(id=>{
+  const el=document.getElementById(id);
+  if(el) el.addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');});
+});
 document.getElementById('manage-panel').addEventListener('click',function(e){if(e.target===this)closeManagePanel();});
 
 // ── MISC UTILS ────────────────────────────────────
