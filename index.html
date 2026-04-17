@@ -1704,7 +1704,8 @@ function renderRRMatches() {
       const s1 = m.score1!==null?m.score1:'–';
       const s2 = m.score2!==null?m.score2:'–';
       const done = m.result!==null;
-      html += `<div class="rr-match-card ${done?'done':''}" onclick="${isOwner?'openRRResult(''+m.id+'')':'showToast('Solo il proprietario può inserire risultati')'}">
+      const rrOnclick = isOwner ? `openRRResult('${m.id}')` : `showToast('Solo il proprietario pu\xf2 inserire risultati')`;
+      html += `<div class="rr-match-card ${done?'done':''}" onclick="${rrOnclick}">
         <div class="rr-player-name" style="color:${PLAYER_COLORS[(champData.players||[]).indexOf(m.p1)%PLAYER_COLORS.length]}">${m.p1}</div>
         <div style="display:flex;align-items:center;gap:4px;">
           <div class="rr-score">${s1}</div>
