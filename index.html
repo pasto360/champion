@@ -324,6 +324,13 @@ select:focus{border-color:#1a1a1a;}
 .elim-slot-btn{padding:8px;border:2px solid #e0ddd6;border-radius:8px;background:#fff;cursor:pointer;font-size:12px;font-weight:600;transition:border-color .15s;}
 .elim-slot-btn.filled{border-color:#1d7eda;background:#f0f7ff;}
 
+
+/* fav button */
+.hbtn.fav-active { color: #f4a200; }
+
+.card-fav-star { font-size:16px; margin-left:6px; color:#ccc; cursor:pointer; transition:color .15s; }
+.card-fav-star.active { color:#f4a200; }
+.card-fav-star:hover { color:#f4a200; }
 </style>
 </head>
 <body>
@@ -388,6 +395,9 @@ select:focus{border-color:#1a1a1a;}
     <div class="sec-title" id="my-champs-title">I miei campionati</div>
     <div class="champ-grid" id="my-champs-grid"></div>
 
+    <div class="sec-title" id="my-favs-title" style="display:none;">⭐ Preferiti</div>
+    <div class="champ-grid" id="my-favs-grid"></div>
+
     <!-- SEARCH -->
     <div class="search-bar">
       <input class="search-input" type="text" id="champ-search" placeholder="🔍  Cerca campionato per nome..." oninput="onSearchInput()"/>
@@ -446,6 +456,7 @@ select:focus{border-color:#1a1a1a;}
         <span id="sync-label">...</span>
       </div>
       <button class="hbtn" id="btn-manage-champ" onclick="openManagePanel()" style="display:none;">⚙</button>
+      <button class="hbtn" id="btn-fav-champ" onclick="toggleFav()" title="Aggiungi ai preferiti">☆</button>
       <button class="hbtn" onclick="showPage('page-home')">← Home</button>
     </div>
   </div>
@@ -785,18 +796,92 @@ let allChamps = []; // cache completa per search+pagination
 let currentPage = 1;
 const PAGE_SIZE = 10;
 
+// ── FAVOURITES (Supabase) ─────────────────────────
+let userFavIds = []; // cache locale — array di champ_id (string)
+
+async function loadFavs() {
+  const { data, error } = await sb.from('user_favourites')
+    .select('champ_id')
+    .eq('user_id', currentUser.id);
+  if (!error) userFavIds = (data||[]).map(r => r.champ_id);
+}
+
+function isFav(id) { return userFavIds.includes(id); }
+
+async function toggleFav() {
+  const id = currentChamp?.id; if (!id) return;
+  const btn = document.getElementById('btn-fav-champ');
+  if (btn) btn.disabled = true;
+  const adding = !isFav(id);
+  if (adding) {
+    const { error } = await sb.from('user_favourites')
+      .insert({ user_id: currentUser.id, champ_id: id });
+    if (error) { showToast('Errore salvataggio'); if(btn)btn.disabled=false; return; }
+    userFavIds.push(id);
+  } else {
+    const { error } = await sb.from('user_favourites')
+      .delete().eq('user_id', currentUser.id).eq('champ_id', id);
+    if (error) { showToast('Errore rimozione'); if(btn)btn.disabled=false; return; }
+    userFavIds = userFavIds.filter(x => x !== id);
+  }
+  if (btn) btn.disabled = false;
+  updateFavBtn();
+  renderFavs();
+  showToast(adding ? '⭐ Aggiunto ai preferiti' : 'Rimosso dai preferiti');
+}
+
+async function toggleFavById(id) {
+  const adding = !isFav(id);
+  if (adding) {
+    const { error } = await sb.from('user_favourites')
+      .insert({ user_id: currentUser.id, champ_id: id });
+    if (error) { showToast('Errore salvataggio'); return; }
+    userFavIds.push(id);
+  } else {
+    const { error } = await sb.from('user_favourites')
+      .delete().eq('user_id', currentUser.id).eq('champ_id', id);
+    if (error) { showToast('Errore rimozione'); return; }
+    userFavIds = userFavIds.filter(x => x !== id);
+  }
+  renderFavs();
+  renderAllChamps();
+  showToast(adding ? '⭐ Aggiunto ai preferiti' : 'Rimosso dai preferiti');
+}
+
+function updateFavBtn() {
+  const btn = document.getElementById('btn-fav-champ'); if (!btn) return;
+  const active = isFav(currentChamp?.id);
+  btn.textContent = active ? '★' : '☆';
+  btn.classList.toggle('fav-active', active);
+  btn.title = active ? 'Rimuovi dai preferiti' : 'Aggiungi ai preferiti';
+}
+
+function renderFavs() {
+  const favChamps = userFavIds.map(id => allChamps.find(c=>c.id===id)).filter(Boolean);
+  const title = document.getElementById('my-favs-title');
+  const grid  = document.getElementById('my-favs-grid');
+  if (!title || !grid) return;
+  title.style.display = favChamps.length ? 'block' : 'none';
+  grid.style.display  = favChamps.length ? '' : 'none';
+  grid.innerHTML = favChamps.map(c => champCard(c, true)).join('');
+}
+
 async function loadChampionshipsHome() {
-  const {data:champs, error} = await sb.from('championships').select('id,name,season,access,owner_id,created_at').order('created_at',{ascending:false});
+  const [{data:champs, error}, ] = await Promise.all([
+    sb.from('championships').select('id,name,season,access,owner_id,created_at').order('created_at',{ascending:false}),
+    loadFavs()
+  ]);
   if (error) { showToast('Errore caricamento campionati'); return; }
 
   allChamps = champs;
-  const mine   = champs.filter(c=>c.owner_id===currentUser.id);
+  const mine = champs.filter(c=>c.owner_id===currentUser.id);
 
   const myGrid = document.getElementById('my-champs-grid');
   document.getElementById('my-champs-title').style.display = mine.length?'block':'none';
   myGrid.style.display = mine.length?'':'none';
-  myGrid.innerHTML = mine.map(champCard).join('');
+  myGrid.innerHTML = mine.map(c=>champCard(c)).join('');
 
+  renderFavs();
   currentPage = 1;
   renderAllChamps();
 }
@@ -834,17 +919,28 @@ function renderAllChamps() {
   pag.innerHTML = html;
 }
 
-function champCard(c) {
+function champCard(c, inFavSection=false) {
   const mine = c.owner_id === currentUser.id;
+  const fav  = isFav(c.id);
   const badge = c.access==='public'
     ? `<span class="badge-access badge-pub">🌐 Pubblico</span>`
     : `<span class="badge-access badge-priv">🔒 Password</span>`;
+  const favStar = !mine && !inFavSection ? `<span class="card-fav-star ${fav?'active':''}" onclick="event.stopPropagation();toggleFavById('${c.id}')" title="${fav?'Rimuovi dai preferiti':'Aggiungi ai preferiti'}">${fav?'★':'☆'}</span>` : '';
+  const favStarFavSection = inFavSection ? `<span class="card-fav-star active" onclick="event.stopPropagation();toggleFavById('${c.id}')" title="Rimuovi dai preferiti">★</span>` : '';
   return `<div class="champ-card ${mine?'champ-card-mine':''}" onclick="openChampionship('${c.id}')">
-    <div class="champ-card-name">${c.name}</div>
+    <div class="champ-card-name">${c.name}${favStarFavSection||favStar}</div>
     <div class="champ-card-meta">${c.season||''}${mine?' · <strong>Mio</strong>':''}</div>
     ${badge}
-    <div class="champ-card-owner">${mine?'Sei il proprietario':''}</div>
   </div>`;
+}
+function toggleFavById(id) {
+  const favs = getFavs();
+  const idx = favs.indexOf(id);
+  if (idx===-1) favs.push(id); else favs.splice(idx,1);
+  setFavs(favs);
+  renderFavs();
+  renderAllChamps();
+  showToast(idx===-1 ? '⭐ Aggiunto ai preferiti' : 'Rimosso dai preferiti');
 }
 
 // ── DASHBOARD ─────────────────────────────────────
@@ -986,6 +1082,7 @@ function loadChampPage(champ) {
   repositionChart();
 
   renderChamp();
+  updateFavBtn();
   setSyncStatus('ok','Online');
   showPage('page-champ');
 }
