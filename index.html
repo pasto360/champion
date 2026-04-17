@@ -413,7 +413,6 @@ select:focus{border-color:#1a1a1a;}
         <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Gare
       </button>
       <button class="tab-btn" id="tab-live-btn" onclick="switchTab('live')" style="position:relative;">
-        <span class="live-pip" id="live-pip" style="display:none;"></span>
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none"/></svg>Live
       </button>
       <button class="tab-btn" id="tab-standings-btn" onclick="switchTab('standings')">
@@ -430,6 +429,10 @@ select:focus{border-color:#1a1a1a;}
     </div>
     <!-- RIGHT COL -->
     <div class="col-right c-page" id="c-page-standings">
+      <!-- live desktop widget -->
+      <div id="live-widget-desktop" style="margin-top:14px;margin-bottom:14px;border-radius:12px;overflow:hidden;background:#000;aspect-ratio:16/9;display:none;">
+        <iframe id="live-iframe-desktop" src="" allowfullscreen allow="autoplay;encrypted-media" style="width:100%;height:100%;border:none;display:block;"></iframe>
+      </div>
       <!-- classifica -->
       <div class="sec-hdr" style="margin-top:14px;"><span class="sec-lbl">Classifica</span><span id="races-progress" style="font-size:11px;color:#bbb;"></span></div>
       <div class="standings-card" id="standings-container"></div>
@@ -794,7 +797,7 @@ async function createChampionship() {
   const defaultData = {
     championship: name, season,
     players: [currentUser.user_metadata?.username||'Giocatore 1','Giocatore 2'],
-    prizes: ['','',''], races: [], liveUrl: ''
+    prizes: ['','',''], races: [], liveUrl: 'https://www.youtube.com/@pixel-race/live'
   };
 
   const {data, error} = await sb.from('championships').insert({
@@ -954,19 +957,29 @@ function getLiveEmbed(url) {
 }
 function renderLive() {
   const embed=getLiveEmbed(champData.liveUrl||'');
+  // Desktop widget
+  const desktopWidget=document.getElementById('live-widget-desktop');
+  const desktopIframe=document.getElementById('live-iframe-desktop');
+  if(desktopWidget && desktopIframe){
+    if(embed){
+      desktopIframe.src=embed;
+      desktopWidget.style.display='block';
+    } else {
+      desktopWidget.style.display='none';
+      desktopIframe.src='';
+    }
+  }
+  // Mobile page
   const mobile=document.getElementById('live-card-mobile');
   const livePage=document.getElementById('c-page-live');
   if(embed){
-    const html=`<div class="live-hdr"><span class="live-dot"></span><span class="live-lbl">In diretta</span></div>
-      <div class="live-video"><iframe src="${embed}" allowfullscreen allow="autoplay;encrypted-media"></iframe></div>`;
+    const html=`<div class="live-video"><iframe src="${embed}" allowfullscreen allow="autoplay;encrypted-media"></iframe></div>`;
     if(mobile)mobile.innerHTML=html;
     if(livePage)livePage.style.display='';
   } else {
     if(mobile)mobile.innerHTML='';
     if(livePage)livePage.style.display='none';
   }
-  const pip=document.getElementById('live-pip');
-  if(pip) pip.style.display=embed?'block':'none';
 }
 
 // ── CHART ─────────────────────────────────────────
