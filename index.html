@@ -1437,7 +1437,24 @@ function renderChart() {
 }
 
 // ── RACES ─────────────────────────────────────────
-function getYtId(url){if(!url)return null;const m=url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([A-Za-z0-9_-]{11})/);return m?m[1]:null;}
+function getYtId(url){
+  if(!url)return null;
+  url=url.trim();
+  // Try all known YouTube URL patterns
+  const patterns=[
+    /[?&]v=([A-Za-z0-9_-]{11})/,           // ?v=ID or &v=ID
+    /youtu\.be\/([A-Za-z0-9_-]{11})/,       // youtu.be/ID
+    /youtube\.com\/embed\/([A-Za-z0-9_-]{11})/, // embed/ID
+    /youtube\.com\/shorts\/([A-Za-z0-9_-]{11})/, // shorts/ID
+    /youtube\.com\/v\/([A-Za-z0-9_-]{11})/, // /v/ID
+    /youtube\.com\/live\/([A-Za-z0-9_-]{11})/, // /live/ID
+  ];
+  for(var i=0;i<patterns.length;i++){
+    var m=url.match(patterns[i]);
+    if(m)return m[1];
+  }
+  return null;
+}
 
 function isMobile(){return window.innerWidth<768;}
 
@@ -1466,9 +1483,10 @@ function renderRaces() {
   document.getElementById('races-grid').innerHTML=races.map((r,idx)=>{
     const ytId=getYtId(r.replayUrl);
     const dateStr = r.date ? new Date(r.date).toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'}) : '';
+    if(r.replayUrl) console.log('[Replay] gara:',r.name,'url:',r.replayUrl,'ytId:',ytId);
     const replayChip = ytId
       ? `<span class="replay-chip" onclick="openReplay('${ytId}','${r.replayUrl}')">▶ Replay</span>`
-      : '';
+      : (r.replayUrl ? `<a class="replay-chip" href="${r.replayUrl}" target="_blank" rel="noopener">▶ Replay</a>` : '');
 
     let top;
     if(r.result) top=`<div class="race-banner done"><span class="race-banner-icon">🏁</span><span>Disputata</span>${replayChip}${dateStr?`<span class="race-banner-date">${dateStr}</span>`:''}</div>`;
@@ -1651,7 +1669,7 @@ function renderManageRaces(){
       <span style="font-size:18px">+</span> Aggiungi circuito</button>`;
 }
 function deleteRace(id){champData.races=(champData.races||[]).filter(r=>r.id!==id);scheduleSave();renderChamp();renderManageRaces();}
-function saveReplayLink(id,url){const r=(champData.races||[]).find(r=>r.id===id);if(r){r.replayUrl=url.trim();scheduleSave();renderChamp();}}
+function saveReplayLink(id,url){const r=(champData.races||[]).find(r=>r.id===id);if(r){r.replayUrl=url.trim();scheduleSave();renderRaces();}}
 function saveRaceDate(id,date){const r=(champData.races||[]).find(r=>r.id===id);if(r){r.date=date;scheduleSave();renderChamp();}}
 
 // PRIZES
