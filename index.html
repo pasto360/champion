@@ -128,11 +128,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .races-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 @media(max-width:400px){.races-grid{grid-template-columns:1fr;}}
 .race-card{background:#fff;border-radius:14px;border:1px solid var(--border);overflow:hidden;}
-.race-banner{width:100%;height:68px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;}
+.race-banner{width:100%;height:76px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;}
 .race-banner.pending{background:#fff;color:#bbb;border-bottom:1px solid #f0ede6;}
 .race-banner.done{background:#1e7e34;color:#fff;}
-.race-banner-icon{font-size:20px;}
-.race-banner-date{font-size:10px;font-weight:500;opacity:.75;letter-spacing:.3px;margin-top:1px;}
+.race-banner-row1{display:flex;align-items:center;gap:6px;}
+.race-banner-icon{font-size:18px;line-height:1;}
+.race-banner-date{font-size:10px;font-weight:500;opacity:.75;letter-spacing:.3px;}
 .race-video-wrap{width:100%;position:relative;padding-top:56.25%;background:#000;}
 .race-video-wrap iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:none;}
 .race-content{padding:10px 11px;}
@@ -343,12 +344,17 @@ select:focus{border-color:#1a1a1a;}
 /* replay chip */
 .replay-chip {
   display: inline-flex; align-items: center; gap: 3px;
-  font-size: 11px; font-weight: 700; color: #1d7eda;
-  background: #e8f0ff; border-radius: 6px;
-  padding: 2px 8px; margin-left: 8px; cursor: pointer;
-  transition: background .15s;
+  font-size: 10px; font-weight: 700; color: #fff;
+  background: rgba(255,255,255,0.25); border-radius: 5px;
+  padding: 2px 7px; cursor: pointer;
+  transition: background .15s; text-decoration: none;
+  border: 1px solid rgba(255,255,255,0.35);
 }
-.replay-chip:hover { background: #c8deff; }
+.replay-chip:hover { background: rgba(255,255,255,0.4); }
+.race-banner.pending .replay-chip {
+  color: #1d7eda; background: #e8f0ff; border-color: #b0c8f0;
+}
+.race-banner.pending .replay-chip:hover { background: #c8deff; }
 </style>
 </head>
 <body>
@@ -1368,12 +1374,30 @@ function renderPrizes() {
 // ── LIVE ──────────────────────────────────────────
 function getLiveEmbed(url) {
   if (!url) return null;
-  let m=url.match(/youtu\.be\/([A-Za-z0-9_-]{11})/);
-  if (m) return `https://www.youtube.com/embed/${m[1]}?autoplay=0`;
-  m=url.match(/[?&]v=([A-Za-z0-9_-]{11})/);
-  if (m) return `https://www.youtube.com/embed/${m[1]}?autoplay=0`;
-  m=url.match(/youtube\.com\/@([^/?#]+)/);
-  if (m) return `https://www.youtube.com/embed/live_stream?channel=${m[1]}`;
+  url = url.trim();
+  // youtu.be/ID
+  let m = url.match(/youtu\.be\/([A-Za-z0-9_-]{11})/);
+  if (m) return 'https://www.youtube.com/embed/' + m[1] + '?autoplay=0';
+  // ?v=ID or &v=ID
+  m = url.match(/[?&]v=([A-Za-z0-9_-]{11})/);
+  if (m) return 'https://www.youtube.com/embed/' + m[1] + '?autoplay=0';
+  // /live/ID
+  m = url.match(/youtube\.com\/live\/([A-Za-z0-9_-]{11})/);
+  if (m) return 'https://www.youtube.com/embed/' + m[1] + '?autoplay=0';
+  // /shorts/ID
+  m = url.match(/youtube\.com\/shorts\/([A-Za-z0-9_-]{11})/);
+  if (m) return 'https://www.youtube.com/embed/' + m[1] + '?autoplay=0';
+  // embed/ID already
+  m = url.match(/youtube\.com\/embed\/([A-Za-z0-9_-]{11})/);
+  if (m) return url;
+  // @channel live stream
+  m = url.match(/youtube\.com\/@([^/?#]+)/);
+  if (m) return 'https://www.youtube.com/embed/live_stream?channel=' + m[1];
+  // channel/ID live
+  m = url.match(/youtube\.com\/channel\/([A-Za-z0-9_-]+)/);
+  if (m) return 'https://www.youtube.com/embed/live_stream?channel=' + m[1];
+  // fallback: return url as-is if it looks like an embeddable URL
+  if (url.startsWith('http')) return url;
   return null;
 }
 function renderLive() {
@@ -1489,8 +1513,14 @@ function renderRaces() {
       : (r.replayUrl ? `<a class="replay-chip" href="${r.replayUrl}" target="_blank" rel="noopener">▶ Replay</a>` : '');
 
     let top;
-    if(r.result) top=`<div class="race-banner done"><span class="race-banner-icon">🏁</span><span>Disputata</span>${replayChip}${dateStr?`<span class="race-banner-date">${dateStr}</span>`:''}</div>`;
-    else top=`<div class="race-banner pending"><span class="race-banner-icon">⏳</span><span>Da disputare</span>${replayChip}${dateStr?`<span class="race-banner-date">${dateStr}</span>`:''}</div>`;
+    const bannerIcon = r.result ? '🏁' : '⏳';
+    const bannerText = r.result ? 'Disputata' : 'Da disputare';
+    const bannerClass = r.result ? 'done' : 'pending';
+    top = `<div class="race-banner ${bannerClass}">
+      <div class="race-banner-row1"><span class="race-banner-icon">${bannerIcon}</span>${replayChip}</div>
+      <span>${bannerText}</span>
+      ${dateStr ? `<span class="race-banner-date">${dateStr}</span>` : ''}
+    </div>`;
 
     let res;
     if(r.result){
