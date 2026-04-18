@@ -339,6 +339,16 @@ select:focus{border-color:#1a1a1a;}
   width: 16px; height: 16px; font-size: 10px; font-weight: 700;
   margin-left: 4px; vertical-align: middle;
 }
+
+/* replay chip */
+.replay-chip {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 11px; font-weight: 700; color: #1d7eda;
+  background: #e8f0ff; border-radius: 6px;
+  padding: 2px 8px; margin-left: 8px; cursor: pointer;
+  transition: background .15s;
+}
+.replay-chip:hover { background: #c8deff; }
 </style>
 </head>
 <body>
@@ -537,6 +547,14 @@ select:focus{border-color:#1a1a1a;}
   </div>
 </div>
 
+
+<!-- Replay lightbox (desktop) -->
+<div class="overlay" id="replay-overlay" onclick="if(event.target===this)closeReplay()">
+  <div style="position:relative;width:90%;max-width:860px;aspect-ratio:16/9;background:#000;border-radius:14px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5);">
+    <button onclick="closeReplay()" style="position:absolute;top:10px;right:14px;z-index:10;background:rgba(0,0,0,.6);border:none;color:#fff;font-size:22px;cursor:pointer;border-radius:50%;width:34px;height:34px;display:flex;align-items:center;justify-content:center;line-height:1;">×</button>
+    <iframe id="replay-iframe" src="" allowfullscreen allow="autoplay;encrypted-media" style="width:100%;height:100%;border:none;"></iframe>
+  </div>
+</div>
 <!-- ══ MODALS / PANELS ══ -->
 
 <!-- Access modal (password per campionato privato) -->
@@ -1141,20 +1159,25 @@ async function requestJoin() {
 async function acceptMember(memberId) {
   const { error } = await sb.from('champ_members')
     .update({ role: 'player' }).eq('id', memberId);
-  if (error) { showToast('Errore'); return; }
+  if (error) { showToast('Errore: ' + (error.message||error.code||'sconosciuto')); return; }
   await loadChampMembers();
   await scheduleSaveImmediate();
   renderChamp();
-  renderManageBody();
-  showToast('Giocatore accettato!');
+  if (document.getElementById('manage-panel') && document.getElementById('manage-panel').classList.contains('open')) {
+    renderManageBody();
+  }
+  showToast('✓ Giocatore accettato!');
 }
 
 async function rejectMember(memberId) {
   const { error } = await sb.from('champ_members')
     .update({ role: 'rejected' }).eq('id', memberId);
-  if (error) { showToast('Errore'); return; }
+  if (error) { showToast('Errore: ' + (error.message||error.code||'sconosciuto')); return; }
   await loadChampMembers();
-  renderManageBody();
+  renderChamp();
+  if (document.getElementById('manage-panel') && document.getElementById('manage-panel').classList.contains('open')) {
+    renderManageBody();
+  }
   showToast('Richiesta rifiutata');
 }
 
@@ -1416,16 +1439,40 @@ function renderChart() {
 // ── RACES ─────────────────────────────────────────
 function getYtId(url){if(!url)return null;const m=url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([A-Za-z0-9_-]{11})/);return m?m[1]:null;}
 
+function isMobile(){return window.innerWidth<768;}
+
+function openReplay(ytId, url) {
+  if (isMobile()) {
+    // Mobile: apri YouTube direttamente
+    window.open('https://www.youtube.com/watch?v=' + ytId, '_blank');
+    return;
+  }
+  // Desktop: mostra lightbox
+  var overlay = document.getElementById('replay-overlay');
+  var iframe  = document.getElementById('replay-iframe');
+  iframe.src = 'https://www.youtube.com/embed/' + ytId + '?autoplay=1';
+  overlay.classList.add('open');
+}
+function closeReplay() {
+  var overlay = document.getElementById('replay-overlay');
+  var iframe  = document.getElementById('replay-iframe');
+  overlay.classList.remove('open');
+  iframe.src = '';
+}
+
 function renderRaces() {
   const races=champData.races||[];
   document.getElementById('races-count').textContent=races.length+' circuiti';
   document.getElementById('races-grid').innerHTML=races.map((r,idx)=>{
     const ytId=getYtId(r.replayUrl);
     const dateStr = r.date ? new Date(r.date).toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'}) : '';
+    const replayChip = ytId
+      ? `<span class="replay-chip" onclick="openReplay('${ytId}','${r.replayUrl}')">▶ Replay</span>`
+      : '';
+
     let top;
-    if(ytId) top=`<div class="race-video-wrap"><iframe src="https://www.youtube.com/embed/${ytId}" allowfullscreen loading="lazy"></iframe></div>`;
-    else if(r.result) top=`<div class="race-banner done"><span class="race-banner-icon">🏁</span><span>Disputata</span>${dateStr?`<span class="race-banner-date">${dateStr}</span>`:''}</div>`;
-    else top=`<div class="race-banner pending"><span class="race-banner-icon">⏳</span><span>Da disputare</span>${dateStr?`<span class="race-banner-date">${dateStr}</span>`:''}</div>`;
+    if(r.result) top=`<div class="race-banner done"><span class="race-banner-icon">🏁</span><span>Disputata</span>${replayChip}${dateStr?`<span class="race-banner-date">${dateStr}</span>`:''}</div>`;
+    else top=`<div class="race-banner pending"><span class="race-banner-icon">⏳</span><span>Da disputare</span>${replayChip}${dateStr?`<span class="race-banner-date">${dateStr}</span>`:''}</div>`;
 
     let res;
     if(r.result){
