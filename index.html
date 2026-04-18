@@ -697,7 +697,7 @@ select:focus{border-color:#1a1a1a;}
     </div>
     <div class="manage-tabs" id="manage-tabs-row">
       <button class="manage-tab active" onclick="switchManageTab('players')">👤 Utenti</button>
-      <button class="manage-tab" onclick="switchManageTab('races')">🏁 Circuiti</button>
+      <button class="manage-tab" id="mtab-races-or-matches" onclick="switchManageTab('races')">🏁 Circuiti</button>
       <button class="manage-tab" onclick="switchManageTab('prizes')">🏆 Premi</button>
       <button class="manage-tab" onclick="switchManageTab('live')">📡 Live</button>
       <button class="manage-tab" onclick="switchManageTab('settings')">⚙ Impost.</button>
@@ -1297,6 +1297,75 @@ function stopPendingPoll() {
   if (pendingPollTimer) { clearInterval(pendingPollTimer); pendingPollTimer = null; }
 }
 
+
+// ── MANAGE RR MATCHES ─────────────────────────────
+function renderManageRRMatches() {
+  ensureRRMatches();
+  var matches = champData.rrMatches || [];
+  var players = champData.players || [];
+  var rounds  = groupRRRounds(matches, players);
+
+  var html = '<p class="manage-hint">Gestisci giocatori e riordina gli scontri.</p>';
+
+  // Giocatori
+  html += '<div class="sec-hdr" style="margin-top:0;"><span class="sec-lbl">Giocatori</span></div>';
+  html += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;">';
+  for (var pi = 0; pi < players.length; pi++) {
+    var p = players[pi];
+    var color = PLAYER_COLORS[pi % PLAYER_COLORS.length];
+    html += '<div style="display:inline-flex;align-items:center;gap:4px;background:#faf9f6;border:1px solid #e0ddd6;border-radius:8px;padding:4px 10px;">'
+         + '<span style="width:8px;height:8px;border-radius:50%;background:' + color + ';display:inline-block;flex-shrink:0;"></span>'
+         + '<span style="font-size:13px;font-weight:600;">' + p + '</span>'
+         + (players.length > 2 ? '<button onclick="removeRRPlayer(' + pi + ')" style="background:none;border:none;color:#ccc;font-size:15px;cursor:pointer;padding:0 0 0 4px;line-height:1;" title="Rimuovi">×</button>' : '')
+         + '</div>';
+  }
+  html += '</div>';
+
+  // Scontri riordinabili per giornata
+  for (var ri = 0; ri < rounds.length; ri++) {
+    var round = rounds[ri];
+    html += '<div class="sec-hdr"><span class="sec-lbl">Giornata ' + (ri+1) + '</span></div>';
+    for (var mi = 0; mi < round.length; mi++) {
+      var m = round[mi];
+      var s1 = m.score1 !== null ? m.score1 : '–';
+      var s2 = m.score2 !== null ? m.score2 : '–';
+      var done = m.result !== null;
+      // Find absolute index in champData.rrMatches for moveRRMatch
+      var absIdx = matches.findIndex(function(x){ return x.id === m.id; });
+      html += '<div class="player-item" style="' + (done ? 'opacity:.65;' : '') + '">'
+           + '<span style="font-size:15px;color:#ccc;margin-right:4px;">⠿</span>'
+           + '<span style="flex:1;font-size:13px;font-weight:600;">' + m.p1 + ' <span style="color:#bbb;font-weight:400;">vs</span> ' + m.p2 + '</span>'
+           + '<span style="font-size:11px;color:' + (done ? '#2dc653' : '#bbb') + ';margin-right:4px;">' + (done ? s1 + '–' + s2 : '') + '</span>'
+           + (absIdx > 0 ? '<button onclick="moveRRMatch(' + absIdx + ',-1)" style="background:none;border:none;cursor:pointer;color:#bbb;font-size:14px;padding:0 2px;" title="Sposta su">↑</button>' : '<span style="width:20px;"></span>')
+           + (absIdx < matches.length-1 ? '<button onclick="moveRRMatch(' + absIdx + ',1)" style="background:none;border:none;cursor:pointer;color:#bbb;font-size:14px;padding:0 2px;" title="Sposta giù">↓</button>' : '<span style="width:20px;"></span>')
+           + '</div>';
+    }
+  }
+
+  document.getElementById('manage-body').innerHTML = html;
+}
+
+function moveRRMatch(absIdx, dir) {
+  var matches = champData.rrMatches || [];
+  var newIdx = absIdx + dir;
+  if (newIdx < 0 || newIdx >= matches.length) return;
+  var tmp = matches[absIdx];
+  matches[absIdx] = matches[newIdx];
+  matches[newIdx] = tmp;
+  champData.rrMatches = matches;
+  scheduleSave(); renderChamp(); renderManageRRMatches();
+}
+
+function removeRRPlayer(idx) {
+  var players = champData.players || [];
+  if (players.length <= 2) { showToast('Minimo 2 giocatori'); return; }
+  var name = players[idx];
+  champData.players.splice(idx, 1);
+  champData.rrMatches = (champData.rrMatches||[]).filter(function(m){ return m.p1!==name && m.p2!==name; });
+  scheduleSave(); renderChamp(); renderManageRRMatches();
+  showToast(name + ' rimosso');
+}
+
 // ── SAVE CHAMP DATA ───────────────────────────────
 function scheduleSave() {
   if (!currentChamp) return; // guard: never save if no championship loaded
@@ -1318,7 +1387,8 @@ function scheduleSave() {
 function renderChamp() {
   document.getElementById('champ-hdr-title').textContent = (champData.championship||'Campionato') + (champData.season?' · '+champData.season:'');
   const fmt = champData.format || 'standard';
-  // Show/hide tabs based on format
+
+  // Mobile tabs visibility
   const rrBtn   = document.getElementById('tab-rr-btn');
   const elimBtn = document.getElementById('tab-elim-btn');
   const racesBtn= document.getElementById('tab-races-btn');
@@ -1326,20 +1396,35 @@ function renderChamp() {
   if(elimBtn) elimBtn.style.display = fmt==='elimination' ? '' : 'none';
   if(racesBtn)racesBtn.style.display= fmt==='standard' ? '' : 'none';
 
-  renderPrizes();
-  renderJoinBanner();
-  renderLive();
+  // Desktop layout: swap col-left content per format
+  const colLeft    = document.getElementById('c-page-races');
+  const chartSec   = document.getElementById('chart-section');
   if (fmt === 'roundrobin') {
+    colLeft.style.display = '';
+    chartSec.style.display = '';
+    // Show RR matches in left col, standings+chart on right
+    renderRRMatchesInline(); // renders into #races-grid with RR layout
+    document.getElementById('races-count').textContent = '';
+    document.querySelector('#c-page-races .sec-lbl').textContent = 'Giornate';
     renderRRStandings();
-    renderRRMatches();
+    renderRRChart();
   } else if (fmt === 'elimination') {
+    colLeft.style.display = 'none';
+    chartSec.style.display = 'none';
     renderElimBracket();
     renderElimStandings();
   } else {
+    colLeft.style.display = '';
+    chartSec.style.display = '';
+    document.querySelector('#c-page-races .sec-lbl').textContent = 'Gare';
     renderStandings();
     renderChart();
     renderRaces();
   }
+
+  renderPrizes();
+  renderJoinBanner();
+  renderLive();
 }
 
 function calcStandings() {
@@ -1601,6 +1686,12 @@ function saveResult(){
 // ── MANAGE PANEL ──────────────────────────────────
 function openManagePanel(){
   currentManageTab='players';
+  // Relabel races tab based on format
+  var racesTab = document.getElementById('mtab-races-or-matches');
+  if (racesTab) {
+    var fmt = champData.format || 'standard';
+    racesTab.textContent = fmt === 'roundrobin' ? '⚽ Scontri' : '🏁 Circuiti';
+  }
   updateManageTabs();renderManageBody();
   document.getElementById('manage-panel').classList.add('open');
 }
@@ -1619,7 +1710,11 @@ function updateManageTabs(){
 }
 function renderManageBody(){
   if(currentManageTab==='players') renderManagePlayers();
-  else if(currentManageTab==='races') renderManageRaces();
+  else if(currentManageTab==='races') {
+    var fmt = champData.format || 'standard';
+    if (fmt === 'roundrobin') renderManageRRMatches();
+    else renderManageRaces();
+  }
   else if(currentManageTab==='prizes') renderManagePrizes();
   else if(currentManageTab==='live') renderManageLive();
   else renderManageSettings();
@@ -1931,6 +2026,68 @@ function showToast(msg){
   toastTimeout=setTimeout(()=>t.classList.remove('show'),2500);
 }
 // ══════════════════════════════════════════════════
+
+// ── RR CHART: punti cumulativi per giornata ───────
+function renderRRChart() {
+  ensureRRMatches();
+  const players = champData.players || [];
+  const matches = champData.rrMatches || [];
+  const rounds  = groupRRRounds(matches, players);
+
+  const cumPts = {};
+  players.forEach(p => cumPts[p] = [0]);
+  rounds.forEach(round => {
+    const prev = {};
+    players.forEach(p => prev[p] = cumPts[p][cumPts[p].length - 1]);
+    round.forEach(m => {
+      if (m.result === null) return;
+      if (m.result === 'p1')      { prev[m.p1] += 3; }
+      else if (m.result === 'p2') { prev[m.p2] += 3; }
+      else                        { prev[m.p1] += 1; prev[m.p2] += 1; }
+    });
+    players.forEach(p => cumPts[p].push(prev[p]));
+  });
+
+  const labels = ['Start'];
+  rounds.forEach((_, i) => labels.push('G' + (i + 1)));
+
+  const legendEl = document.getElementById('chart-legend');
+  if (legendEl) {
+    legendEl.innerHTML = players.map((p, i) =>
+      '<span class="legend-item"><span class="legend-dot" style="background:' + PLAYER_COLORS[i % PLAYER_COLORS.length] + '"></span>' + p + '</span>'
+    ).join('');
+  }
+
+  const ctx = document.getElementById('chart-canvas');
+  if (!ctx) return;
+  if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+  chartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: players.map((p, i) => ({
+        label: p,
+        data: cumPts[p],
+        borderColor: PLAYER_COLORS[i % PLAYER_COLORS.length],
+        backgroundColor: PLAYER_COLORS[i % PLAYER_COLORS.length] + '22',
+        tension: 0.3, pointRadius: 4, borderWidth: 2, fill: false
+      }))
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+        y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 11 } }, grid: { color: '#f0ede6' } }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: { backgroundColor: '#1a1a1a', titleColor: '#fff', bodyColor: '#ccc', padding: 10, cornerRadius: 10,
+          callbacks: { label: ctx => ' ' + ctx.dataset.label + ': ' + ctx.parsed.y + ' pt' } }
+      }
+    }
+  });
+}
+
 // ── ROUND ROBIN ───────────────────────────────────
 // ══════════════════════════════════════════════════
 
@@ -2008,29 +2165,23 @@ function renderRRStandings() {
   }).join('');
 }
 
-function renderRRMatches() {
-  ensureRRMatches();
-  const matches = champData.rrMatches || [];
-  const el = document.getElementById('rr-content');
-  if (!el) return;
-  const rounds = groupRRRounds(matches, champData.players||[]);
-  let html = '';
-  for (let ri = 0; ri < rounds.length; ri++) {
-    const round = rounds[ri];
-    html += '<div class="sec-hdr" style="margin-top:' + (ri?16:0) + 'px;"><span class="sec-lbl">Giornata ' + (ri+1) + '</span></div>';
+function buildRRMatchesHTML(rounds) {
+  var html = '';
+  for (var ri = 0; ri < rounds.length; ri++) {
+    var round = rounds[ri];
+    html += '<div class="sec-hdr" style="margin-top:' + (ri?12:0) + 'px;"><span class="sec-lbl">Giornata ' + (ri+1) + '</span></div>';
     html += '<div class="rr-match-grid">';
-    for (let mi = 0; mi < round.length; mi++) {
-      const m = round[mi];
-      const s1 = m.score1 !== null ? m.score1 : '–';
-      const s2 = m.score2 !== null ? m.score2 : '–';
-      const done = m.result !== null;
-      const doneClass = done ? 'done' : '';
-      const rrOnclick = isOwner
-        ? ('openRRResult(' + "'" + m.id + "'" + ')')
+    for (var mi = 0; mi < round.length; mi++) {
+      var m = round[mi];
+      var s1 = m.score1 !== null ? m.score1 : '–';
+      var s2 = m.score2 !== null ? m.score2 : '–';
+      var done = m.result !== null;
+      var rrOnclick = isOwner
+        ? ("openRRResult('" + m.id + "')")
         : "showToast('Solo il proprietario pu\u00f2 inserire risultati')";
-      const c1rr = PLAYER_COLORS[(champData.players||[]).indexOf(m.p1) % PLAYER_COLORS.length];
-      const c2rr = PLAYER_COLORS[(champData.players||[]).indexOf(m.p2) % PLAYER_COLORS.length];
-      html += '<div class="rr-match-card ' + doneClass + '" onclick="' + rrOnclick + '">'
+      var c1rr = PLAYER_COLORS[(champData.players||[]).indexOf(m.p1) % PLAYER_COLORS.length];
+      var c2rr = PLAYER_COLORS[(champData.players||[]).indexOf(m.p2) % PLAYER_COLORS.length];
+      html += '<div class="rr-match-card ' + (done?'done':'') + '" onclick="' + rrOnclick + '">'
            + '<div class="rr-player-name" style="color:' + c1rr + '">' + m.p1 + '</div>'
            + '<div style="display:flex;align-items:center;gap:4px;">'
            + '<div class="rr-score">' + s1 + '</div>'
@@ -2042,7 +2193,25 @@ function renderRRMatches() {
     }
     html += '</div>';
   }
-  el.innerHTML = html;
+  return html;
+}
+
+// Desktop: renders giornate into col-left (#races-grid)
+function renderRRMatchesInline() {
+  ensureRRMatches();
+  var matches = champData.rrMatches || [];
+  var rounds = groupRRRounds(matches, champData.players||[]);
+  var el = document.getElementById('races-grid');
+  if (el) { el.style.gridTemplateColumns = '1fr'; el.innerHTML = buildRRMatchesHTML(rounds); }
+}
+
+// Mobile: renders giornate into #rr-content
+function renderRRMatches() {
+  ensureRRMatches();
+  var matches = champData.rrMatches || [];
+  var rounds = groupRRRounds(matches, champData.players||[]);
+  var el = document.getElementById('rr-content');
+  if (el) el.innerHTML = buildRRMatchesHTML(rounds);
 }
 
 
