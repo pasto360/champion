@@ -331,6 +331,14 @@ select:focus{border-color:#1a1a1a;}
 .card-fav-star { font-size:16px; margin-left:6px; color:#ccc; cursor:pointer; transition:color .15s; }
 .card-fav-star.active { color:#f4a200; }
 .card-fav-star:hover { color:#f4a200; }
+
+/* pending badge on manage panel players tab */
+.manage-tab-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  background: #e06000; color: #fff; border-radius: 50%;
+  width: 16px; height: 16px; font-size: 10px; font-weight: 700;
+  margin-left: 4px; vertical-align: middle;
+}
 </style>
 </head>
 <body>
@@ -502,6 +510,7 @@ select:focus{border-color:#1a1a1a;}
       <!-- premi -->
       <div class="sec-hdr" style="margin-top:16px;"><span class="sec-lbl">Premi</span></div>
       <div class="prizes-card" id="prizes-container"></div>
+      <div id="join-banner"></div>
     </div>
     <!-- CHART -->
     <div class="col-chart" id="chart-section">
@@ -689,6 +698,7 @@ const KNOWN_IMAGES  = ['lemans.png','monza.png','nurburgring.png','spa.png','suz
 // ── APP STATE ─────────────────────────────────────
 let currentUser    = null;
 let currentChamp   = null; // full row from DB
+let champMembers   = []; // cache: array of champ_members rows for current champ
 let champData      = {};   // the JSON 'data' field
 let isOwner        = false;
 let resultingRaceId= null;
@@ -933,16 +943,6 @@ function champCard(c, inFavSection=false) {
     ${badge}
   </div>`;
 }
-function toggleFavById(id) {
-  const favs = getFavs();
-  const idx = favs.indexOf(id);
-  if (idx===-1) favs.push(id); else favs.splice(idx,1);
-  setFavs(favs);
-  renderFavs();
-  renderAllChamps();
-  showToast(idx===-1 ? '⭐ Aggiunto ai preferiti' : 'Rimosso dai preferiti');
-}
-
 // ── DASHBOARD ─────────────────────────────────────
 async function loadDashboard() {
   const {data:champs} = await sb.from('championships').select('id,name,season,access,created_at').eq('owner_id',currentUser.id).order('created_at',{ascending:false});
@@ -996,10 +996,10 @@ async function createChampionship() {
   if (!name) { document.getElementById('nc-err').textContent='Inserisci il nome'; return; }
   if (access==='password' && !pass) { document.getElementById('nc-err').textContent='Inserisci una password'; return; }
 
-  const defaultPlayers = [currentUser.user_metadata?.username||'Giocatore 1','Giocatore 2'];
+  const username = currentUser.user_metadata?.username || currentUser.email?.split('@')[0] || 'Owner';
   const defaultData = {
     championship: name, season, format: selectedChampType,
-    players: defaultPlayers,
+    players: [username],
     prizes: ['','',''], races: [], liveUrl: 'https://www.youtube.com/@pixel-race/live',
     rrMatches: [], elimBracket: null
   };
@@ -1012,6 +1012,15 @@ async function createChampionship() {
   }).select().single();
 
   if (error) { document.getElementById('nc-err').textContent=error.message; return; }
+
+  // Auto-enroll owner as 'owner' role
+  await sb.from('champ_members').insert({
+    champ_id: data.id,
+    user_id: currentUser.id,
+    username,
+    role: 'owner'
+  });
+
   closeOverlay('new-champ-overlay');
   showToast('Campionato creato!');
   await loadChampionshipsHome();
@@ -1034,7 +1043,7 @@ async function openChampionship(id) {
   if (champ.access==='password' && !isOwnerCheck) {
     // Check saved password
     if (savedPass && savedPass === champ.password_hash) {
-      loadChampPage(champ);
+      await loadChampPage(champ);
     } else {
       pendingAccessChamp = champ;
       document.getElementById('access-title').textContent = champ.name;
@@ -1044,11 +1053,11 @@ async function openChampionship(id) {
       openOverlay('access-overlay');
     }
   } else {
-    loadChampPage(champ);
+    await loadChampPage(champ);
   }
 }
 
-function submitAccess() {
+async function submitAccess() {
   const pass = document.getElementById('access-pass').value;
   const champ = pendingAccessChamp;
   if (!champ) return;
@@ -1060,13 +1069,16 @@ function submitAccess() {
     localStorage.setItem('champ_access_'+champ.id, pass);
   }
   closeOverlay('access-overlay');
-  loadChampPage(champ);
+  await loadChampPage(champ);
 }
 
-function loadChampPage(champ) {
+async function loadChampPage(champ) {
   currentChamp = champ;
   champData = champ.data || {};
   isOwner = champ.owner_id === currentUser?.id;
+
+  // Load members from DB
+  await loadChampMembers();
 
   // Show/hide manage button
   document.getElementById('btn-manage-champ').style.display = isOwner ? 'inline-flex' : 'none';
@@ -1085,6 +1097,139 @@ function loadChampPage(champ) {
   updateFavBtn();
   setSyncStatus('ok','Online');
   showPage('page-champ');
+}
+
+async function loadChampMembers() {
+  const { data, error } = await sb.from('champ_members')
+    .select('id,user_id,username,role,joined_at')
+    .eq('champ_id', currentChamp.id)
+    .order('joined_at', { ascending: true });
+  if (error) return;
+  champMembers = data || [];
+  // Sync champData.players with accepted members (owner + player roles)
+  const activePlayers = champMembers
+    .filter(m => m.role === 'owner' || m.role === 'player')
+    .map(m => m.username);
+  if (activePlayers.length > 0) {
+    champData.players = activePlayers;
+  }
+}
+
+async function requestJoin() {
+  const username = currentUser.user_metadata?.username || currentUser.email?.split('@')[0] || 'Utente';
+  const existing = champMembers.find(m => m.user_id === currentUser.id);
+  if (existing) {
+    if (existing.role === 'pending') showToast("Richiesta già inviata, attendi l'approvazione");
+    else if (existing.role === 'player') showToast('Sei già un giocatore!');
+    else if (existing.role === 'rejected') showToast('La tua richiesta è stata rifiutata');
+    return;
+  }
+  const { error } = await sb.from('champ_members').insert({
+    champ_id: currentChamp.id,
+    user_id: currentUser.id,
+    username,
+    role: 'pending'
+  });
+  if (error) { showToast('Errore: ' + error.message); return; }
+  await loadChampMembers();
+  renderChamp();
+  showToast("Richiesta inviata! Attendi l'approvazione dell'admin");
+}
+
+async function acceptMember(memberId) {
+  const { error } = await sb.from('champ_members')
+    .update({ role: 'player' }).eq('id', memberId);
+  if (error) { showToast('Errore'); return; }
+  await loadChampMembers();
+  await scheduleSaveImmediate();
+  renderChamp();
+  renderManageBody();
+  showToast('Giocatore accettato!');
+}
+
+async function rejectMember(memberId) {
+  const { error } = await sb.from('champ_members')
+    .update({ role: 'rejected' }).eq('id', memberId);
+  if (error) { showToast('Errore'); return; }
+  await loadChampMembers();
+  renderManageBody();
+  showToast('Richiesta rifiutata');
+}
+
+async function kickMember(memberId) {
+  const m = champMembers.find(m => m.id === memberId); if (!m) return;
+  const { error } = await sb.from('champ_members').delete().eq('id', memberId);
+  if (error) { showToast('Errore'); return; }
+  await loadChampMembers();
+  await scheduleSaveImmediate();
+  renderChamp();
+  renderManageBody();
+  showToast(m.username + ' rimosso');
+}
+
+async function scheduleSaveImmediate() {
+  try {
+    await sb.from('championships').update({ data: champData }).eq('id', currentChamp.id);
+  } catch(e) { console.error(e); }
+}
+
+function myMemberStatus() {
+  const m = champMembers.find(m => m.user_id === currentUser?.id);
+  return m ? m.role : null;
+}
+
+
+// ── JOIN BANNER ───────────────────────────────────
+function renderJoinBanner() {
+  const el = document.getElementById('join-banner'); if (!el) return;
+  const status = myMemberStatus();
+
+  // Owner: show pending requests notification
+  if (isOwner) {
+    const pending = champMembers.filter(m => m.role === 'pending');
+    if (pending.length) {
+      let rows = '';
+      pending.forEach(function(m) {
+        var mid = m.id;
+        rows += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">'
+             + '<span style="flex:1;font-size:13px;font-weight:600;">' + m.username + '</span>'
+             + '<button onclick="acceptMember(' + JSON.stringify(mid) + ')" style="background:#e8f8e8;border:1px solid #b0d8b0;border-radius:8px;padding:4px 12px;font-size:14px;cursor:pointer;font-weight:700;">&#10003;</button>'
+             + '<button onclick="rejectMember(' + JSON.stringify(mid) + ')" style="background:#fde8e8;border:1px solid #e0b0b0;border-radius:8px;padding:4px 12px;font-size:14px;cursor:pointer;font-weight:700;">&#10007;</button>'
+             + '</div>';
+      });
+      const label = pending.length > 1 ? 'richieste in attesa' : 'richiesta in attesa';
+      el.innerHTML = '<div style="margin:12px 0;background:#fffbf0;border:1px solid #f0d080;border-radius:12px;padding:12px 14px;">'
+        + '<div style="font-size:12px;font-weight:700;color:#b07000;margin-bottom:10px;">&#9203; ' + pending.length + ' ' + label + '</div>'
+        + rows
+        + '</div>';
+    } else {
+      el.innerHTML = '';
+    }
+    return;
+  }
+
+  // Non-member: show join button
+  if (!status) {
+    el.innerHTML = '<div style="margin:12px 0;background:#f0f7ff;border:1px solid #b0d0f0;border-radius:12px;padding:14px;text-align:center;">'
+      + '<div style="font-size:13px;color:#555;margin-bottom:10px;">Vuoi partecipare a questo campionato?</div>'
+      + '<button onclick="requestJoin()" style="background:#1d7eda;color:#fff;border:none;border-radius:10px;padding:9px 24px;font-size:14px;font-weight:700;cursor:pointer;">Richiedi iscrizione</button>'
+      + '</div>';
+    return;
+  }
+  if (status === 'pending') {
+    el.innerHTML = '<div style="margin:12px 0;background:#fffbf0;border:1px solid #f0d080;border-radius:12px;padding:12px 14px;text-align:center;font-size:13px;color:#b07000;">'
+      + "&#9203; Richiesta inviata &mdash; attendi l'approvazione dell'admin"
+      + '</div>';
+    return;
+  }
+  if (status === 'rejected') {
+    el.innerHTML = '<div style="margin:12px 0;background:#fde8e8;border:1px solid #e0b0b0;border-radius:12px;padding:12px 14px;text-align:center;font-size:13px;color:#a03030;">'
+      + '&#10007; La tua richiesta è stata rifiutata'
+      + '</div>';
+    return;
+  }
+  // player or owner: hide banner
+  el.innerHTML = '';
 }
 
 // ── SAVE CHAMP DATA ───────────────────────────────
@@ -1113,6 +1258,7 @@ function renderChamp() {
   if(racesBtn)racesBtn.style.display= fmt==='standard' ? '' : 'none';
 
   renderPrizes();
+  renderJoinBanner();
   renderLive();
   if (fmt === 'roundrobin') {
     renderRRStandings();
@@ -1327,7 +1473,14 @@ function closeManagePanel(){document.getElementById('manage-panel').classList.re
 function switchManageTab(tab){currentManageTab=tab;updateManageTabs();renderManageBody();}
 function updateManageTabs(){
   const tabs=['players','races','prizes','live','settings'];
-  document.querySelectorAll('.manage-tab').forEach((btn,i)=>btn.classList.toggle('active',tabs[i]===currentManageTab));
+  const btns = document.querySelectorAll('.manage-tab');
+  btns.forEach((btn,i)=>btn.classList.toggle('active',tabs[i]===currentManageTab));
+  // Pending badge on first tab (players)
+  if (isOwner && btns[0]) {
+    btns[0].querySelector('.manage-tab-badge')?.remove();
+    const n = champMembers.filter(m=>m.role==='pending').length;
+    if (n) btns[0].insertAdjacentHTML('beforeend',`<span class="manage-tab-badge">${n}</span>`);
+  }
 }
 function renderManageBody(){
   if(currentManageTab==='players') renderManagePlayers();
@@ -1339,28 +1492,52 @@ function renderManageBody(){
 
 // PLAYERS
 function renderManagePlayers(){
-  const players=champData.players||[];
-  document.getElementById('manage-body').innerHTML=`
-    <p class="manage-hint">Max 20 utenti · ${players.length}/20</p>
-    ${players.map((p,i)=>`
-      <div class="player-item">
-        <div class="color-dot" style="background:${PLAYER_COLORS[i%PLAYER_COLORS.length]}"></div>
-        <input class="name-input" type="text" value="${p}"
-          onblur="renamePlayer(${i},this.value)" onkeydown="if(event.key==='Enter')this.blur()"/>
-        <button class="del-btn" onclick="deletePlayer(${i})">×</button>
-      </div>`).join('')}
-    <button class="add-btn" ${players.length>=20?'disabled':''} onclick="addPlayer()">
-      <span style="font-size:18px">+</span> Aggiungi utente</button>`;
+  const players  = champMembers.filter(m=>m.role==='owner'||m.role==='player');
+  const pending  = champMembers.filter(m=>m.role==='pending');
+  const rejected = champMembers.filter(m=>m.role==='rejected');
+
+  let html = `<p class="manage-hint">Giocatori attivi: ${players.length}</p>`;
+
+  // Active players list
+  html += players.map((m,i)=>{
+    const color = PLAYER_COLORS[i%PLAYER_COLORS.length];
+    const isMe = m.user_id === currentUser?.id;
+    const canKick = isOwner && m.role !== 'owner';
+    return `<div class="player-item">
+      <div class="color-dot" style="background:${color}"></div>
+      <span class="name-input" style="flex:1;font-size:13px;font-weight:600;color:#1a1a1a;">${m.username}${m.role==='owner'?' 👑':''}</span>
+      ${canKick?`<button class="del-btn" onclick="kickMember('${m.id}')" title="Rimuovi">×</button>`:''}
+    </div>`;
+  }).join('');
+
+  // Pending requests (only visible to owner)
+  if (isOwner && pending.length) {
+    html += `<div class="sec-hdr" style="margin-top:16px;"><span class="sec-lbl">Richieste in attesa</span><span style="font-size:11px;color:#e06000;font-weight:700;margin-left:6px;">${pending.length}</span></div>`;
+    html += pending.map(m=>`
+      <div class="player-item" style="background:#fffbf0;border-radius:10px;padding:8px 10px;margin-bottom:6px;">
+        <div class="color-dot" style="background:#e0c060"></div>
+        <span style="flex:1;font-size:13px;font-weight:600;">${m.username}</span>
+        <button onclick="acceptMember('${m.id}')" style="background:#e8f8e8;border:none;border-radius:8px;padding:5px 10px;font-size:15px;cursor:pointer;margin-right:4px;" title="Accetta">✓</button>
+        <button onclick="rejectMember('${m.id}')" style="background:#fde8e8;border:none;border-radius:8px;padding:5px 10px;font-size:15px;cursor:pointer;" title="Rifiuta">✗</button>
+      </div>`).join('');
+  }
+
+  // Rejected (only owner)
+  if (isOwner && rejected.length) {
+    html += `<div class="sec-hdr" style="margin-top:16px;"><span class="sec-lbl" style="color:#bbb;">Rifiutati</span></div>`;
+    html += rejected.map(m=>`
+      <div class="player-item" style="opacity:.5;">
+        <div class="color-dot" style="background:#ccc"></div>
+        <span style="flex:1;font-size:13px;">${m.username}</span>
+        <button onclick="acceptMember('${m.id}')" style="background:#f0f7ff;border:none;border-radius:8px;padding:4px 8px;font-size:12px;cursor:pointer;">Riammetti</button>
+      </div>`).join('');
+  }
+
+  document.getElementById('manage-body').innerHTML = html;
 }
 // renamePlayer defined below (handles RR+Elim)
 // deletePlayer defined below (handles RR+Elim)
-function addPlayer(){
-  if((champData.players||[]).length>=20){showToast('Max 20');return;}
-  if(!champData.players)champData.players=[];
-  champData.players.push('Nuovo utente');
-  scheduleSave();renderChamp();renderManagePlayers();
-  setTimeout(()=>{const els=document.querySelectorAll('.name-input');const l=els[els.length-1];if(l){l.focus();l.select();}},50);
-}
+function addPlayer(){} // no-op: players join via request
 
 // RACES
 function renderManageRaces(){
@@ -1697,28 +1874,36 @@ function renderRRMatches() {
   if (!el) return;
   const rounds = groupRRRounds(matches, champData.players||[]);
   let html = '';
-  rounds.forEach((round, ri) => {
-    html += `<div class="sec-hdr" style="margin-top:${ri?16:0}px;"><span class="sec-lbl">Giornata ${ri+1}</span></div>`;
+  for (let ri = 0; ri < rounds.length; ri++) {
+    const round = rounds[ri];
+    html += '<div class="sec-hdr" style="margin-top:' + (ri?16:0) + 'px;"><span class="sec-lbl">Giornata ' + (ri+1) + '</span></div>';
     html += '<div class="rr-match-grid">';
-    round.forEach(m => {
-      const s1 = m.score1!==null?m.score1:'–';
-      const s2 = m.score2!==null?m.score2:'–';
-      const done = m.result!==null;
-      const rrOnclick = isOwner ? `openRRResult('${m.id}')` : `showToast('Solo il proprietario pu\xf2 inserire risultati')`;
-      html += `<div class="rr-match-card ${done?'done':''}" onclick="${rrOnclick}">
-        <div class="rr-player-name" style="color:${PLAYER_COLORS[(champData.players||[]).indexOf(m.p1)%PLAYER_COLORS.length]}">${m.p1}</div>
-        <div style="display:flex;align-items:center;gap:4px;">
-          <div class="rr-score">${s1}</div>
-          <div class="rr-vs">vs</div>
-          <div class="rr-score">${s2}</div>
-        </div>
-        <div class="rr-player-name" style="color:${PLAYER_COLORS[(champData.players||[]).indexOf(m.p2)%PLAYER_COLORS.length]}">${m.p2}</div>
-      </div>`;
-    });
+    for (let mi = 0; mi < round.length; mi++) {
+      const m = round[mi];
+      const s1 = m.score1 !== null ? m.score1 : '–';
+      const s2 = m.score2 !== null ? m.score2 : '–';
+      const done = m.result !== null;
+      const doneClass = done ? 'done' : '';
+      const rrOnclick = isOwner
+        ? ('openRRResult(' + JSON.stringify(m.id) + ')')
+        : "showToast('Solo il proprietario pu\u00f2 inserire risultati')";
+      const c1rr = PLAYER_COLORS[(champData.players||[]).indexOf(m.p1) % PLAYER_COLORS.length];
+      const c2rr = PLAYER_COLORS[(champData.players||[]).indexOf(m.p2) % PLAYER_COLORS.length];
+      html += '<div class="rr-match-card ' + doneClass + '" onclick="' + rrOnclick + '">'
+           + '<div class="rr-player-name" style="color:' + c1rr + '">' + m.p1 + '</div>'
+           + '<div style="display:flex;align-items:center;gap:4px;">'
+           + '<div class="rr-score">' + s1 + '</div>'
+           + '<div class="rr-vs">vs</div>'
+           + '<div class="rr-score">' + s2 + '</div>'
+           + '</div>'
+           + '<div class="rr-player-name" style="color:' + c2rr + '">' + m.p2 + '</div>'
+           + '</div>';
+    }
     html += '</div>';
-  });
+  }
   el.innerHTML = html;
 }
+
 
 // Simple round-robin scheduling (round robin algorithm)
 function groupRRRounds(matches, players) {
