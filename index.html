@@ -1038,6 +1038,12 @@ async function createChampionship() {
 
   if (error) { document.getElementById('nc-err').textContent=error.message; return; }
 
+  // Reset champData NOW to avoid any pending save overwriting the new championship
+  clearTimeout(saveTimeout);
+  saveTimeout = null;
+  currentChamp = null;
+  champData = {};
+
   // Auto-enroll owner as 'owner' role
   await sb.from('champ_members').insert({
     champ_id: data.id,
@@ -1098,8 +1104,11 @@ async function submitAccess() {
 }
 
 async function loadChampPage(champ) {
+  // Cancel any pending save from previous championship to avoid data cross-contamination
+  clearTimeout(saveTimeout);
+  saveTimeout = null;
   currentChamp = champ;
-  champData = champ.data || {};
+  champData = JSON.parse(JSON.stringify(champ.data || {})); // deep copy to avoid reference issues
   isOwner = champ.owner_id === currentUser?.id;
 
   // Load members from DB
@@ -1290,11 +1299,15 @@ function stopPendingPoll() {
 
 // ── SAVE CHAMP DATA ───────────────────────────────
 function scheduleSave() {
+  if (!currentChamp) return; // guard: never save if no championship loaded
+  const champIdAtSchedule = currentChamp.id;
   setSyncStatus('saving','Salvataggio...');
   clearTimeout(saveTimeout);
   saveTimeout = setTimeout(async ()=>{
+    // Guard: if championship changed while waiting, abort save
+    if (!currentChamp || currentChamp.id !== champIdAtSchedule) return;
     try {
-      await sb.from('championships').update({data: champData}).eq('id', currentChamp.id);
+      await sb.from('championships').update({data: champData}).eq('id', champIdAtSchedule);
       setSyncStatus('ok','Salvato ✓');
       setTimeout(()=>setSyncStatus('ok','Online'),2000);
     } catch(e){ setSyncStatus('error','Errore'); }
