@@ -784,6 +784,13 @@ async function doLogin() {
   const email = document.getElementById('login-email').value.trim();
   const pass  = document.getElementById('login-pass').value;
   setAuthLoading(true);
+  // Check ban before attempting login
+  const {data:prof} = await sb.from('profiles').select('banned').eq('email', email).single();
+  if (prof && prof.banned) {
+    setAuthLoading(false);
+    document.getElementById('auth-err').textContent = "Account sospeso. Contatta l'amministratore.";
+    return;
+  }
   const {error} = await sb.auth.signInWithPassword({email, password:pass});
   setAuthLoading(false);
   if (error) { document.getElementById('auth-err').textContent = error.message; return; }
@@ -799,6 +806,21 @@ async function doRegister() {
   if (!username) { document.getElementById('auth-err').textContent='Inserisci un nome utente'; return; }
   if (pass.length < 6) { document.getElementById('auth-err').textContent='Password minimo 6 caratteri'; return; }
   setAuthLoading(true);
+  // Check if email is banned in profiles
+  const {data:bannedCheck} = await sb.from('profiles').select('banned').eq('email', email).maybeSingle();
+  if (bannedCheck && bannedCheck.banned) {
+    setAuthLoading(false);
+    document.getElementById('auth-err').textContent = 'Questa email non può essere utilizzata.';
+    return;
+  }
+  // Check username against blacklist
+  const {data:blWords} = await sb.from('blacklist_words').select('word');
+  const forbidden = (blWords||[]).map(w => w.word.toLowerCase());
+  if (forbidden.some(w => username.toLowerCase().includes(w))) {
+    setAuthLoading(false);
+    document.getElementById('auth-err').textContent = 'Username non consentito.';
+    return;
+  }
   const {error} = await sb.auth.signUp({email, password:pass, options:{data:{username}}});
   setAuthLoading(false);
   if (error) { document.getElementById('auth-err').textContent = error.message; return; }
