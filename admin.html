@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DUELIA — Admin</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0f0f0f;color:#e8e8e8;min-height:100vh;}
+
+  /* ── LOGIN ── */
+  #login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;}
+  .login-box{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:16px;padding:40px 36px;width:340px;text-align:center;}
+  .login-box h1{font-size:22px;font-weight:900;letter-spacing:2px;color:#c8f0c8;margin-bottom:4px;}
+  .login-box p{font-size:12px;color:#555;margin-bottom:28px;letter-spacing:1px;text-transform:uppercase;}
+  .login-box input{width:100%;padding:12px 14px;background:#111;border:1px solid #333;border-radius:10px;color:#e8e8e8;font-size:14px;margin-bottom:12px;outline:none;}
+  .login-box input:focus{border-color:#555;}
+  .login-box button{width:100%;padding:13px;background:#4a7a4a;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;margin-top:4px;}
+  .login-box button:hover{background:#5a9a5a;}
+  .login-err{color:#e06060;font-size:13px;margin-top:10px;min-height:18px;}
+
+  /* ── LAYOUT ── */
+  #admin-screen{display:none;}
+  .admin-header{background:#1a1a1a;border-bottom:1px solid #2a2a2a;padding:0 24px;height:54px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+  .admin-header h1{font-size:18px;font-weight:900;letter-spacing:2px;color:#c8f0c8;}
+  .admin-header span{font-size:12px;color:#555;}
+  .logout-btn{background:none;border:1px solid #333;color:#888;border-radius:8px;padding:5px 14px;font-size:12px;cursor:pointer;}
+  .logout-btn:hover{border-color:#555;color:#ccc;}
+
+  .admin-body{display:grid;grid-template-columns:180px 1fr;min-height:calc(100vh - 54px);}
+  .sidebar{background:#141414;border-right:1px solid #222;padding:20px 0;}
+  .sidebar-btn{display:block;width:100%;text-align:left;padding:11px 20px;background:none;border:none;color:#888;font-size:13px;cursor:pointer;transition:color .15s,background .15s;}
+  .sidebar-btn:hover{color:#e8e8e8;background:#1e1e1e;}
+  .sidebar-btn.active{color:#c8f0c8;background:#1e2e1e;font-weight:600;border-left:3px solid #4a7a4a;}
+
+  .main-panel{padding:28px;}
+  .panel{display:none;}
+  .panel.active{display:block;}
+  .panel-title{font-size:18px;font-weight:700;margin-bottom:20px;color:#e8e8e8;}
+
+  /* ── TABLE ── */
+  .data-table{width:100%;border-collapse:collapse;font-size:13px;}
+  .data-table th{text-align:left;padding:10px 12px;border-bottom:1px solid #2a2a2a;color:#555;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.5px;}
+  .data-table td{padding:10px 12px;border-bottom:1px solid #1e1e1e;vertical-align:middle;}
+  .data-table tr:hover td{background:#1a1a1a;}
+  .data-table .mono{font-family:monospace;font-size:11px;color:#555;}
+
+  /* ── ACTIONS ── */
+  .act-btn{padding:4px 10px;border-radius:6px;border:none;font-size:12px;font-weight:600;cursor:pointer;transition:opacity .15s;}
+  .act-btn:hover{opacity:.8;}
+  .act-btn.red{background:#5a1a1a;color:#e08080;}
+  .act-btn.yellow{background:#4a3a00;color:#e0c060;}
+  .act-btn.green{background:#1a3a1a;color:#80c080;}
+  .act-btn.blue{background:#1a2a4a;color:#80a0e0;}
+
+  /* ── SEARCH / FILTER ── */
+  .search-bar{display:flex;gap:10px;margin-bottom:18px;}
+  .search-bar input{flex:1;padding:9px 14px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:8px;color:#e8e8e8;font-size:13px;outline:none;}
+  .search-bar input:focus{border-color:#4a7a4a;}
+  .search-bar button{padding:9px 16px;background:#2a2a2a;border:none;border-radius:8px;color:#888;font-size:13px;cursor:pointer;}
+
+  /* ── BADGE ── */
+  .badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;}
+  .badge.banned{background:#5a1a1a;color:#e08080;}
+  .badge.active{background:#1a3a1a;color:#80c080;}
+
+  /* ── BLACKLIST ── */
+  .word-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;}
+  .word-chip{display:inline-flex;align-items:center;gap:5px;background:#2a1a1a;border:1px solid #4a2a2a;border-radius:6px;padding:4px 10px;font-size:13px;color:#e08080;}
+  .word-chip button{background:none;border:none;color:#884444;cursor:pointer;font-size:15px;line-height:1;padding:0;}
+  .add-word-row{display:flex;gap:8px;}
+  .add-word-row input{flex:1;padding:9px 14px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:8px;color:#e8e8e8;font-size:13px;outline:none;}
+  .add-word-row button{padding:9px 16px;background:#4a7a4a;border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;}
+
+  /* ── MODAL ── */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:500;}
+  .modal-overlay.open{display:flex;}
+  .modal-box{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:14px;padding:28px;width:360px;}
+  .modal-box h3{font-size:16px;font-weight:700;margin-bottom:14px;}
+  .modal-box input{width:100%;padding:10px 12px;background:#111;border:1px solid #333;border-radius:8px;color:#e8e8e8;font-size:13px;margin-bottom:12px;outline:none;}
+  .modal-box input:focus{border-color:#555;}
+  .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:4px;}
+  .modal-actions button{padding:8px 18px;border-radius:8px;border:none;font-size:13px;font-weight:600;cursor:pointer;}
+  .modal-actions .cancel{background:#2a2a2a;color:#888;}
+  .modal-actions .confirm{background:#4a7a4a;color:#fff;}
+  .modal-actions .danger{background:#7a1a1a;color:#fff;}
+
+  .stat-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;margin-bottom:28px;}
+  .stat-card{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:12px;padding:18px;text-align:center;}
+  .stat-card .num{font-size:32px;font-weight:900;color:#c8f0c8;}
+  .stat-card .lbl{font-size:12px;color:#555;margin-top:4px;text-transform:uppercase;letter-spacing:.5px;}
+
+  .toast-admin{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#c8f0c8;color:#1a1a1a;padding:9px 20px;border-radius:20px;font-size:13px;font-weight:700;opacity:0;transition:opacity .3s;z-index:600;pointer-events:none;}
+  .toast-admin.show{opacity:1;}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <h1>DUELIA</h1>
+    <p>Area Amministratore</p>
+    <input type="password" id="admin-pass" placeholder="Password admin" onkeydown="if(event.key==='Enter')tryLogin()"/>
+    <button onclick="tryLogin()">Accedi</button>
+    <div class="login-err" id="login-err"></div>
+  </div>
+</div>
+
+<!-- ADMIN PANEL -->
+<div id="admin-screen">
+  <div class="admin-header">
+    <h1>DUELIA Admin</h1>
+    <div style="display:flex;align-items:center;gap:16px;">
+      <span id="admin-time"></span>
+      <button class="logout-btn" onclick="adminLogout()">Esci</button>
+    </div>
+  </div>
+  <div class="admin-body">
+    <div class="sidebar">
+      <button class="sidebar-btn active" onclick="showPanel('dashboard')">📊 Dashboard</button>
+      <button class="sidebar-btn" onclick="showPanel('users')">👤 Utenti</button>
+      <button class="sidebar-btn" onclick="showPanel('champs')">🏆 Campionati</button>
+      <button class="sidebar-btn" onclick="showPanel('blacklist')">🚫 Blacklist</button>
+    </div>
+    <div class="main-panel">
+
+      <!-- DASHBOARD -->
+      <div class="panel active" id="panel-dashboard">
+        <div class="panel-title">Dashboard</div>
+        <div class="stat-cards">
+          <div class="stat-card"><div class="num" id="stat-users">—</div><div class="lbl">Utenti totali</div></div>
+          <div class="stat-card"><div class="num" id="stat-champs">—</div><div class="lbl">Campionati</div></div>
+          <div class="stat-card"><div class="num" id="stat-banned">—</div><div class="lbl">Account bannati</div></div>
+          <div class="stat-card"><div class="num" id="stat-blacklist">—</div><div class="lbl">Parole bloccate</div></div>
+        </div>
+        <div style="color:#555;font-size:13px;">Ultimo aggiornamento: <span id="last-refresh">—</span></div>
+      </div>
+
+      <!-- UTENTI -->
+      <div class="panel" id="panel-users">
+        <div class="panel-title">Gestione Utenti</div>
+        <div class="search-bar">
+          <input type="text" id="user-search" placeholder="Cerca per email o username..." oninput="filterUsers()"/>
+          <button onclick="loadUsers()">↻ Aggiorna</button>
+        </div>
+        <table class="data-table">
+          <thead><tr>
+            <th>Username</th><th>Email</th><th>Registrato</th><th>Stato</th><th>Azioni</th>
+          </tr></thead>
+          <tbody id="users-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- CAMPIONATI -->
+      <div class="panel" id="panel-champs">
+        <div class="panel-title">Gestione Campionati</div>
+        <div class="search-bar">
+          <input type="text" id="champ-search-admin" placeholder="Cerca per nome..." oninput="filterChamps()"/>
+          <button onclick="loadChamps()">↻ Aggiorna</button>
+        </div>
+        <table class="data-table">
+          <thead><tr>
+            <th>Nome</th><th>Creatore</th><th>Formato</th><th>Creato il</th><th>ID</th><th>Azioni</th>
+          </tr></thead>
+          <tbody id="champs-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- BLACKLIST -->
+      <div class="panel" id="panel-blacklist">
+        <div class="panel-title">Blacklist Parole</div>
+        <p style="font-size:13px;color:#666;margin-bottom:16px;">Queste parole non possono essere usate nei nomi di campionati o username.</p>
+        <div class="word-chips" id="word-chips"></div>
+        <div class="add-word-row">
+          <input type="text" id="new-word" placeholder="Aggiungi parola..." onkeydown="if(event.key==='Enter')addBlacklistWord()"/>
+          <button onclick="addBlacklistWord()">+ Aggiungi</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="rename-modal">
+  <div class="modal-box">
+    <h3>Rinomina campionato</h3>
+    <input type="text" id="rename-input" placeholder="Nuovo nome..."/>
+    <div class="modal-actions">
+      <button class="cancel" onclick="closeModal('rename-modal')">Annulla</button>
+      <button class="confirm" onclick="confirmRename()">Salva</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="delete-champ-modal">
+  <div class="modal-box">
+    <h3>Elimina campionato</h3>
+    <p style="font-size:13px;color:#888;margin-bottom:16px;">Questa azione è irreversibile. Il campionato e tutti i dati verranno eliminati.</p>
+    <div class="modal-actions">
+      <button class="cancel" onclick="closeModal('delete-champ-modal')">Annulla</button>
+      <button class="danger" onclick="confirmDeleteChamp()">Elimina</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-admin" id="admin-toast"></div>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────
+const ADMIN_PASS_HASH = '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918'; // sha256 of "admin" — CHANGE THIS
+const SUPA_URL = 'https://jhoruzazoqpqlytcbjev.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impob3J1emF6b3FwcWx5dGNiamV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyNjg2MjcsImV4cCI6MjA5MTg0NDYyN30.wcQgwe3KJwSugqPW57JR2Qn5q5RZXLxGMSL9xNsKYSk';
+const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+// Blacklist stored in localStorage (admin-side only, no DB needed)
+const BL_KEY = 'duelia_blacklist';
+
+// ── AUTH ─────────────────────────────────────────────
+async function sha256(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+async function tryLogin() {
+  const pass = document.getElementById('admin-pass').value;
+  const hash = await sha256(pass);
+  if (hash !== ADMIN_PASS_HASH) {
+    document.getElementById('login-err').textContent = 'Password errata';
+    return;
+  }
+  sessionStorage.setItem('duelia_admin', '1');
+  enterAdmin();
+}
+
+function checkSession() {
+  if (sessionStorage.getItem('duelia_admin') === '1') enterAdmin();
+}
+
+function adminLogout() {
+  sessionStorage.removeItem('duelia_admin');
+  document.getElementById('admin-screen').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('admin-pass').value = '';
+}
+
+function enterAdmin() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('admin-screen').style.display = 'block';
+  loadDashboard();
+  startClock();
+}
+
+// ── CLOCK ────────────────────────────────────────────
+function startClock() {
+  function tick() {
+    document.getElementById('admin-time').textContent =
+      new Date().toLocaleString('it-IT', {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+  }
+  tick(); setInterval(tick, 30000);
+}
+
+// ── PANELS ───────────────────────────────────────────
+function showPanel(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  event.currentTarget.classList.add('active');
+  if (name === 'users') loadUsers();
+  if (name === 'champs') loadChamps();
+  if (name === 'blacklist') renderBlacklist();
+}
+
+// ── TOAST ────────────────────────────────────────────
+function adminToast(msg) {
+  const t = document.getElementById('admin-toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ── DASHBOARD ────────────────────────────────────────
+async function loadDashboard() {
+  const [{ count: uCount }, { count: cCount }] = await Promise.all([
+    sb.from('profiles').select('*', {count:'exact',head:true}),
+    sb.from('championships').select('*', {count:'exact',head:true})
+  ]);
+  document.getElementById('stat-users').textContent = uCount ?? '?';
+  document.getElementById('stat-champs').textContent = cCount ?? '?';
+  document.getElementById('stat-banned').textContent = getBannedEmails().length;
+  document.getElementById('stat-blacklist').textContent = getBlacklist().length;
+  document.getElementById('last-refresh').textContent = new Date().toLocaleTimeString('it-IT');
+}
+
+// ── USERS ─────────────────────────────────────────────
+let allUsers = [];
+async function loadUsers() {
+  // Use auth.users via admin — we only have anon key so we use profiles table
+  const { data, error } = await sb.from('profiles').select('id,username,email,created_at').order('created_at', {ascending:false});
+  if (error) { adminToast('Errore caricamento utenti: ' + error.message); return; }
+  allUsers = data || [];
+  renderUsers(allUsers);
+}
+
+function renderUsers(users) {
+  const banned = getBannedEmails();
+  document.getElementById('users-tbody').innerHTML = users.map(u => {
+    const isBanned = banned.includes(u.email);
+    const date = u.created_at ? new Date(u.created_at).toLocaleDateString('it-IT') : '—';
+    return '<tr>'
+      + '<td><strong>' + (u.username||'—') + '</strong></td>'
+      + '<td>' + (u.email||'—') + '</td>'
+      + '<td>' + date + '</td>'
+      + '<td><span class="badge ' + (isBanned?'banned':'active') + '">' + (isBanned?'Bannato':'Attivo') + '</span></td>'
+      + '<td style="display:flex;gap:6px;">'
+      + (isBanned
+          ? '<button class="act-btn green" onclick="unbanUser(\'' + (u.email||'').replace(/'/g,"\\'") + '\')">Sbanna</button>'
+          : '<button class="act-btn yellow" onclick="banUser(\'' + (u.email||'').replace(/'/g,"\\'") + '\')">Banna</button>')
+      + '<button class="act-btn red" onclick="deleteUserRecord(\'' + u.id + '\',\'' + (u.username||'').replace(/'/g,"\\'") + '\')">Elimina</button>'
+      + '</td></tr>';
+  }).join('');
+}
+
+function filterUsers() {
+  const q = document.getElementById('user-search').value.toLowerCase();
+  renderUsers(allUsers.filter(u =>
+    (u.email||'').toLowerCase().includes(q) || (u.username||'').toLowerCase().includes(q)
+  ));
+}
+
+// Ban = store email in localStorage (admin device)
+function getBannedEmails() { try { return JSON.parse(localStorage.getItem('duelia_banned')||'[]'); } catch(e){return[];} }
+function saveBannedEmails(arr) { localStorage.setItem('duelia_banned', JSON.stringify(arr)); }
+
+function banUser(email) {
+  const banned = getBannedEmails();
+  if (!banned.includes(email)) { banned.push(email); saveBannedEmails(banned); }
+  adminToast('Utente bannato: ' + email);
+  renderUsers(allUsers);
+  document.getElementById('stat-banned').textContent = getBannedEmails().length;
+}
+function unbanUser(email) {
+  saveBannedEmails(getBannedEmails().filter(e => e !== email));
+  adminToast('Ban rimosso: ' + email);
+  renderUsers(allUsers);
+  document.getElementById('stat-banned').textContent = getBannedEmails().length;
+}
+
+async function deleteUserRecord(id, username) {
+  if (!confirm('Eliminare definitivamente ' + username + '? Questa azione è irreversibile.')) return;
+  // Delete from profiles
+  const { error } = await sb.from('profiles').delete().eq('id', id);
+  if (error) { adminToast('Errore: ' + error.message); return; }
+  allUsers = allUsers.filter(u => u.id !== id);
+  renderUsers(allUsers);
+  adminToast('Utente eliminato');
+}
+
+// ── CHAMPIONSHIPS ─────────────────────────────────────
+let allChamps = [];
+async function loadChamps() {
+  const { data, error } = await sb.from('championships')
+    .select('id,name,season,owner_id,created_at,data')
+    .order('created_at', {ascending:false});
+  if (error) { adminToast('Errore: ' + error.message); return; }
+  allChamps = data || [];
+  renderChamps(allChamps);
+}
+
+function renderChamps(champs) {
+  document.getElementById('champs-tbody').innerHTML = champs.map(c => {
+    const date = c.created_at ? new Date(c.created_at).toLocaleDateString('it-IT') : '—';
+    const fmt = (c.data||{}).format || 'standard';
+    const fmtLabel = {standard:'Standard', roundrobin:'Round Robin', elimination:'Eliminazione'}[fmt] || fmt;
+    const shortId = c.id.split('-')[0];
+    return '<tr>'
+      + '<td><strong>' + (c.name||'—') + '</strong>' + (c.season?' <span style="color:#555;font-size:11px;">'+c.season+'</span>':'') + '</td>'
+      + '<td class="mono">' + (c.owner_id||'').substring(0,8) + '…</td>'
+      + '<td>' + fmtLabel + '</td>'
+      + '<td>' + date + '</td>'
+      + '<td class="mono" title="' + c.id + '">' + shortId + '…</td>'
+      + '<td style="display:flex;gap:6px;">'
+      + '<button class="act-btn blue" onclick="openRenameModal(\'' + c.id + '\',\'' + (c.name||'').replace(/'/g,"\\'").replace(/"/g,'&quot;') + '\')">Rinomina</button>'
+      + '<button class="act-btn red" onclick="openDeleteChampModal(\'' + c.id + '\',\'' + (c.name||'').replace(/'/g,"\\'") + '\')">Elimina</button>'
+      + '</td></tr>';
+  }).join('');
+}
+
+function filterChamps() {
+  const q = document.getElementById('champ-search-admin').value.toLowerCase();
+  renderChamps(allChamps.filter(c => (c.name||'').toLowerCase().includes(q)));
+}
+
+// Rename
+let renameTarget = null;
+function openRenameModal(id, currentName) {
+  renameTarget = id;
+  document.getElementById('rename-input').value = currentName;
+  document.getElementById('rename-modal').classList.add('open');
+  setTimeout(() => document.getElementById('rename-input').focus(), 100);
+}
+async function confirmRename() {
+  const newName = document.getElementById('rename-input').value.trim();
+  if (!newName || !renameTarget) return;
+  if (containsBlacklisted(newName)) { adminToast('Nome contiene parole non consentite'); return; }
+  const { error } = await sb.from('championships').update({ name: newName }).eq('id', renameTarget);
+  if (error) { adminToast('Errore: ' + error.message); return; }
+  closeModal('rename-modal');
+  adminToast('Campionato rinominato');
+  await loadChamps();
+}
+
+// Delete
+let deleteChampTarget = null;
+function openDeleteChampModal(id, name) {
+  deleteChampTarget = id;
+  document.querySelector('#delete-champ-modal h3').textContent = 'Elimina "' + name + '"';
+  document.getElementById('delete-champ-modal').classList.add('open');
+}
+async function confirmDeleteChamp() {
+  if (!deleteChampTarget) return;
+  const { error } = await sb.from('championships').delete().eq('id', deleteChampTarget);
+  if (error) { adminToast('Errore: ' + error.message); return; }
+  closeModal('delete-champ-modal');
+  adminToast('Campionato eliminato');
+  await loadChamps();
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+// ── BLACKLIST ─────────────────────────────────────────
+function getBlacklist() { try { return JSON.parse(localStorage.getItem(BL_KEY)||'[]'); } catch(e){return[];} }
+function saveBlacklist(arr) { localStorage.setItem(BL_KEY, JSON.stringify(arr)); }
+function containsBlacklisted(text) {
+  const lower = text.toLowerCase();
+  return getBlacklist().some(w => lower.includes(w.toLowerCase()));
+}
+
+function renderBlacklist() {
+  const words = getBlacklist();
+  document.getElementById('word-chips').innerHTML = words.length
+    ? words.map((w,i) => '<div class="word-chip">' + w + '<button onclick="removeBlacklistWord(' + i + ')">×</button></div>').join('')
+    : '<span style="color:#555;font-size:13px;">Nessuna parola nella lista</span>';
+  document.getElementById('stat-blacklist').textContent = words.length;
+}
+
+function addBlacklistWord() {
+  const input = document.getElementById('new-word');
+  const word = input.value.trim().toLowerCase();
+  if (!word) return;
+  const list = getBlacklist();
+  if (!list.includes(word)) { list.push(word); saveBlacklist(list); }
+  input.value = '';
+  renderBlacklist();
+  adminToast('"' + word + '" aggiunto alla blacklist');
+}
+
+function removeBlacklistWord(idx) {
+  const list = getBlacklist();
+  list.splice(idx, 1);
+  saveBlacklist(list);
+  renderBlacklist();
+  adminToast('Parola rimossa');
+}
+
+// ── CLOSE MODALS ON BACKDROP ──────────────────────────
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('open'); });
+});
+
+// ── BOOT ─────────────────────────────────────────────
+checkSession();
+</script>
+</body>
+</html>

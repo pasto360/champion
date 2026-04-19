@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RacePortal</title>
+<title>DUELIA</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -23,7 +23,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 /* ── SHARED HEADER ── */
 .app-header{
-  background:#1a1a1a;color:#fff;height:56px;
+  background:#e8e8e8;color:#1a1a1a;height:56px;
   display:flex;align-items:center;justify-content:space-between;
   padding:0 20px;position:sticky;top:0;z-index:100;
 }
@@ -55,7 +55,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .welcome-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px;}
 .welcome-bar h2{font-size:18px;font-weight:700;}
 .welcome-bar p{font-size:13px;color:var(--muted);margin-top:2px;}
-.btn-new{background:#1a1a1a;color:#fff;border:none;padding:10px 18px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;}
+.btn-new{background:#7a9e7e;color:#1a1a1a;border:none;padding:10px 18px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;}
 .btn-new:active{opacity:.8;}
 
 .sec-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#999;margin-bottom:12px;}
@@ -87,7 +87,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .sheet-close{position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:50%;border:none;background:#f0ede6;cursor:pointer;font-size:17px;display:flex;align-items:center;justify-content:center;color:#555;}
 
 /* ── CHAMPIONSHIP PAGE ── */
-.champ-page-header{background:#1a1a1a;color:#fff;padding:0 20px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.champ-page-header{background:#e8e8e8;color:#1a1a1a;padding:0 20px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
 .champ-page-header h1{font-size:16px;font-weight:700;}
 .champ-page-header .right{display:flex;align-items:center;gap:8px;}
 
@@ -373,7 +373,7 @@ select:focus{border-color:#1a1a1a;}
 <div class="page" id="page-auth">
   <div class="auth-wrap">
     <div class="auth-box">
-      <div class="auth-logo">🏁 RacePortal</div>
+      <div class="auth-logo" style="font-size:26px;font-weight:900;letter-spacing:1px;">DUELIA</div>
       <div class="auth-sub">Crea e gioca i tuoi campionati</div>
       <div class="auth-tabs">
         <button class="auth-tab active" id="tab-login-btn" onclick="switchAuthTab('login')">Accedi</button>
@@ -402,7 +402,7 @@ select:focus{border-color:#1a1a1a;}
 ══════════════════════════════════════════════════ -->
 <div class="page" id="page-home">
   <header class="app-header">
-    <h1>🏁 RacePortal</h1>
+    <h1 style="font-size:20px;font-weight:900;letter-spacing:1px;">DUELIA</h1>
     <div class="right">
       <span id="home-username" style="font-size:13px;color:#aaa;"></span>
       <button class="hbtn" onclick="showPage('page-dashboard')">Dashboard</button>
@@ -1440,7 +1440,9 @@ function scheduleSave() {
 
 // ── RENDER ────────────────────────────────────────
 function renderChamp() {
-  document.getElementById('champ-hdr-title').textContent = (champData.championship||'Campionato') + (champData.season?' · '+champData.season:'');
+  var champTitle = (champData.championship||'Campionato') + (champData.season?' · '+champData.season:'');
+  var createdDate = currentChamp.created_at ? new Date(currentChamp.created_at).toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'}) : '';
+  document.getElementById('champ-hdr-title').innerHTML = champTitle + (createdDate ? '<span style="font-size:11px;font-weight:400;color:#888;margin-left:8px;">' + createdDate + '</span>' : '');
   const fmt = champData.format || 'standard';
 
   // Mobile tabs visibility
