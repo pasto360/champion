@@ -1306,7 +1306,15 @@ function renderManageRRMatches() {
   var players = champData.players || [];
   var rounds  = groupRRRounds(matches, players);
 
-  var html = '<p class="manage-hint">Gestisci giocatori e riordina gli scontri per giornata.</p>';
+  var double = !!champData.doubleLegs;
+  var html = '<div style="display:flex;align-items:center;gap:10px;background:#faf9f6;border:1px solid #e0ddd6;border-radius:10px;padding:10px 14px;margin-bottom:14px;">'
+    + '<input type="checkbox" id="rr-double-legs" ' + (double ? 'checked' : '') + ' onchange="toggleDoubleLegs(this.checked)" style="width:18px;height:18px;cursor:pointer;accent-color:#1d7eda;"/>'
+    + '<div>'
+    + '<div style="font-size:13px;font-weight:700;">Andata e ritorno</div>'
+    + '<div style="font-size:11px;color:#aaa;margin-top:1px;">Ogni coppia si affronta due volte (casa e trasferta)</div>'
+    + '</div>'
+    + '</div>';
+  html += '<p class="manage-hint">Gestisci giocatori e riordina gli scontri per giornata.</p>';
 
   // Giocatori attivi
   html += '<div class="sec-hdr" style="margin-top:0;"><span class="sec-lbl">Giocatori (' + players.length + ')</span></div>';
@@ -1364,6 +1372,15 @@ function renderManageRRMatches() {
   }
 
   document.getElementById('manage-body').innerHTML = html;
+}
+
+function toggleDoubleLegs(enabled) {
+  champData.doubleLegs = !!enabled;
+  ensureRRMatches(); // adds or removes return legs
+  scheduleSave();
+  renderChamp();
+  renderManageRRMatches();
+  showToast(enabled ? 'Andata e ritorno attivato' : 'Solo andata attivato');
 }
 
 function addRRPlayerFromMember(username) {
@@ -2097,6 +2114,15 @@ function renderRRChart() {
     ).join('');
   }
 
+  // Ensure canvas exists (may have been replaced by placeholder)
+  var chartWrap = document.querySelector('.chart-wrap');
+  if (!chartWrap) return;
+  if (!document.getElementById('chart-canvas')) {
+    var freshCanvas = document.createElement('canvas');
+    freshCanvas.id = 'chart-canvas';
+    chartWrap.innerHTML = '';
+    chartWrap.appendChild(freshCanvas);
+  }
   const ctx = document.getElementById('chart-canvas');
   if (!ctx) return;
   if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
@@ -2105,16 +2131,8 @@ function renderRRChart() {
   var totalPts = 0;
   players.forEach(function(p){ totalPts += cumPts[p][cumPts[p].length-1]; });
   if (totalPts === 0) {
-    // No results yet — show placeholder
-    var chartWrap = ctx.parentElement;
-    if (chartWrap) chartWrap.innerHTML = '<div style="height:100%;display:flex;align-items:center;justify-content:center;color:#ccc;font-size:13px;flex-direction:column;gap:6px;"><span style="font-size:28px;">📊</span><span>Nessun risultato ancora</span></div>';
+    chartWrap.innerHTML = '<div style="height:100%;display:flex;align-items:center;justify-content:center;color:#ccc;font-size:13px;flex-direction:column;gap:6px;"><span style="font-size:28px;">📊</span><span>Nessun risultato ancora</span></div>';
     return;
-  }
-  // Restore canvas if it was replaced
-  var chartWrap2 = document.getElementById('chart-canvas')?.parentElement;
-  if (chartWrap2 && !document.getElementById('chart-canvas')) {
-    var c = document.createElement('canvas'); c.id = 'chart-canvas';
-    chartWrap2.innerHTML = ''; chartWrap2.appendChild(c);
   }
 
   chartInstance = new Chart(ctx, {
@@ -2166,16 +2184,36 @@ function generateRRMatches() {
 function ensureRRMatches() {
   if (!champData.rrMatches) champData.rrMatches = [];
   const players = champData.players || [];
-  // Add missing matches for new players
+  const double = !!champData.doubleLegs;
+  // Add missing single-leg matches (A vs B)
   for (let i = 0; i < players.length; i++) {
     for (let j = i+1; j < players.length; j++) {
       const exists = champData.rrMatches.find(m =>
-        (m.p1===players[i]&&m.p2===players[j])||(m.p1===players[j]&&m.p2===players[i]));
+        (m.p1===players[i]&&m.p2===players[j]&&!m.returnLeg)||
+        (m.p1===players[j]&&m.p2===players[i]&&!m.returnLeg));
       if (!exists) champData.rrMatches.push({
         id:'rr_'+i+'_'+j+'_'+Date.now(),
-        p1:players[i],p2:players[j],score1:null,score2:null,result:null
+        p1:players[i], p2:players[j],
+        score1:null, score2:null, result:null, returnLeg:false
       });
     }
+  }
+  if (double) {
+    // Add missing return-leg matches (B vs A)
+    for (let i = 0; i < players.length; i++) {
+      for (let j = i+1; j < players.length; j++) {
+        const existsReturn = champData.rrMatches.find(m =>
+          m.p1===players[j] && m.p2===players[i] && m.returnLeg===true);
+        if (!existsReturn) champData.rrMatches.push({
+          id:'rr_ret_'+j+'_'+i+'_'+Date.now(),
+          p1:players[j], p2:players[i],
+          score1:null, score2:null, result:null, returnLeg:true
+        });
+      }
+    }
+  } else {
+    // Remove return-leg matches if doubleLegs was turned off
+    champData.rrMatches = champData.rrMatches.filter(m => !m.returnLeg);
   }
 }
 
@@ -2275,29 +2313,43 @@ function renderRRMatches() {
 }
 
 
-// Simple round-robin scheduling (round robin algorithm)
+// Round-robin scheduling — handles both single and double legs
 function groupRRRounds(matches, players) {
   if (players.length < 2) return [matches];
-  const n = players.length % 2 === 0 ? players.length : players.length + 1;
-  const rounds = [];
-  const list = [...players];
-  if (list.length % 2 !== 0) list.push('BYE');
-  for (let r = 0; r < n-1; r++) {
-    const round = [];
-    for (let i = 0; i < n/2; i++) {
-      const p1 = list[i], p2 = list[n-1-i];
-      if (p1==='BYE'||p2==='BYE') continue;
-      const match = matches.find(m=>(m.p1===p1&&m.p2===p2)||(m.p1===p2&&m.p2===p1));
-      if (match) round.push(match);
+  var andataMatches  = matches.filter(function(m){ return !m.returnLeg; });
+  var ritornoMatches = matches.filter(function(m){ return  m.returnLeg; });
+
+  function scheduleLegs(legMatches, plist) {
+    var n = plist.length % 2 === 0 ? plist.length : plist.length + 1;
+    var rounds = [];
+    var list = plist.slice();
+    if (list.length % 2 !== 0) list.push('BYE');
+    for (var r = 0; r < n-1; r++) {
+      var round = [];
+      for (var i = 0; i < n/2; i++) {
+        var p1 = list[i], p2 = list[n-1-i];
+        if (p1==='BYE'||p2==='BYE') continue;
+        var match = legMatches.find(function(m){ return m.p1===p1&&m.p2===p2; });
+        if (!match) match = legMatches.find(function(m){ return m.p1===p2&&m.p2===p1; });
+        if (match) round.push(match);
+      }
+      if (round.length) rounds.push(round);
+      list.splice(1, 0, list.pop());
     }
-    if (round.length) rounds.push(round);
-    list.splice(1,0,list.pop());
+    // Unscheduled
+    var scheduled = rounds.reduce(function(a,r){ return a.concat(r.map(function(m){return m.id;})); }, []);
+    var extra = legMatches.filter(function(m){ return scheduled.indexOf(m.id)===-1; });
+    if (extra.length) rounds.push(extra);
+    return rounds;
   }
-  // Any unscheduled matches go to last round
-  const scheduled = rounds.flat().map(m=>m.id);
-  const extra = matches.filter(m=>!scheduled.includes(m.id));
-  if (extra.length) rounds.push(extra);
-  return rounds;
+
+  var andataRounds = scheduleLegs(andataMatches, players);
+  if (ritornoMatches.length === 0) return andataRounds;
+
+  // For ritorno: reverse player order so home/away swap
+  var ritornoRounds = scheduleLegs(ritornoMatches, players.slice().reverse());
+  // Label ritorno rounds — we just append them; buildRRMatchesHTML will show "Giornata N"
+  return andataRounds.concat(ritornoRounds);
 }
 
 let rrResultId = null;
