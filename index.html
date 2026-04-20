@@ -1130,11 +1130,14 @@ async function loadChampPage(champ) {
   // Cancel any pending save from previous championship to avoid data cross-contamination
   clearTimeout(saveTimeout);
   saveTimeout = null;
+  // Reset immediately so old data is never shown while loading
+  champMembers = [];
+  champData = {};
   currentChamp = champ;
   champData = JSON.parse(JSON.stringify(champ.data || {})); // deep copy to avoid reference issues
   isOwner = champ.owner_id === currentUser?.id;
 
-  // Load members from DB
+  // Load members from DB (fresh for this championship)
   await loadChampMembers();
 
   // Show/hide manage button
@@ -1420,7 +1423,21 @@ function moveRRMatch(absIdx, dir) {
   matches[absIdx] = matches[newIdx];
   matches[newIdx] = tmp;
   champData.rrMatches = matches;
-  scheduleSave(); renderChamp(); renderManageRRMatches();
+  // Force immediate re-render of inline matches BEFORE scheduleSave
+  // to ensure UI reflects new order right away
+  var el = document.getElementById('races-grid');
+  if (el) {
+    var rounds = groupByDayRespectingOrder(champData.rrMatches);
+    el.className = 'races-grid rr-grid';
+    el.innerHTML = buildRRMatchesHTML(rounds);
+  }
+  var elMob = document.getElementById('rr-content');
+  if (elMob) {
+    var roundsMob = groupByDayRespectingOrder(champData.rrMatches);
+    elMob.innerHTML = buildRRMatchesHTML(roundsMob);
+  }
+  scheduleSave();
+  renderManageRRMatches();
 }
 
 async function removeRRPlayer(idx) {
@@ -1461,7 +1478,13 @@ function scheduleSave() {
 function renderChamp() {
   var champTitle = (champData.championship||'Campionato') + (champData.season?' · '+champData.season:'');
   var createdDate = currentChamp.created_at ? new Date(currentChamp.created_at).toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'}) : '';
-  document.getElementById('champ-hdr-title').innerHTML = champTitle + (createdDate ? '<span style="font-size:11px;font-weight:500;color:rgba(0,0,0,0.45);margin-left:8px;">' + createdDate + '</span>' : '');
+  var champId = currentChamp.id || '';
+  document.getElementById('champ-hdr-title').innerHTML =
+    '<div style="line-height:1.3;">'
+    + '<span>' + champTitle + '</span>'
+    + (createdDate ? '<span style="font-size:11px;font-weight:500;color:rgba(0,0,0,0.45);margin-left:8px;">' + createdDate + '</span>' : '')
+    + (champId ? '<div style="font-family:monospace;font-size:9px;color:rgba(0,0,0,0.35);margin-top:1px;letter-spacing:.3px;">' + champId + '</div>' : '')
+    + '</div>';
   const fmt = champData.format || 'standard';
 
   // Mobile tabs visibility
@@ -2312,11 +2335,37 @@ function buildRRMatchesHTML(rounds) {
   return html || '<div style="color:#bbb;font-size:13px;padding:12px;">Aggiungi almeno 2 giocatori per generare gli scontri.</div>';
 }
 
+// Raggruppa match in giornate rispettando l'ordine manuale in rrMatches
+// Ogni giornata contiene match che non condividono giocatori
+function groupByDayRespectingOrder(matches) {
+  var rounds = [];
+  var remaining = matches.slice();
+  while (remaining.length > 0) {
+    var round = [];
+    var usedPlayers = {};
+    var nextRemaining = [];
+    for (var i = 0; i < remaining.length; i++) {
+      var m = remaining[i];
+      if (!usedPlayers[m.p1] && !usedPlayers[m.p2]) {
+        round.push(m);
+        usedPlayers[m.p1] = true;
+        usedPlayers[m.p2] = true;
+      } else {
+        nextRemaining.push(m);
+      }
+    }
+    if (round.length === 0) { rounds.push(remaining); break; } // failsafe
+    rounds.push(round);
+    remaining = nextRemaining;
+  }
+  return rounds;
+}
+
 // Desktop: renders giornate into col-left (#races-grid)
 function renderRRMatchesInline() {
   ensureRRMatches();
   var matches = champData.rrMatches || [];
-  var rounds = groupRRRounds(matches, champData.players||[]);
+  var rounds = groupByDayRespectingOrder(matches); // rispetta ordine manuale
   var el = document.getElementById('races-grid');
   if (el) {
     el.className = 'races-grid rr-grid';
@@ -2328,7 +2377,7 @@ function renderRRMatchesInline() {
 function renderRRMatches() {
   ensureRRMatches();
   var matches = champData.rrMatches || [];
-  var rounds = groupRRRounds(matches, champData.players||[]);
+  var rounds = groupByDayRespectingOrder(matches); // rispetta ordine manuale
   var el = document.getElementById('rr-content');
   if (el) el.innerHTML = buildRRMatchesHTML(rounds);
 }
