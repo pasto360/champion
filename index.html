@@ -1372,25 +1372,22 @@ function renderManageRRMatches() {
     html += '</div>';
   }
 
-  // Scontri riordinabili per giornata
-  for (var ri = 0; ri < rounds.length; ri++) {
-    var round = rounds[ri];
-    html += '<div class="sec-hdr"><span class="sec-lbl">Giornata ' + (ri+1) + '</span></div>';
-    for (var mi = 0; mi < round.length; mi++) {
-      var m = round[mi];
-      var s1 = m.score1 !== null ? m.score1 : '–';
-      var s2 = m.score2 !== null ? m.score2 : '–';
-      var done = m.result !== null;
-      // Find absolute index in champData.rrMatches for moveRRMatch
-      var absIdx = matches.findIndex(function(x){ return x.id === m.id; });
-      html += '<div class="player-item" style="' + (done ? 'opacity:.65;' : '') + '">'
-           + '<span style="font-size:15px;color:#ccc;margin-right:4px;">⠿</span>'
-           + '<span style="flex:1;font-size:13px;font-weight:600;">' + m.p1 + ' <span style="color:#bbb;font-weight:400;">vs</span> ' + m.p2 + '</span>'
-           + '<span style="font-size:11px;color:' + (done ? '#2dc653' : '#bbb') + ';margin-right:4px;">' + (done ? s1 + '–' + s2 : '') + '</span>'
-           + (absIdx > 0 ? '<button onclick="moveRRMatch(' + absIdx + ',-1)" style="background:none;border:none;cursor:pointer;color:#bbb;font-size:14px;padding:0 2px;" title="Sposta su">↑</button>' : '<span style="width:20px;"></span>')
-           + (absIdx < matches.length-1 ? '<button onclick="moveRRMatch(' + absIdx + ',1)" style="background:none;border:none;cursor:pointer;color:#bbb;font-size:14px;padding:0 2px;" title="Sposta giù">↓</button>' : '<span style="width:20px;"></span>')
-           + '</div>';
-    }
+  // Scontri riordinabili — mostrati nell'ordine RAW di rrMatches (non raggruppati per giornata)
+  // così lo spostamento manuale è effettivo e persistente
+  html += '<div class="sec-hdr" style="margin-top:4px;"><span class="sec-lbl">Scontri (' + matches.length + ')</span><span style="font-size:11px;color:#aaa;margin-left:6px;">usa ↑↓ per riordinare</span></div>';
+  for (var mi = 0; mi < matches.length; mi++) {
+    var m = matches[mi];
+    var s1 = m.score1 !== null ? m.score1 : '–';
+    var s2 = m.score2 !== null ? m.score2 : '–';
+    var done = m.result !== null;
+    var retLabel = m.returnLeg ? '<span style="font-size:10px;background:#f0ede6;border-radius:4px;padding:1px 5px;color:#888;margin-left:4px;">ritorno</span>' : '';
+    html += '<div class="player-item" style="' + (done ? 'opacity:.7;' : '') + '">'
+         + '<span style="font-size:15px;color:#ccc;margin-right:4px;cursor:grab;">⠿</span>'
+         + '<span style="flex:1;font-size:13px;font-weight:600;">' + m.p1 + ' <span style="color:#bbb;font-weight:400;">vs</span> ' + m.p2 + retLabel + '</span>'
+         + '<span style="font-size:11px;color:' + (done ? '#2dc653' : '#bbb') + ';margin-right:6px;">' + (done ? s1 + '–' + s2 : '') + '</span>'
+         + (mi > 0 ? '<button onclick="moveRRMatch(' + mi + ',-1)" style="background:none;border:none;cursor:pointer;color:#888;font-size:16px;padding:0 3px;line-height:1;" title="Sposta su">↑</button>' : '<span style="width:22px;display:inline-block;"></span>')
+         + (mi < matches.length-1 ? '<button onclick="moveRRMatch(' + mi + ',1)" style="background:none;border:none;cursor:pointer;color:#888;font-size:16px;padding:0 3px;line-height:1;" title="Sposta giù">↓</button>' : '<span style="width:22px;display:inline-block;"></span>')
+         + '</div>';
   }
 
   document.getElementById('manage-body').innerHTML = html;
