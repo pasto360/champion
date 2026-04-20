@@ -441,7 +441,7 @@ select:focus{border-color:#1a1a1a;}
   <header class="app-header">
     <h1>Dashboard</h1>
     <div class="right">
-      <button class="hbtn" onclick="showPage('page-home')">← Home</button>
+      <button class="hbtn" onclick="goHome()">← Home</button>
       <button class="hbtn red" onclick="doLogout()">Esci</button>
     </div>
   </header>
@@ -482,7 +482,7 @@ select:focus{border-color:#1a1a1a;}
       </div>
       <button class="hbtn" id="btn-manage-champ" onclick="openManagePanel()" style="display:none;">⚙</button>
       <button class="hbtn" id="btn-fav-champ" onclick="toggleFav()" title="Aggiungi ai preferiti">☆</button>
-      <button class="hbtn" onclick="showPage('page-home')">← Home</button>
+      <button class="hbtn" onclick="goHome()">← Home</button>
     </div>
   </div>
 
@@ -570,10 +570,7 @@ select:focus{border-color:#1a1a1a;}
     <h2 id="access-title">Accedi al campionato</h2>
     <p id="access-sub">Inserisci la password per visualizzare</p>
     <div class="field"><label>Password campionato</label><input type="password" id="access-pass" placeholder="••••••"/></div>
-    <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:14px;cursor:pointer;">
-      <input type="checkbox" id="access-remember" style="width:auto;"/>
-      Ricorda su questo dispositivo
-    </label>
+
     <button class="btn-primary" onclick="submitAccess()">Entra</button>
     <div class="auth-err" id="access-err"></div>
   </div>
@@ -762,6 +759,12 @@ window.addEventListener('DOMContentLoaded', async () => {
 });
 
 // ── PAGE ROUTING ──────────────────────────────────
+async function goHome() {
+  showPage('page-home');
+  // Always reload fresh from DB when returning home
+  await loadChampionshipsHome();
+}
+
 function showPage(id) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById(id).classList.add('active');
@@ -1081,27 +1084,34 @@ async function createChampionship() {
 }
 
 // ── OPEN CHAMPIONSHIP ─────────────────────────────
-async function openChampionship(id) {
-  // Check if we have saved access
-  const savedKey = 'champ_access_'+id;
-  const savedPass = localStorage.getItem(savedKey);
+// In-memory session access cache (never localStorage)
+const sessionAccess = new Map(); // champId -> true
 
-  const {data:champ,error} = await sb.from('championships').select('*').eq('id',id).single();
+async function openChampionship(id) {
+  if (!id) { showToast('ID campionato non valido'); return; }
+  if (!currentUser) { showToast('Sessione scaduta, effettua di nuovo il login'); showPage('page-auth'); return; }
+
+  const {data:champ, error} = await sb.from('championships').select('*').eq('id', id).single();
   if (error || !champ) { showToast('Campionato non trovato'); return; }
 
-  const isOwnerCheck = champ.owner_id === currentUser?.id;
+  const isOwnerCheck = champ.owner_id === currentUser.id;
+
+  // Check membership in champ_members (player/owner = already accepted)
+  const {data:membership} = await sb.from('champ_members')
+    .select('role').eq('champ_id', id).eq('user_id', currentUser.id).maybeSingle();
+  const isMember = membership && (membership.role === 'owner' || membership.role === 'player');
 
   // Access check
-  if (champ.access==='password' && !isOwnerCheck) {
-    // Check saved password
-    if (savedPass && savedPass === champ.password_hash) {
+  if (champ.access === 'password' && !isOwnerCheck && !isMember) {
+    // Check in-session cache
+    if (sessionAccess.get(id)) {
       await loadChampPage(champ);
     } else {
       pendingAccessChamp = champ;
       document.getElementById('access-title').textContent = champ.name;
-      document.getElementById('access-sub').textContent = `Inserisci la password per accedere a "${champ.name}"`;
-      document.getElementById('access-pass').value='';
-      document.getElementById('access-err').textContent='';
+      document.getElementById('access-sub').textContent = 'Inserisci la password per accedere a "' + champ.name + '"';
+      document.getElementById('access-pass').value = '';
+      document.getElementById('access-err').textContent = '';
       openOverlay('access-overlay');
     }
   } else {
@@ -1114,12 +1124,11 @@ async function submitAccess() {
   const champ = pendingAccessChamp;
   if (!champ) return;
   if (pass !== champ.password_hash) {
-    document.getElementById('access-err').textContent='Password non corretta';
+    document.getElementById('access-err').textContent = 'Password non corretta';
     return;
   }
-  if (document.getElementById('access-remember').checked) {
-    localStorage.setItem('champ_access_'+champ.id, pass);
-  }
+  // Save access in session memory (never localStorage)
+  sessionAccess.set(champ.id, true);
   closeOverlay('access-overlay');
   await loadChampPage(champ);
 }
