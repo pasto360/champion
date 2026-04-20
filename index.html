@@ -495,9 +495,7 @@ select:focus{border-color:#1a1a1a;}
       <button class="tab-btn" id="tab-live-btn" onclick="switchTab('live')" style="position:relative;">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none"/></svg>Live
       </button>
-      <button class="tab-btn" id="tab-rr-btn" onclick="switchTab('rr')" style="display:none;">
-        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg>Gironi
-      </button>
+      <!-- tab-rr-btn removed: RR matches shown in races tab -->
       <button class="tab-btn" id="tab-elim-btn" onclick="switchTab('elim')" style="display:none;">
         <svg viewBox="0 0 24 24"><path d="M4 6h16M8 12h8M11 18h2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Bracket
       </button>
@@ -544,8 +542,8 @@ select:focus{border-color:#1a1a1a;}
     <div class="sec-hdr"><span class="sec-lbl">Live</span></div>
     <div class="live-card" id="live-card-mobile"></div>
   </div>
-  <!-- Round Robin page -->
-  <div class="c-page" id="c-page-rr" style="padding:16px;">
+  <!-- Round Robin page (hidden — matches shown in c-page-races) -->
+  <div class="c-page" id="c-page-rr" style="display:none!important;">
     <div id="rr-content"></div>
   </div>
   <!-- Elimination page -->
@@ -1148,7 +1146,7 @@ async function loadChampPage(champ) {
 
   // Reset tabs based on format
   const fmt = (champ.data||{}).format || 'standard';
-  if (fmt === 'roundrobin')    switchTab('rr');
+  if (fmt === 'roundrobin')    switchTab('races');
   else if (fmt === 'elimination') switchTab('elim');
   else switchTab('races');
   repositionChart();
@@ -1491,7 +1489,7 @@ function renderChamp() {
   const rrBtn   = document.getElementById('tab-rr-btn');
   const elimBtn = document.getElementById('tab-elim-btn');
   const racesBtn= document.getElementById('tab-races-btn');
-  if(rrBtn)   rrBtn.style.display   = fmt==='roundrobin' ? '' : 'none';
+  if(rrBtn)   rrBtn.style.display   = 'none'; // RR uses races tab
   if(elimBtn) elimBtn.style.display = fmt==='elimination' ? '' : 'none';
   if(racesBtn)racesBtn.style.display= fmt==='standard' ? '' : 'none';
 
@@ -1946,6 +1944,7 @@ function saveLiveUrl(url){champData.liveUrl=url.trim();scheduleSave();renderLive
 function renderManageSettings(){
   document.getElementById('manage-body').innerHTML=`
     <p class="manage-hint">Impostazioni del campionato</p>
+    <div style="font-family:monospace;font-size:11px;color:#aaa;background:#f5f3ef;border-radius:8px;padding:8px 12px;margin-bottom:12px;word-break:break-all;"><span style="font-size:10px;color:#bbb;display:block;margin-bottom:2px;">ID Campionato</span>${currentChamp?.id||'—'}</div>
     <div class="prize-input-row" style="margin-bottom:10px;">
       <span class="prize-input-icon">🏆</span>
       <input class="prize-field" type="text" id="set-champ-name"
