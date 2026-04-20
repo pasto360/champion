@@ -1464,7 +1464,7 @@ function scheduleSave() {
 function renderChamp() {
   var champTitle = (champData.championship||'Campionato') + (champData.season?' · '+champData.season:'');
   var createdDate = currentChamp.created_at ? new Date(currentChamp.created_at).toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'}) : '';
-  document.getElementById('champ-hdr-title').innerHTML = champTitle + (createdDate ? '<span style="font-size:11px;font-weight:400;color:#888;margin-left:8px;">' + createdDate + '</span>' : '');
+  document.getElementById('champ-hdr-title').innerHTML = champTitle + (createdDate ? '<span style="font-size:11px;font-weight:500;color:rgba(0,0,0,0.45);margin-left:8px;">' + createdDate + '</span>' : '');
   const fmt = champData.format || 'standard';
 
   // Mobile tabs visibility
