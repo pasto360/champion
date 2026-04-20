@@ -1518,9 +1518,13 @@ function renderChamp() {
     renderRRStandings();
     renderRRChart();
   } else if (fmt === 'elimination') {
-    colLeft.style.display = 'none';
+    colLeft.style.display = '';
     chartSec.style.display = 'none';
-    renderElimBracket();
+    document.querySelector('#c-page-races .sec-lbl').textContent = 'Tabellone';
+    document.getElementById('races-count').textContent = '';
+    document.getElementById('races-grid').className = 'races-grid rr-grid';
+    document.getElementById('races-grid').innerHTML = '<div id="elim-bracket-inline"></div>';
+    renderElimBracketInline();
     renderElimStandings();
   } else {
     colLeft.style.display = '';
@@ -2503,6 +2507,58 @@ function generateElimBracket(players) {
     bracket.push(round);
   }
   return bracket;
+}
+
+// Renders bracket into col-left inline container
+function renderElimBracketInline() {
+  const el = document.getElementById('elim-bracket-inline');
+  if (!el) return;
+  const bracket = champData.elimBracket;
+  if (!bracket) {
+    renderElimSetup(el);
+    return;
+  }
+  propagateElimWinners();
+  const roundNames = getRoundNames(bracket.length);
+  let html = '<div style="overflow-x:auto;padding-bottom:8px;"><div style="display:flex;gap:0;align-items:stretch;">';
+  bracket.forEach(function(round, ri) {
+    html += '<div style="display:flex;flex-direction:column;justify-content:space-around;min-width:130px;padding:0 6px;">';
+    html += '<div style="font-size:10px;font-weight:600;color:#aaa;text-align:center;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">' + (roundNames[ri]||'Round '+(ri+1)) + '</div>';
+    round.forEach(function(match) {
+      var p1=match.p1||null, p2=match.p2||null, w=match.winner;
+      var canClick = isOwner && p1 && p2;
+      var clickAttr = canClick ? ('onclick="openElimResult(\'' + match.id + '\')" style="cursor:pointer;"') : '';
+      html += '<div class="bracket-match ' + (w?'done':'') + '" ' + clickAttr + '>';
+      [p1,p2].forEach(function(p, pi) {
+        var isW = w && w===p;
+        var isTbd = !p;
+        var slotClass = 'bracket-slot' + (isW?' winner':'') + (isTbd?' tbd':'');
+        var seed = p ? ((champData.players||[]).indexOf(p)+1) : '?';
+        html += '<div class="' + slotClass + '">'
+             + '<span class="bracket-seed">' + seed + '</span>'
+             + (p||'Da definire')
+             + '</div>';
+      });
+      html += '</div>';
+    });
+    html += '</div>';
+  });
+  html += '</div></div>';
+  // Champion
+  var final = bracket[bracket.length-1][0];
+  if (final && final.winner) {
+    var ci = (champData.players||[]).indexOf(final.winner);
+    var color = PLAYER_COLORS[ci%PLAYER_COLORS.length];
+    html += '<div style="text-align:center;margin-top:14px;padding:14px;background:linear-gradient(135deg,#fffbf0,#fff8e0);border-radius:12px;border:1px solid #f0e080;">'
+         + '<div style="font-size:26px;">🏆</div>'
+         + '<div style="font-size:16px;font-weight:700;color:' + color + ';margin-top:3px;">' + final.winner + '</div>'
+         + '<div style="font-size:11px;color:#aaa;margin-top:1px;">Campione</div>'
+         + '</div>';
+  }
+  if (isOwner) {
+    html += '<button onclick="resetElimBracket()" style="margin-top:10px;background:none;border:1px solid #e0ddd6;border-radius:8px;padding:7px 14px;font-size:12px;cursor:pointer;color:#888;width:100%;">🔄 Ricrea tabellone</button>';
+  }
+  el.innerHTML = html;
 }
 
 function renderElimBracket() {
