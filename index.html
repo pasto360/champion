@@ -356,6 +356,13 @@ select:focus{border-color:#1a1a1a;}
   color: #1d7eda; background: #e8f0ff; border-color: #b0c8f0;
 }
 .race-banner.pending .replay-chip:hover { background: #c8deff; }
+
+/* list-grid per campionati nella ricerca */
+.champ-grid.list-grid{grid-template-columns:1fr;gap:6px;}
+.champ-grid.list-grid .champ-card{display:flex;align-items:center;gap:12px;padding:10px 14px;min-height:0;}
+.champ-grid.list-grid .champ-card-name{font-size:14px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.champ-grid.list-grid .champ-card-meta{font-size:12px;color:#aaa;white-space:nowrap;}
+.champ-grid.list-grid .badge-access{margin-top:0;flex-shrink:0;}
 </style>
 </head>
 <body>
@@ -429,7 +436,7 @@ select:focus{border-color:#1a1a1a;}
     </div>
 
     <div class="sec-title">Tutti i campionati</div>
-    <div class="champ-grid" id="all-champs-grid"></div>
+    <div class="champ-grid list-grid" id="all-champs-grid"></div>
     <div class="pagination" id="pagination"></div>
   </div>
 </div>
@@ -1487,11 +1494,7 @@ function renderChamp() {
   var createdDate = currentChamp.created_at ? new Date(currentChamp.created_at).toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'}) : '';
   var champId = currentChamp.id || '';
   document.getElementById('champ-hdr-title').innerHTML =
-    '<div style="line-height:1.3;">'
-    + '<span>' + champTitle + '</span>'
-    + (createdDate ? '<span style="font-size:11px;font-weight:500;color:rgba(0,0,0,0.45);margin-left:8px;">' + createdDate + '</span>' : '')
-    + (champId ? '<div style="font-family:monospace;font-size:9px;color:rgba(0,0,0,0.35);margin-top:1px;letter-spacing:.3px;">' + champId + '</div>' : '')
-    + '</div>';
+    champTitle + (createdDate ? '<span style="font-size:11px;font-weight:500;color:rgba(0,0,0,0.45);margin-left:8px;">' + createdDate + '</span>' : '');
   const fmt = champData.format || 'standard';
 
   // Mobile tabs visibility
