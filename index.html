@@ -607,8 +607,8 @@ select:focus{border-color:#1a1a1a;}
     </div>
     <!-- Cerca e aggiungi -->
     <div class="search-friend-row">
-      <input type="text" id="friend-search-input" placeholder="Username o email..." onkeydown="if(event.key==='Enter')searchAndAddFriend()"/>
-      <button onclick="searchAndAddFriend()">Aggiungi</button>
+      <input type="text" id="friend-search-input" placeholder="Username..." onkeydown="if(event.key==='Enter')searchAndAddFriend()"/>
+      <button onclick="searchAndAddFriend()">Cerca</button>
     </div>
     <div id="friend-search-result" style="font-size:12px;margin-bottom:10px;min-height:16px;"></div>
     <!-- Richieste in arrivo -->
@@ -2844,33 +2844,45 @@ function openElimResult(id) {
   let match=null;
   (champData.elimBracket||[]).forEach(r=>r.forEach(m=>{if(m.id===id)match=m;}));
   if(!match||!match.p1||!match.p2)return;
-  document.getElementById('elim-result-title').textContent=match.p1+' vs '+match.p2;
-  const c1=PLAYER_COLORS[(champData.players||[]).indexOf(match.p1)%PLAYER_COLORS.length];
-  const c2=PLAYER_COLORS[(champData.players||[]).indexOf(match.p2)%PLAYER_COLORS.length];
-  document.getElementById('elim-result-body').innerHTML=`
-    <p style="font-size:13px;color:#888;margin-bottom:16px;">Chi vince e avanza?</p>
-    <div style="display:flex;gap:10px;margin-bottom:16px;">
-      <button onclick="saveElimResultWith('${match.p1}')"
-        style="flex:1;padding:14px;border:2px solid ${c1};border-radius:12px;background:#fff;font-size:14px;font-weight:700;color:${c1};cursor:pointer;">
-        ${match.p1}
-      </button>
-      <button onclick="saveElimResultWith('${match.p2}')"
-        style="flex:1;padding:14px;border:2px solid ${c2};border-radius:12px;background:#fff;font-size:14px;font-weight:700;color:${c2};cursor:pointer;">
-        ${match.p2}
-      </button>
-    </div>
-    ${match.winner?`<button onclick="clearElimResult('${id}')" style="background:none;border:none;color:#bbb;font-size:12px;cursor:pointer;display:block;margin:0 auto;">🗑 Rimuovi risultato</button>`:''}`;
+  document.getElementById('elim-result-title').textContent = match.p1 + ' vs ' + match.p2;
+  var c1=PLAYER_COLORS[(champData.players||[]).indexOf(match.p1)%PLAYER_COLORS.length];
+  var c2=PLAYER_COLORS[(champData.players||[]).indexOf(match.p2)%PLAYER_COLORS.length];
+  var s1 = match.score1 !== null && match.score1 !== undefined ? match.score1 : '';
+  var s2 = match.score2 !== null && match.score2 !== undefined ? match.score2 : '';
+  var clearBtn = match.winner ? '<button onclick="clearElimResult(' + JSON.stringify(id) + ')" style="background:none;border:none;color:#bbb;font-size:12px;cursor:pointer;display:block;margin:8px auto 0;">&#128465; Rimuovi risultato</button>' : '';
+  var body = '<p style="font-size:13px;color:#888;margin-bottom:14px;">Inserisci il punteggio (opzionale) e scegli il vincitore</p>';
+  // Score inputs
+  body += '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">';
+  body += '<div style="flex:1;text-align:center;">';
+  body += '<div style="font-size:13px;font-weight:700;color:' + c1 + ';margin-bottom:6px;">' + match.p1 + '</div>';
+  body += '<input type="number" min="0" max="99" id="elim-s1" value="' + s1 + '" style="width:60px;font-size:24px;font-weight:800;text-align:center;border:2px solid #e0ddd6;border-radius:10px;padding:6px;outline:none;"/>';
+  body += '</div>';
+  body += '<div style="font-size:18px;font-weight:800;color:#bbb;">–</div>';
+  body += '<div style="flex:1;text-align:center;">';
+  body += '<div style="font-size:13px;font-weight:700;color:' + c2 + ';margin-bottom:6px;">' + match.p2 + '</div>';
+  body += '<input type="number" min="0" max="99" id="elim-s2" value="' + s2 + '" style="width:60px;font-size:24px;font-weight:800;text-align:center;border:2px solid #e0ddd6;border-radius:10px;padding:6px;outline:none;"/>';
+  body += '</div></div>';
+  // Winner buttons
+  body += '<div style="display:flex;gap:10px;margin-bottom:8px;">';
+  body += '<button onclick="saveElimResultWith(' + JSON.stringify(match.p1) + ')" style="flex:1;padding:12px;border:2px solid ' + c1 + ';border-radius:12px;background:#fff;font-size:14px;font-weight:700;color:' + c1 + ';cursor:pointer;">&#10003; ' + match.p1 + '</button>';
+  body += '<button onclick="saveElimResultWith(' + JSON.stringify(match.p2) + ')" style="flex:1;padding:12px;border:2px solid ' + c2 + ';border-radius:12px;background:#fff;font-size:14px;font-weight:700;color:' + c2 + ';cursor:pointer;">&#10003; ' + match.p2 + '</button>';
+  body += '</div>' + clearBtn;
+  document.getElementById('elim-result-body').innerHTML = body;
   openOverlay('elim-result-overlay');
 }
 function saveElimResult() {} // stub — actual save is via saveElimResultWith
 function saveElimResultWith(winner) {
-  let match=null;
-  (champData.elimBracket||[]).forEach(r=>r.forEach(m=>{if(m.id===elimResultMatchId)match=m;}));
-  if(!match)return;
-  match.winner=winner;
-  // If previous winner changed, clear downstream
+  var match = null;
+  (champData.elimBracket||[]).forEach(function(r){ r.forEach(function(m){ if(m.id===elimResultMatchId) match=m; }); });
+  if (!match) return;
+  // Save scores if provided
+  var s1el = document.getElementById('elim-s1');
+  var s2el = document.getElementById('elim-s2');
+  if (s1el && s1el.value !== '') match.score1 = parseInt(s1el.value)||0;
+  if (s2el && s2el.value !== '') match.score2 = parseInt(s2el.value)||0;
+  match.winner = winner;
   propagateElimWinners();
-  scheduleSave();renderChamp();closeOverlay('elim-result-overlay');showToast(winner+' avanza!');
+  scheduleSave(); renderChamp(); closeOverlay('elim-result-overlay'); showToast(winner + ' avanza!');
 }
 function clearElimResult(id) {
   let match=null;
@@ -2976,9 +2988,12 @@ function renderFriendsPanel() {
   } else {
     accEl.innerHTML = accepted.map(function(f) {
       var otherId = f.sender_id === currentUser.id ? f.receiver_id : f.sender_id;
-      var btn = '<button class="f-btn remove" onclick="removeFriend(' + JSON.stringify(f.id) + ')">Rimuovi</button>';
+      var btn = '<button class="f-btn remove" data-fid="' + f.id + '" data-action="remove">Rimuovi</button>';
       return friendRow(f, otherId, btn);
     }).join('');
+    accEl.querySelectorAll('[data-action="remove"]').forEach(function(btn) {
+      btn.addEventListener('click', function() { removeFriend(this.getAttribute('data-fid')); });
+    });
   }
 
   // Pending incoming
@@ -2987,10 +3002,17 @@ function renderFriendsPanel() {
   if (pending_in.length > 0) {
     pendEl.style.display = '';
     pendList.innerHTML = pending_in.map(function(f) {
-      var btns = '<button class="f-btn accept" onclick="acceptFriend(' + JSON.stringify(f.id) + ')">✓</button>'
-               + '<button class="f-btn decline" onclick="declineFriend(' + JSON.stringify(f.id) + ')">✗</button>';
+      var btns = '<button class="f-btn accept" data-fid="' + f.id + '" data-action="accept">&#10003;</button>'
+               + '<button class="f-btn decline" data-fid="' + f.id + '" data-action="decline">&#10007;</button>';
       return friendRow(f, f.sender_id, btns);
     }).join('');
+    pendList.querySelectorAll('[data-action]').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var fid = this.getAttribute('data-fid');
+        if (this.getAttribute('data-action') === 'accept') acceptFriend(fid);
+        else declineFriend(fid);
+      });
+    });
   } else { pendEl.style.display = 'none'; }
 
   // Pending outgoing
@@ -3000,9 +3022,12 @@ function renderFriendsPanel() {
     sentEl.style.display = '';
     sentList.innerHTML = pending_out.map(function(f) {
       var btn = '<span class="friend-status">In attesa...</span>'
-              + '<button class="f-btn remove" onclick="cancelFriend(' + JSON.stringify(f.id) + ')">Annulla</button>';
+              + '<button class="f-btn remove" data-fid="' + f.id + '" data-action="cancel">Annulla</button>';
       return friendRow(f, f.receiver_id, btn);
     }).join('');
+    sentList.querySelectorAll('[data-action="cancel"]').forEach(function(btn) {
+      btn.addEventListener('click', function() { cancelFriend(this.getAttribute('data-fid')); });
+    });
   } else { sentEl.style.display = 'none'; }
 }
 
@@ -3015,7 +3040,7 @@ async function searchAndAddFriend() {
   res.textContent = 'Ricerca...';
   var result = await sb.from('profiles')
     .select('id,username,email')
-    .or('username.ilike.' + q + ',email.ilike.' + q)
+    .ilike('username', q)
     .neq('id', currentUser.id)
     .limit(1);
   var data = result.data;
