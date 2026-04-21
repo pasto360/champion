@@ -6,6 +6,8 @@
 <title>DUELIA</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
 
+
+
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
@@ -667,6 +669,26 @@ select:focus{border-color:#1a1a1a;}
         <div class="type-card-ico">🏆</div>
         <div><div class="type-card-name">Eliminazione Diretta</div><div class="type-card-desc">Tabellone a bracket, avanzano i vincitori</div></div>
       </label>
+      <label class="type-card" onclick="selectChampType('timetrial',this)">
+        <input type="radio" name="nc-type" value="timetrial" style="display:none"/>
+        <div class="type-card-ico">⏱️</div>
+        <div><div class="type-card-name">Time Trial</div><div class="type-card-desc">Classifica sul miglior tempo o distanza</div></div>
+      </label>
+    </div>
+    <!-- TimeTrial options (visibili solo se selezionato) -->
+    <div id="nc-tt-options" style="display:none;background:#f5f3ef;border-radius:10px;padding:12px;margin-bottom:12px;">
+      <div class="field" style="margin-bottom:8px;"><label>Unità di misura</label>
+        <select id="nc-tt-unit" class="prize-field" style="border:none;font-size:14px;background:transparent;">
+          <option value="time">Tempo (mm:ss.mmm)</option>
+          <option value="distance">Distanza (metri)</option>
+        </select>
+      </div>
+      <div class="field" style="margin-bottom:0;"><label>Classifica</label>
+        <select id="nc-tt-order" class="prize-field" style="border:none;font-size:14px;background:transparent;">
+          <option value="asc">Valore più basso = 1° (es. tempo)</option>
+          <option value="desc">Valore più alto = 1° (es. distanza)</option>
+        </select>
+      </div>
     </div>
     <div class="field"><label>Nome</label><input type="text" id="nc-name" placeholder="Es. Formula Amici 2026"/></div>
     <div class="field"><label>Anno / Stagione</label><input type="text" id="nc-season" placeholder="2026"/></div>
@@ -1108,6 +1130,8 @@ function selectChampType(type, el) {
   selectedChampType = type;
   document.querySelectorAll('.type-card').forEach(c=>c.classList.remove('active'));
   el.classList.add('active');
+  var ttOpts = document.getElementById('nc-tt-options');
+  if (ttOpts) ttOpts.style.display = type === 'timetrial' ? '' : 'none';
 }
 
 async function createChampionship() {
@@ -1119,11 +1143,14 @@ async function createChampionship() {
   if (access==='password' && !pass) { document.getElementById('nc-err').textContent='Inserisci una password'; return; }
 
   const username = currentUser.user_metadata?.username || currentUser.email?.split('@')[0] || 'Owner';
+  var ttUnit  = document.getElementById('nc-tt-unit')  ? document.getElementById('nc-tt-unit').value  : 'time';
+  var ttOrder = document.getElementById('nc-tt-order') ? document.getElementById('nc-tt-order').value : 'asc';
   const defaultData = {
     championship: name, season, format: selectedChampType,
     players: [username],
     prizes: ['','',''], races: [], liveUrl: 'https://www.youtube.com/@pixel-race/live',
-    rrMatches: [], elimBracket: null
+    rrMatches: [], elimBracket: null,
+    ttUnit: ttUnit, ttOrder: ttOrder, ttRuns: {}
   };
 
   const {data, error} = await sb.from('championships').insert({
@@ -1600,6 +1627,14 @@ function renderChamp() {
     document.getElementById('races-grid').innerHTML = '<div id="elim-bracket-inline"></div>';
     renderElimBracketInline();
     renderElimStandings();
+  } else if (fmt === 'timetrial') {
+    colLeft.style.display = '';
+    chartSec.style.display = 'none';
+    document.querySelector('#c-page-races .sec-lbl').textContent = 'Prove';
+    document.getElementById('races-count').textContent = '';
+    document.getElementById('races-grid').className = 'races-grid rr-grid';
+    renderTTRuns();
+    renderTTStandings();
   } else {
     colLeft.style.display = '';
     chartSec.style.display = '';
@@ -1878,7 +1913,7 @@ function openManagePanel(){
   var racesTab = document.getElementById('mtab-races-or-matches');
   if (racesTab) {
     var fmt = champData.format || 'standard';
-    racesTab.textContent = fmt === 'roundrobin' ? '⚽ Scontri' : '🏁 Circuiti';
+    racesTab.textContent = fmt === 'roundrobin' ? '⚽ Scontri' : fmt === 'timetrial' ? '⏱ Prove' : '🏁 Circuiti';
   }
   updateManageTabs();renderManageBody();
   document.getElementById('manage-panel').classList.add('open');
@@ -1901,6 +1936,7 @@ function renderManageBody(){
   else if(currentManageTab==='races') {
     var fmt = champData.format || 'standard';
     if (fmt === 'roundrobin') renderManageRRMatches();
+    else if (fmt === 'timetrial') renderManageTT();
     else renderManageRaces();
   }
   else if(currentManageTab==='prizes') renderManagePrizes();
@@ -2055,6 +2091,7 @@ function renderManageSettings(){
   html += '<input class="prize-field" type="text" id="set-champ-pass" placeholder="Password di accesso..." value="' + ((currentChamp&&currentChamp.password_hash)||'').replace(/"/g,'&quot;') + '"/>';
   html += '</div>';
   html += '<button class="btn-primary" style="margin-top:8px;" onclick="saveChampSettings()">Salva impostazioni</button>';
+  if ((champData.format||'standard') === 'timetrial') html += renderTTSettings();
   html += '<div class="invite-section">';
   html += '<h4>Invita al campionato</h4>';
   html += '<p style="font-size:12px;color:#aaa;margin-bottom:10px;">Cerca un utente per username o email e invitalo direttamente — non serve che sia tuo amico.</p>';
@@ -3151,6 +3188,229 @@ function updateNcPassField(val) {
   if (pf) pf.style.display = val === 'password' ? '' : 'none';
 }
 
+// ══════════════════════════════════════════════════
+// ── TIME TRIAL ────────────────────────────────────
+// ══════════════════════════════════════════════════
+
+// Format a TT value for display
+function formatTTValue(val, unit) {
+  if (val === null || val === undefined || val === '') return '—';
+  if (unit === 'time') {
+    // val in milliseconds total
+    var ms  = Math.round(val);
+    var min = Math.floor(ms / 60000);
+    var sec = Math.floor((ms % 60000) / 1000);
+    var mil = ms % 1000;
+    return (min > 0 ? min + ':' : '') + (sec < 10 && min > 0 ? '0' : '') + sec + '.' + String(mil).padStart(3,'0');
+  } else {
+    return val.toFixed(2) + ' m';
+  }
+}
+
+// Parse user input to a raw number (ms for time, float for distance)
+function parseTTInput(str, unit) {
+  str = str.trim();
+  if (!str) return null;
+  if (unit === 'time') {
+    // Accept: mm:ss.mmm  or  ss.mmm  or  plain ms
+    var m = str.match(/^(?:(\d+):)?(\d+)\.(\d{1,3})$/);
+    if (m) {
+      var mins = parseInt(m[1]||'0');
+      var secs = parseInt(m[2]);
+      var mils = parseInt(m[3].padEnd(3,'0'));
+      return mins*60000 + secs*1000 + mils;
+    }
+    var plain = parseFloat(str);
+    return isNaN(plain) ? null : plain;
+  } else {
+    var d = parseFloat(str.replace(',','.'));
+    return isNaN(d) ? null : d;
+  }
+}
+
+// Get best run for each player
+function calcTTStandings() {
+  var players = champData.players || [];
+  var runs    = champData.ttRuns  || {};
+  var order   = champData.ttOrder || 'asc';
+  var unit    = champData.ttUnit  || 'time';
+  var results = players.map(function(p) {
+    var playerRuns = (runs[p] || []).filter(function(r){ return r !== null && r !== undefined; });
+    var best = playerRuns.length === 0 ? null
+      : order === 'asc'
+        ? Math.min.apply(null, playerRuns)
+        : Math.max.apply(null, playerRuns);
+    return { name: p, best: best, runs: playerRuns.length };
+  });
+  // Sort: those with a result first, then by best value
+  results.sort(function(a, b) {
+    if (a.best === null && b.best === null) return 0;
+    if (a.best === null) return 1;
+    if (b.best === null) return -1;
+    return order === 'asc' ? a.best - b.best : b.best - a.best;
+  });
+  return results;
+}
+
+function renderTTStandings() {
+  var standings = calcTTStandings();
+  var unit = champData.ttUnit || 'time';
+  var posCls = ['p1','p2','p3'];
+  var progress = document.getElementById('races-progress');
+  var totalRuns = Object.values(champData.ttRuns||{}).reduce(function(s,r){ return s + (r||[]).length; }, 0);
+  if (progress) progress.textContent = totalRuns + ' prove inserite';
+  var fill = document.getElementById('progress-fill');
+  var label = document.getElementById('progress-label');
+  var played = standings.filter(function(s){ return s.best !== null; }).length;
+  if (fill) fill.style.width = (standings.length > 0 ? Math.round(played/standings.length*100) : 0) + '%';
+  if (label) label.textContent = played + '/' + standings.length + ' iscritti con risultato';
+
+  document.getElementById('standings-container').innerHTML = standings.map(function(p, i) {
+    var color = PLAYER_COLORS[(champData.players||[]).indexOf(p.name) % PLAYER_COLORS.length];
+    return '<div class="rr-stand-row">'
+      + '<div class="rr-pos ' + (posCls[i]||'') + '">' + (i===0?'🏆':i+1) + '</div>'
+      + '<div style="flex:1;min-width:0;">'
+      + '<div class="s-name" style="color:' + color + '">' + p.name + '</div>'
+      + '<div class="rr-stat">' + p.runs + ' ' + (p.runs===1?'prova':'prove') + '</div>'
+      + '</div>'
+      + '<div class="rr-pts-big" style="font-size:15px;">' + formatTTValue(p.best, unit) + '</div>'
+      + '</div>';
+  }).join('');
+}
+
+function renderTTRuns() {
+  var el = document.getElementById('races-grid'); if (!el) return;
+  var players = champData.players || [];
+  var runs    = champData.ttRuns  || {};
+  var unit    = champData.ttUnit  || 'time';
+  var order   = champData.ttOrder || 'asc';
+  var standings = calcTTStandings();
+
+  var html = '';
+  standings.forEach(function(ps) {
+    var p = ps.name;
+    var color = PLAYER_COLORS[(players||[]).indexOf(p) % PLAYER_COLORS.length];
+    var playerRuns = (runs[p] || []);
+    var best = ps.best;
+    html += '<div style="background:#faf9f6;border-radius:12px;padding:12px 14px;margin-bottom:8px;">';
+    html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">';
+    html += '<div style="width:10px;height:10px;border-radius:50%;background:' + color + ';flex-shrink:0;"></div>';
+    html += '<div style="flex:1;font-size:13px;font-weight:700;">' + p + '</div>';
+    html += '<div style="font-size:14px;font-weight:800;color:' + color + ';">' + formatTTValue(best, unit) + '</div>';
+    html += '</div>';
+    // Runs list
+    if (playerRuns.length > 0) {
+      html += '<div style="display:flex;flex-wrap:wrap;gap:6px;">';
+      playerRuns.forEach(function(r, ri) {
+        var isBest = r === best;
+        html += '<div style="padding:4px 10px;border-radius:8px;font-size:12px;font-weight:600;background:' + (isBest?'#e8f8e8;color:#1a7a1a':'#f0ede6;color:#666') + ';">'
+             + formatTTValue(r, unit) + (isBest?' ★':'') + '</div>';
+      });
+      html += '</div>';
+    }
+    html += '</div>';
+  });
+  el.innerHTML = html || '<div style="color:#bbb;font-size:13px;padding:12px;">Nessuna prova ancora</div>';
+}
+
+// ── MANAGE TT ──
+function renderManageTT() {
+  var players = champData.players || [];
+  var runs    = champData.ttRuns  || {};
+  var unit    = champData.ttUnit  || 'time';
+  var order   = champData.ttOrder || 'asc';
+  var placeholder = unit === 'time' ? 'es. 1:23.456' : 'es. 45.20';
+  var unitLabel   = unit === 'time' ? 'Tempo (mm:ss.mmm)' : 'Distanza (m)';
+
+  var html = '<p class="manage-hint">Inserisci le prove di ogni partecipante. Conta il risultato migliore.</p>';
+  html += '<div style="background:#f5f3ef;border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:#888;">'
+        + '&#128207; Unità: <strong>' + unitLabel + '</strong> — '
+        + 'Classifica: <strong>' + (order==='asc'?'valore più basso = 1°':'valore più alto = 1°') + '</strong>'
+        + '</div>';
+
+  players.forEach(function(p) {
+    var playerRuns = (runs[p] || []);
+    var color = PLAYER_COLORS[(players||[]).indexOf(p) % PLAYER_COLORS.length];
+    html += '<div style="margin-bottom:14px;border:1px solid #e0ddd6;border-radius:12px;padding:12px;">';
+    html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">';
+    html += '<div style="width:10px;height:10px;border-radius:50%;background:' + color + ';"></div>';
+    html += '<span style="font-size:13px;font-weight:700;">' + p + '</span>';
+    html += '</div>';
+    // Existing runs
+    if (playerRuns.length > 0) {
+      html += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">';
+      playerRuns.forEach(function(r, ri) {
+        html += '<div style="display:inline-flex;align-items:center;gap:4px;background:#f0ede6;border-radius:7px;padding:4px 8px;font-size:12px;">'
+             + formatTTValue(r, unit)
+             + '<button data-player="' + p + '" data-run="' + ri + '" data-action="delrun" style="background:none;border:none;color:#bbb;cursor:pointer;font-size:13px;padding:0;line-height:1;">×</button>'
+             + '</div>';
+      });
+      html += '</div>';
+    }
+    // Add run input
+    html += '<div style="display:flex;gap:6px;">';
+    html += '<input type="text" id="tt-input-' + p.replace(/[^a-zA-Z0-9]/g,'_') + '" placeholder="' + placeholder + '" style="flex:1;padding:7px 10px;border:1px solid #e0ddd6;border-radius:8px;font-size:13px;outline:none;"/>';
+    html += '<button data-player="' + p + '" data-action="addrun" style="padding:7px 14px;background:#7a9e7e;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">+</button>';
+    html += '</div>';
+    html += '</div>';
+  });
+
+  document.getElementById('manage-body').innerHTML = html;
+
+  // Event delegation
+  document.getElementById('manage-body').addEventListener('click', function(e) {
+    var btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    var action = btn.getAttribute('data-action');
+    var player = btn.getAttribute('data-player');
+    if (action === 'addrun') {
+      var inputId = 'tt-input-' + player.replace(/[^a-zA-Z0-9]/g,'_');
+      var input = document.getElementById(inputId);
+      if (!input) return;
+      var val = parseTTInput(input.value, unit);
+      if (val === null) { showToast('Valore non valido. Usa formato: ' + placeholder); return; }
+      if (!champData.ttRuns) champData.ttRuns = {};
+      if (!champData.ttRuns[player]) champData.ttRuns[player] = [];
+      champData.ttRuns[player].push(val);
+      input.value = '';
+      scheduleSave(); renderChamp(); renderManageTT();
+    } else if (action === 'delrun') {
+      var ri = parseInt(btn.getAttribute('data-run'));
+      if (!champData.ttRuns || !champData.ttRuns[player]) return;
+      champData.ttRuns[player].splice(ri, 1);
+      scheduleSave(); renderChamp(); renderManageTT();
+    }
+  });
+}
+
+// ── TT in impostazioni (unità e ordine modificabili) ──
+function renderTTSettings() {
+  var unit  = champData.ttUnit  || 'time';
+  var order = champData.ttOrder || 'asc';
+  return '<div style="background:#f5f3ef;border-radius:10px;padding:12px;margin-top:14px;">'
+    + '<p style="font-size:12px;font-weight:700;color:#888;margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Impostazioni Time Trial</p>'
+    + '<div class="field" style="margin-bottom:8px;"><label>Unità di misura</label>'
+    + '<select id="tt-unit-sel" class="prize-field" style="border:none;font-size:14px;background:transparent;">'
+    + '<option value="time"' + (unit==='time'?' selected':'') + '>Tempo (mm:ss.mmm)</option>'
+    + '<option value="distance"' + (unit==='distance'?' selected':'') + '>Distanza (metri)</option>'
+    + '</select></div>'
+    + '<div class="field" style="margin-bottom:10px;"><label>Classifica</label>'
+    + '<select id="tt-order-sel" class="prize-field" style="border:none;font-size:14px;background:transparent;">'
+    + '<option value="asc"' + (order==='asc'?' selected':'') + '>Valore più basso = 1° (es. tempo)</option>'
+    + '<option value="desc"' + (order==='desc'?' selected':'') + '>Valore più alto = 1° (es. distanza)</option>'
+    + '</select></div>'
+    + '<button onclick="saveTTSettings()" style="background:#7a9e7e;color:#fff;border:none;border-radius:8px;padding:7px 16px;font-size:13px;font-weight:700;cursor:pointer;">Salva impostazioni TT</button>'
+    + '</div>';
+}
+
+async function saveTTSettings() {
+  var unit  = document.getElementById('tt-unit-sel')?.value  || champData.ttUnit;
+  var order = document.getElementById('tt-order-sel')?.value || champData.ttOrder;
+  champData.ttUnit  = unit;
+  champData.ttOrder = order;
+  scheduleSave(); renderChamp();
+  showToast('Impostazioni Time Trial salvate!');
+}
 </script>
 </body>
 </html>
