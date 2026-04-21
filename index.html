@@ -6,209 +6,6 @@
 <title>DUELIA</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
 
-// ══════════════════════════════════════════════════
-// ── AMICIZIE ──────────────────────────────────────
-// ══════════════════════════════════════════════════
-let myFriendships = [];
-
-async function loadFriendships() {
-  const { data } = await sb.from('friendships')
-    .select('id,sender_id,receiver_id,status,created_at')
-    .or('sender_id.eq.' + currentUser.id + ',receiver_id.eq.' + currentUser.id);
-  myFriendships = data || [];
-  updateFriendsBadge();
-}
-
-function updateFriendsBadge() {
-  const pending = myFriendships.filter(f => f.receiver_id === currentUser.id && f.status === 'pending');
-  const badge = document.getElementById('friends-badge');
-  if (!badge) return;
-  if (pending.length > 0) { badge.style.display = 'flex'; badge.textContent = pending.length; }
-  else { badge.style.display = 'none'; }
-}
-
-function openFriendsPanel() {
-  renderFriendsPanel();
-  document.getElementById('friends-overlay').classList.add('open');
-}
-function closeFriendsPanel() {
-  document.getElementById('friends-overlay').classList.remove('open');
-}
-
-function renderFriendsPanel() {
-  const accepted = myFriendships.filter(f => f.status === 'accepted');
-  const pending_in = myFriendships.filter(f => f.receiver_id === currentUser.id && f.status === 'pending');
-  const pending_out = myFriendships.filter(f => f.sender_id === currentUser.id && f.status === 'pending');
-
-  // Accepted
-  const accEl = document.getElementById('friends-accepted-list');
-  if (accepted.length === 0) {
-    accEl.innerHTML = '<div style="color:#bbb;font-size:13px;">Nessun amico ancora</div>';
-  } else {
-    accEl.innerHTML = accepted.map(f => {
-      const otherId = f.sender_id === currentUser.id ? f.receiver_id : f.sender_id;
-      const cached = allFriendProfiles[otherId] || { username: otherId.substring(0,8)+'…' };
-      return '<div class="friend-row">'
-        + '<div class="friend-avatar">' + (cached.username||'?')[0].toUpperCase() + '</div>'
-        + '<div class="friend-name">' + (cached.username||'—') + '</div>'
-        + '<div class="friend-actions"><button class="f-btn remove" onclick="removeFriend('' + f.id + '')">Rimuovi</button></div>'
-        + '</div>';
-    }).join('');
-  }
-
-  // Pending incoming
-  const pendEl = document.getElementById('friends-pending-section');
-  const pendList = document.getElementById('friends-pending-list');
-  if (pending_in.length > 0) {
-    pendEl.style.display = '';
-    pendList.innerHTML = pending_in.map(f => {
-      const cached = allFriendProfiles[f.sender_id] || { username: f.sender_id.substring(0,8)+'…' };
-      return '<div class="friend-row">'
-        + '<div class="friend-avatar">' + (cached.username||'?')[0].toUpperCase() + '</div>'
-        + '<div class="friend-name">' + (cached.username||'—') + '</div>'
-        + '<div class="friend-actions">'
-        + '<button class="f-btn accept" onclick="acceptFriend('' + f.id + '')">✓</button>'
-        + '<button class="f-btn decline" onclick="declineFriend('' + f.id + '')">✗</button>'
-        + '</div></div>';
-    }).join('');
-  } else { pendEl.style.display = 'none'; }
-
-  // Pending outgoing
-  const sentEl = document.getElementById('friends-sent-section');
-  const sentList = document.getElementById('friends-sent-list');
-  if (pending_out.length > 0) {
-    sentEl.style.display = '';
-    sentList.innerHTML = pending_out.map(f => {
-      const cached = allFriendProfiles[f.receiver_id] || { username: f.receiver_id.substring(0,8)+'…' };
-      return '<div class="friend-row">'
-        + '<div class="friend-avatar" style="background:#aaa;">' + (cached.username||'?')[0].toUpperCase() + '</div>'
-        + '<div class="friend-name">' + (cached.username||'—') + '</div>'
-        + '<div class="friend-status">In attesa</div>'
-        + '<div class="friend-actions"><button class="f-btn remove" onclick="cancelFriend('' + f.id + '')">Annulla</button></div>'
-        + '</div>';
-    }).join('');
-  } else { sentEl.style.display = 'none'; }
-}
-
-const allFriendProfiles = {}; // cache username per user_id
-
-async function searchAndAddFriend() {
-  const q = document.getElementById('friend-search-input').value.trim();
-  const res = document.getElementById('friend-search-result');
-  if (!q) return;
-  res.textContent = 'Ricerca...';
-  // Search by username or email
-  const { data } = await sb.from('profiles')
-    .select('id,username,email')
-    .or('username.ilike.' + q + ',email.ilike.' + q)
-    .neq('id', currentUser.id)
-    .limit(1);
-  if (!data || data.length === 0) { res.textContent = 'Nessun utente trovato'; return; }
-  const target = data[0];
-  allFriendProfiles[target.id] = target;
-  // Check if already friends or pending
-  const existing = myFriendships.find(f =>
-    (f.sender_id === currentUser.id && f.receiver_id === target.id) ||
-    (f.sender_id === target.id && f.receiver_id === currentUser.id));
-  if (existing) {
-    if (existing.status === 'accepted') { res.textContent = 'Siete già amici!'; return; }
-    if (existing.status === 'pending') { res.textContent = 'Richiesta già in sospeso'; return; }
-  }
-  res.innerHTML = 'Trovato: <strong>' + (target.username||target.email) + '</strong> — '
-    + '<button onclick="sendFriendRequest('' + target.id + '')" style="background:#7a9e7e;color:#fff;border:none;border-radius:6px;padding:3px 10px;font-size:12px;cursor:pointer;font-weight:600;">Invia richiesta</button>';
-}
-
-async function sendFriendRequest(targetId) {
-  const { error } = await sb.from('friendships').insert({ sender_id: currentUser.id, receiver_id: targetId, status: 'pending' });
-  if (error) { showToast('Errore: ' + error.message); return; }
-  await loadFriendships();
-  // Fetch profile if not cached
-  if (!allFriendProfiles[targetId]) {
-    const { data } = await sb.from('profiles').select('id,username').eq('id', targetId).single();
-    if (data) allFriendProfiles[targetId] = data;
-  }
-  document.getElementById('friend-search-result').textContent = 'Richiesta inviata!';
-  document.getElementById('friend-search-input').value = '';
-  renderFriendsPanel();
-}
-
-async function acceptFriend(friendshipId) {
-  await sb.from('friendships').update({ status: 'accepted' }).eq('id', friendshipId);
-  await loadFriendships();
-  // Cache missing profiles
-  await cacheFriendProfiles();
-  renderFriendsPanel();
-  showToast('Amicizia accettata!');
-}
-async function declineFriend(friendshipId) {
-  await sb.from('friendships').update({ status: 'declined' }).eq('id', friendshipId);
-  await loadFriendships();
-  renderFriendsPanel();
-}
-async function removeFriend(friendshipId) {
-  await sb.from('friendships').delete().eq('id', friendshipId);
-  await loadFriendships();
-  renderFriendsPanel();
-  showToast('Amico rimosso');
-}
-async function cancelFriend(friendshipId) {
-  await sb.from('friendships').delete().eq('id', friendshipId);
-  await loadFriendships();
-  renderFriendsPanel();
-}
-
-async function cacheFriendProfiles() {
-  const ids = [...new Set(myFriendships.flatMap(f => [f.sender_id, f.receiver_id]))].filter(id => id !== currentUser.id && !allFriendProfiles[id]);
-  if (!ids.length) return;
-  const { data } = await sb.from('profiles').select('id,username').in('id', ids);
-  (data||[]).forEach(p => { allFriendProfiles[p.id] = p; });
-}
-
-function getFriendIds() {
-  return myFriendships.filter(f => f.status === 'accepted')
-    .map(f => f.sender_id === currentUser.id ? f.receiver_id : f.sender_id);
-}
-
-function isFriendOfOwner(ownerId) {
-  return getFriendIds().includes(ownerId);
-}
-
-// ── INVITI CAMPIONATO (diretti, no amicizia) ──
-async function inviteToChamp() {
-  const q = document.getElementById('invite-input').value.trim();
-  const res = document.getElementById('invite-result');
-  if (!q || !currentChamp) return;
-  res.textContent = 'Ricerca...';
-  const { data } = await sb.from('profiles')
-    .select('id,username,email')
-    .or('username.ilike.' + q + ',email.ilike.' + q)
-    .neq('id', currentUser.id)
-    .limit(1);
-  if (!data || !data.length) { res.textContent = 'Nessun utente trovato'; return; }
-  const target = data[0];
-  // Check not already member
-  const { data: existing } = await sb.from('champ_members').select('id,role').eq('champ_id', currentChamp.id).eq('user_id', target.id).maybeSingle();
-  if (existing) {
-    const roleLabel = {owner:'owner',player:'già iscritto',pending:'richiesta in attesa',rejected:'rifiutato'}[existing.role]||existing.role;
-    res.textContent = (target.username||target.email) + ' — ' + roleLabel;
-    return;
-  }
-  // Insert directly as 'player'
-  const { error } = await sb.from('champ_members').insert({ champ_id: currentChamp.id, user_id: target.id, username: target.username||target.email, role: 'player' });
-  if (error) { res.textContent = 'Errore: ' + error.message; return; }
-  await loadChampMembers();
-  await scheduleSaveImmediate();
-  res.innerHTML = '<span style="color:#2dc653;font-weight:600;">✓ ' + (target.username||target.email) + ' aggiunto al campionato!</span>';
-  document.getElementById('invite-input').value = '';
-  renderChamp();
-}
-
-// ── GESTIONE ACCESS TIPO IN NUOVO CAMPIONATO ──
-function updateNcPassField(val) {
-  const pf = document.getElementById('nc-pass-field');
-  if (pf) pf.style.display = val === 'password' ? '' : 'none';
-}
-
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
@@ -3127,6 +2924,207 @@ function deletePlayer(idx) {
   const el=document.getElementById(id);
   if(el) el.addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');});
 });
+
+// ══════════════════════════════════════════════════
+// ── AMICIZIE ──────────────────────────────────────
+// ══════════════════════════════════════════════════
+let myFriendships = [];
+
+async function loadFriendships() {
+  const { data } = await sb.from('friendships')
+    .select('id,sender_id,receiver_id,status,created_at')
+    .or('sender_id.eq.' + currentUser.id + ',receiver_id.eq.' + currentUser.id);
+  myFriendships = data || [];
+  updateFriendsBadge();
+}
+
+function updateFriendsBadge() {
+  const pending = myFriendships.filter(f => f.receiver_id === currentUser.id && f.status === 'pending');
+  const badge = document.getElementById('friends-badge');
+  if (!badge) return;
+  if (pending.length > 0) { badge.style.display = 'flex'; badge.textContent = pending.length; }
+  else { badge.style.display = 'none'; }
+}
+
+function openFriendsPanel() {
+  renderFriendsPanel();
+  document.getElementById('friends-overlay').classList.add('open');
+}
+function closeFriendsPanel() {
+  document.getElementById('friends-overlay').classList.remove('open');
+}
+
+function renderFriendsPanel() {
+  var accepted = myFriendships.filter(function(f){ return f.status === 'accepted'; });
+  var pending_in  = myFriendships.filter(function(f){ return f.receiver_id === currentUser.id && f.status === 'pending'; });
+  var pending_out = myFriendships.filter(function(f){ return f.sender_id === currentUser.id && f.status === 'pending'; });
+
+  function friendRow(f, otherId, extraBtn) {
+    var cached = allFriendProfiles[otherId] || { username: otherId.substring(0,8)+'...' };
+    var initial = ((cached.username||'?')[0]||'?').toUpperCase();
+    return '<div class="friend-row">'
+      + '<div class="friend-avatar">' + initial + '</div>'
+      + '<div class="friend-name">' + (cached.username||'—') + '</div>'
+      + '<div class="friend-actions">' + extraBtn + '</div>'
+      + '</div>';
+  }
+
+  // Accepted
+  var accEl = document.getElementById('friends-accepted-list');
+  if (accepted.length === 0) {
+    accEl.innerHTML = '<div style="color:#bbb;font-size:13px;">Nessun amico ancora</div>';
+  } else {
+    accEl.innerHTML = accepted.map(function(f) {
+      var otherId = f.sender_id === currentUser.id ? f.receiver_id : f.sender_id;
+      var btn = '<button class="f-btn remove" onclick="removeFriend(' + JSON.stringify(f.id) + ')">Rimuovi</button>';
+      return friendRow(f, otherId, btn);
+    }).join('');
+  }
+
+  // Pending incoming
+  var pendEl = document.getElementById('friends-pending-section');
+  var pendList = document.getElementById('friends-pending-list');
+  if (pending_in.length > 0) {
+    pendEl.style.display = '';
+    pendList.innerHTML = pending_in.map(function(f) {
+      var btns = '<button class="f-btn accept" onclick="acceptFriend(' + JSON.stringify(f.id) + ')">✓</button>'
+               + '<button class="f-btn decline" onclick="declineFriend(' + JSON.stringify(f.id) + ')">✗</button>';
+      return friendRow(f, f.sender_id, btns);
+    }).join('');
+  } else { pendEl.style.display = 'none'; }
+
+  // Pending outgoing
+  var sentEl = document.getElementById('friends-sent-section');
+  var sentList = document.getElementById('friends-sent-list');
+  if (pending_out.length > 0) {
+    sentEl.style.display = '';
+    sentList.innerHTML = pending_out.map(function(f) {
+      var btn = '<span class="friend-status">In attesa...</span>'
+              + '<button class="f-btn remove" onclick="cancelFriend(' + JSON.stringify(f.id) + ')">Annulla</button>';
+      return friendRow(f, f.receiver_id, btn);
+    }).join('');
+  } else { sentEl.style.display = 'none'; }
+}
+
+const allFriendProfiles = {}; // cache username per user_id
+
+async function searchAndAddFriend() {
+  var q = document.getElementById('friend-search-input').value.trim();
+  var res = document.getElementById('friend-search-result');
+  if (!q) return;
+  res.textContent = 'Ricerca...';
+  var result = await sb.from('profiles')
+    .select('id,username,email')
+    .or('username.ilike.' + q + ',email.ilike.' + q)
+    .neq('id', currentUser.id)
+    .limit(1);
+  var data = result.data;
+  if (!data || data.length === 0) { res.textContent = 'Nessun utente trovato'; return; }
+  var target = data[0];
+  allFriendProfiles[target.id] = target;
+  var existing = myFriendships.find(function(f) {
+    return (f.sender_id === currentUser.id && f.receiver_id === target.id) ||
+           (f.sender_id === target.id && f.receiver_id === currentUser.id);
+  });
+  if (existing) {
+    if (existing.status === 'accepted') { res.textContent = 'Siete gia amici!'; return; }
+    if (existing.status === 'pending')  { res.textContent = 'Richiesta gia in sospeso'; return; }
+  }
+  var displayName = target.username || target.email;
+  res.innerHTML = 'Trovato: <strong>' + displayName + '</strong> — <button id="send-req-btn" style="background:#7a9e7e;color:#fff;border:none;border-radius:6px;padding:3px 10px;font-size:12px;cursor:pointer;font-weight:600;">Invia richiesta</button>';
+  document.getElementById('send-req-btn').onclick = function() { sendFriendRequest(target.id); };
+}
+
+async function sendFriendRequest(targetId) {
+  const { error } = await sb.from('friendships').insert({ sender_id: currentUser.id, receiver_id: targetId, status: 'pending' });
+  if (error) { showToast('Errore: ' + error.message); return; }
+  await loadFriendships();
+  // Fetch profile if not cached
+  if (!allFriendProfiles[targetId]) {
+    const { data } = await sb.from('profiles').select('id,username').eq('id', targetId).single();
+    if (data) allFriendProfiles[targetId] = data;
+  }
+  document.getElementById('friend-search-result').textContent = 'Richiesta inviata!';
+  document.getElementById('friend-search-input').value = '';
+  renderFriendsPanel();
+}
+
+async function acceptFriend(friendshipId) {
+  await sb.from('friendships').update({ status: 'accepted' }).eq('id', friendshipId);
+  await loadFriendships();
+  // Cache missing profiles
+  await cacheFriendProfiles();
+  renderFriendsPanel();
+  showToast('Amicizia accettata!');
+}
+async function declineFriend(friendshipId) {
+  await sb.from('friendships').update({ status: 'declined' }).eq('id', friendshipId);
+  await loadFriendships();
+  renderFriendsPanel();
+}
+async function removeFriend(friendshipId) {
+  await sb.from('friendships').delete().eq('id', friendshipId);
+  await loadFriendships();
+  renderFriendsPanel();
+  showToast('Amico rimosso');
+}
+async function cancelFriend(friendshipId) {
+  await sb.from('friendships').delete().eq('id', friendshipId);
+  await loadFriendships();
+  renderFriendsPanel();
+}
+
+async function cacheFriendProfiles() {
+  const ids = [...new Set(myFriendships.flatMap(f => [f.sender_id, f.receiver_id]))].filter(id => id !== currentUser.id && !allFriendProfiles[id]);
+  if (!ids.length) return;
+  const { data } = await sb.from('profiles').select('id,username').in('id', ids);
+  (data||[]).forEach(p => { allFriendProfiles[p.id] = p; });
+}
+
+function getFriendIds() {
+  return myFriendships.filter(f => f.status === 'accepted')
+    .map(f => f.sender_id === currentUser.id ? f.receiver_id : f.sender_id);
+}
+
+function isFriendOfOwner(ownerId) {
+  return getFriendIds().includes(ownerId);
+}
+
+// ── INVITI CAMPIONATO (diretti, no amicizia) ──
+async function inviteToChamp() {
+  const q = document.getElementById('invite-input').value.trim();
+  const res = document.getElementById('invite-result');
+  if (!q || !currentChamp) return;
+  res.textContent = 'Ricerca...';
+  const { data } = await sb.from('profiles')
+    .select('id,username,email')
+    .or('username.ilike.' + q + ',email.ilike.' + q)
+    .neq('id', currentUser.id)
+    .limit(1);
+  if (!data || !data.length) { res.textContent = 'Nessun utente trovato'; return; }
+  const target = data[0];
+  // Check not already member
+  const { data: existing } = await sb.from('champ_members').select('id,role').eq('champ_id', currentChamp.id).eq('user_id', target.id).maybeSingle();
+  if (existing) {
+    const roleLabel = {owner:'owner',player:'già iscritto',pending:'richiesta in attesa',rejected:'rifiutato'}[existing.role]||existing.role;
+    res.textContent = (target.username||target.email) + ' — ' + roleLabel;
+    return;
+  }
+  // Insert directly as 'player'
+  const { error } = await sb.from('champ_members').insert({ champ_id: currentChamp.id, user_id: target.id, username: target.username||target.email, role: 'player' });
+  if (error) { res.textContent = 'Errore: ' + error.message; return; }
+  await loadChampMembers();
+  await scheduleSaveImmediate();
+  res.innerHTML = '<span style="color:#2dc653;font-weight:600;">✓ ' + (target.username||target.email) + ' aggiunto al campionato!</span>';
+  document.getElementById('invite-input').value = '';
+  renderChamp();
+}
+
+// ── GESTIONE ACCESS TIPO IN NUOVO CAMPIONATO ──
+function updateNcPassField(val) {
+  const pf = document.getElementById('nc-pass-field');
+  if (pf) pf.style.display = val === 'password' ? '' : 'none';
+}
 
 </script>
 </body>
