@@ -5,6 +5,210 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DUELIA</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+
+// ══════════════════════════════════════════════════
+// ── AMICIZIE ──────────────────────────────────────
+// ══════════════════════════════════════════════════
+let myFriendships = [];
+
+async function loadFriendships() {
+  const { data } = await sb.from('friendships')
+    .select('id,sender_id,receiver_id,status,created_at')
+    .or('sender_id.eq.' + currentUser.id + ',receiver_id.eq.' + currentUser.id);
+  myFriendships = data || [];
+  updateFriendsBadge();
+}
+
+function updateFriendsBadge() {
+  const pending = myFriendships.filter(f => f.receiver_id === currentUser.id && f.status === 'pending');
+  const badge = document.getElementById('friends-badge');
+  if (!badge) return;
+  if (pending.length > 0) { badge.style.display = 'flex'; badge.textContent = pending.length; }
+  else { badge.style.display = 'none'; }
+}
+
+function openFriendsPanel() {
+  renderFriendsPanel();
+  document.getElementById('friends-overlay').classList.add('open');
+}
+function closeFriendsPanel() {
+  document.getElementById('friends-overlay').classList.remove('open');
+}
+
+function renderFriendsPanel() {
+  const accepted = myFriendships.filter(f => f.status === 'accepted');
+  const pending_in = myFriendships.filter(f => f.receiver_id === currentUser.id && f.status === 'pending');
+  const pending_out = myFriendships.filter(f => f.sender_id === currentUser.id && f.status === 'pending');
+
+  // Accepted
+  const accEl = document.getElementById('friends-accepted-list');
+  if (accepted.length === 0) {
+    accEl.innerHTML = '<div style="color:#bbb;font-size:13px;">Nessun amico ancora</div>';
+  } else {
+    accEl.innerHTML = accepted.map(f => {
+      const otherId = f.sender_id === currentUser.id ? f.receiver_id : f.sender_id;
+      const cached = allFriendProfiles[otherId] || { username: otherId.substring(0,8)+'…' };
+      return '<div class="friend-row">'
+        + '<div class="friend-avatar">' + (cached.username||'?')[0].toUpperCase() + '</div>'
+        + '<div class="friend-name">' + (cached.username||'—') + '</div>'
+        + '<div class="friend-actions"><button class="f-btn remove" onclick="removeFriend('' + f.id + '')">Rimuovi</button></div>'
+        + '</div>';
+    }).join('');
+  }
+
+  // Pending incoming
+  const pendEl = document.getElementById('friends-pending-section');
+  const pendList = document.getElementById('friends-pending-list');
+  if (pending_in.length > 0) {
+    pendEl.style.display = '';
+    pendList.innerHTML = pending_in.map(f => {
+      const cached = allFriendProfiles[f.sender_id] || { username: f.sender_id.substring(0,8)+'…' };
+      return '<div class="friend-row">'
+        + '<div class="friend-avatar">' + (cached.username||'?')[0].toUpperCase() + '</div>'
+        + '<div class="friend-name">' + (cached.username||'—') + '</div>'
+        + '<div class="friend-actions">'
+        + '<button class="f-btn accept" onclick="acceptFriend('' + f.id + '')">✓</button>'
+        + '<button class="f-btn decline" onclick="declineFriend('' + f.id + '')">✗</button>'
+        + '</div></div>';
+    }).join('');
+  } else { pendEl.style.display = 'none'; }
+
+  // Pending outgoing
+  const sentEl = document.getElementById('friends-sent-section');
+  const sentList = document.getElementById('friends-sent-list');
+  if (pending_out.length > 0) {
+    sentEl.style.display = '';
+    sentList.innerHTML = pending_out.map(f => {
+      const cached = allFriendProfiles[f.receiver_id] || { username: f.receiver_id.substring(0,8)+'…' };
+      return '<div class="friend-row">'
+        + '<div class="friend-avatar" style="background:#aaa;">' + (cached.username||'?')[0].toUpperCase() + '</div>'
+        + '<div class="friend-name">' + (cached.username||'—') + '</div>'
+        + '<div class="friend-status">In attesa</div>'
+        + '<div class="friend-actions"><button class="f-btn remove" onclick="cancelFriend('' + f.id + '')">Annulla</button></div>'
+        + '</div>';
+    }).join('');
+  } else { sentEl.style.display = 'none'; }
+}
+
+const allFriendProfiles = {}; // cache username per user_id
+
+async function searchAndAddFriend() {
+  const q = document.getElementById('friend-search-input').value.trim();
+  const res = document.getElementById('friend-search-result');
+  if (!q) return;
+  res.textContent = 'Ricerca...';
+  // Search by username or email
+  const { data } = await sb.from('profiles')
+    .select('id,username,email')
+    .or('username.ilike.' + q + ',email.ilike.' + q)
+    .neq('id', currentUser.id)
+    .limit(1);
+  if (!data || data.length === 0) { res.textContent = 'Nessun utente trovato'; return; }
+  const target = data[0];
+  allFriendProfiles[target.id] = target;
+  // Check if already friends or pending
+  const existing = myFriendships.find(f =>
+    (f.sender_id === currentUser.id && f.receiver_id === target.id) ||
+    (f.sender_id === target.id && f.receiver_id === currentUser.id));
+  if (existing) {
+    if (existing.status === 'accepted') { res.textContent = 'Siete già amici!'; return; }
+    if (existing.status === 'pending') { res.textContent = 'Richiesta già in sospeso'; return; }
+  }
+  res.innerHTML = 'Trovato: <strong>' + (target.username||target.email) + '</strong> — '
+    + '<button onclick="sendFriendRequest('' + target.id + '')" style="background:#7a9e7e;color:#fff;border:none;border-radius:6px;padding:3px 10px;font-size:12px;cursor:pointer;font-weight:600;">Invia richiesta</button>';
+}
+
+async function sendFriendRequest(targetId) {
+  const { error } = await sb.from('friendships').insert({ sender_id: currentUser.id, receiver_id: targetId, status: 'pending' });
+  if (error) { showToast('Errore: ' + error.message); return; }
+  await loadFriendships();
+  // Fetch profile if not cached
+  if (!allFriendProfiles[targetId]) {
+    const { data } = await sb.from('profiles').select('id,username').eq('id', targetId).single();
+    if (data) allFriendProfiles[targetId] = data;
+  }
+  document.getElementById('friend-search-result').textContent = 'Richiesta inviata!';
+  document.getElementById('friend-search-input').value = '';
+  renderFriendsPanel();
+}
+
+async function acceptFriend(friendshipId) {
+  await sb.from('friendships').update({ status: 'accepted' }).eq('id', friendshipId);
+  await loadFriendships();
+  // Cache missing profiles
+  await cacheFriendProfiles();
+  renderFriendsPanel();
+  showToast('Amicizia accettata!');
+}
+async function declineFriend(friendshipId) {
+  await sb.from('friendships').update({ status: 'declined' }).eq('id', friendshipId);
+  await loadFriendships();
+  renderFriendsPanel();
+}
+async function removeFriend(friendshipId) {
+  await sb.from('friendships').delete().eq('id', friendshipId);
+  await loadFriendships();
+  renderFriendsPanel();
+  showToast('Amico rimosso');
+}
+async function cancelFriend(friendshipId) {
+  await sb.from('friendships').delete().eq('id', friendshipId);
+  await loadFriendships();
+  renderFriendsPanel();
+}
+
+async function cacheFriendProfiles() {
+  const ids = [...new Set(myFriendships.flatMap(f => [f.sender_id, f.receiver_id]))].filter(id => id !== currentUser.id && !allFriendProfiles[id]);
+  if (!ids.length) return;
+  const { data } = await sb.from('profiles').select('id,username').in('id', ids);
+  (data||[]).forEach(p => { allFriendProfiles[p.id] = p; });
+}
+
+function getFriendIds() {
+  return myFriendships.filter(f => f.status === 'accepted')
+    .map(f => f.sender_id === currentUser.id ? f.receiver_id : f.sender_id);
+}
+
+function isFriendOfOwner(ownerId) {
+  return getFriendIds().includes(ownerId);
+}
+
+// ── INVITI CAMPIONATO (diretti, no amicizia) ──
+async function inviteToChamp() {
+  const q = document.getElementById('invite-input').value.trim();
+  const res = document.getElementById('invite-result');
+  if (!q || !currentChamp) return;
+  res.textContent = 'Ricerca...';
+  const { data } = await sb.from('profiles')
+    .select('id,username,email')
+    .or('username.ilike.' + q + ',email.ilike.' + q)
+    .neq('id', currentUser.id)
+    .limit(1);
+  if (!data || !data.length) { res.textContent = 'Nessun utente trovato'; return; }
+  const target = data[0];
+  // Check not already member
+  const { data: existing } = await sb.from('champ_members').select('id,role').eq('champ_id', currentChamp.id).eq('user_id', target.id).maybeSingle();
+  if (existing) {
+    const roleLabel = {owner:'owner',player:'già iscritto',pending:'richiesta in attesa',rejected:'rifiutato'}[existing.role]||existing.role;
+    res.textContent = (target.username||target.email) + ' — ' + roleLabel;
+    return;
+  }
+  // Insert directly as 'player'
+  const { error } = await sb.from('champ_members').insert({ champ_id: currentChamp.id, user_id: target.id, username: target.username||target.email, role: 'player' });
+  if (error) { res.textContent = 'Errore: ' + error.message; return; }
+  await loadChampMembers();
+  await scheduleSaveImmediate();
+  res.innerHTML = '<span style="color:#2dc653;font-weight:600;">✓ ' + (target.username||target.email) + ' aggiunto al campionato!</span>';
+  document.getElementById('invite-input').value = '';
+  renderChamp();
+}
+
+// ── GESTIONE ACCESS TIPO IN NUOVO CAMPIONATO ──
+function updateNcPassField(val) {
+  const pf = document.getElementById('nc-pass-field');
+  if (pf) pf.style.display = val === 'password' ? '' : 'none';
+}
+
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
@@ -363,6 +567,32 @@ select:focus{border-color:#1a1a1a;}
 .champ-grid.list-grid .champ-card-name{font-size:14px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .champ-grid.list-grid .champ-card-meta{font-size:12px;color:#aaa;white-space:nowrap;}
 .champ-grid.list-grid .badge-access{margin-top:0;flex-shrink:0;}
+
+/* friends */
+.friends-btn{position:relative;background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:5px 10px;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:4px;}
+.friends-btn:hover{background:rgba(255,255,255,.3);}
+.notif-badge{position:absolute;top:-4px;right:-4px;background:#e05050;color:#fff;border-radius:50%;width:16px;height:16px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;display:none;}
+.friends-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;display:none;align-items:flex-start;justify-content:flex-end;padding:60px 16px 0;}
+.friends-overlay.open{display:flex;}
+.friends-panel{background:#fff;border-radius:16px;width:340px;max-height:80vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.18);padding:20px;}
+.friends-panel h3{font-size:16px;font-weight:700;margin-bottom:14px;}
+.friend-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f0ede6;}
+.friend-row:last-child{border-bottom:none;}
+.friend-avatar{width:32px;height:32px;border-radius:50%;background:#7a9e7e;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;}
+.friend-name{flex:1;font-size:13px;font-weight:600;}
+.friend-status{font-size:11px;color:#aaa;}
+.friend-actions{display:flex;gap:4px;}
+.f-btn{padding:4px 10px;border-radius:6px;border:none;font-size:12px;font-weight:600;cursor:pointer;}
+.f-btn.accept{background:#e8f8e8;color:#2dc653;}
+.f-btn.decline{background:#fde8e8;color:#e05050;}
+.f-btn.remove{background:#f5f3ef;color:#aaa;}
+.search-friend-row{display:flex;gap:8px;margin-bottom:14px;}
+.search-friend-row input{flex:1;padding:8px 12px;border:1px solid #e0ddd6;border-radius:8px;font-size:13px;outline:none;}
+.search-friend-row button{padding:8px 14px;background:#7a9e7e;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer;font-weight:600;}
+.invite-section{margin-top:16px;padding-top:16px;border-top:1px solid #f0ede6;}
+.invite-section h4{font-size:13px;font-weight:700;margin-bottom:10px;color:#555;}
+.badge-closed{background:#2a1a1a;color:#e08080;font-size:10px;font-weight:700;border-radius:4px;padding:2px 6px;margin-left:4px;}
+.badge-closed-card{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;background:#fff0f0;color:#c04040;}
 </style>
 </head>
 <body>
@@ -412,6 +642,9 @@ select:focus{border-color:#1a1a1a;}
     <h1 style="font-size:20px;font-weight:900;letter-spacing:1px;">DUELIA</h1>
     <div class="right">
       <span id="home-username" style="font-size:13px;color:rgba(255,255,255,.7);"></span>
+      <button class="friends-btn" onclick="openFriendsPanel()" title="Amici">
+        👥<span id="friends-badge" class="notif-badge">0</span>
+      </button>
       <button class="hbtn" onclick="showPage('page-dashboard')">Dashboard</button>
       <button class="hbtn red" onclick="doLogout()">Esci</button>
     </div>
@@ -567,6 +800,36 @@ select:focus{border-color:#1a1a1a;}
     <iframe id="replay-iframe" src="" allowfullscreen allow="autoplay;encrypted-media" style="width:100%;height:100%;border:none;"></iframe>
   </div>
 </div>
+
+<!-- Friends panel overlay -->
+<div class="friends-overlay" id="friends-overlay" onclick="if(event.target===this)closeFriendsPanel()">
+  <div class="friends-panel">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <h3 style="margin:0;">👥 Amici</h3>
+      <button onclick="closeFriendsPanel()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#bbb;">×</button>
+    </div>
+    <!-- Cerca e aggiungi -->
+    <div class="search-friend-row">
+      <input type="text" id="friend-search-input" placeholder="Username o email..." onkeydown="if(event.key==='Enter')searchAndAddFriend()"/>
+      <button onclick="searchAndAddFriend()">Aggiungi</button>
+    </div>
+    <div id="friend-search-result" style="font-size:12px;margin-bottom:10px;min-height:16px;"></div>
+    <!-- Richieste in arrivo -->
+    <div id="friends-pending-section" style="display:none;">
+      <div style="font-size:11px;font-weight:700;color:#e06000;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">Richieste in arrivo</div>
+      <div id="friends-pending-list"></div>
+    </div>
+    <!-- Amici accettati -->
+    <div style="font-size:11px;font-weight:700;color:#aaa;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;margin-top:12px;">I miei amici</div>
+    <div id="friends-accepted-list"><div style="color:#bbb;font-size:13px;">Nessun amico ancora</div></div>
+    <!-- Richieste inviate -->
+    <div id="friends-sent-section" style="display:none;margin-top:12px;">
+      <div style="font-size:11px;font-weight:700;color:#aaa;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">Richieste inviate</div>
+      <div id="friends-sent-list"></div>
+    </div>
+  </div>
+</div>
+
 <!-- ══ MODALS / PANELS ══ -->
 
 <!-- Access modal (password per campionato privato) -->
@@ -612,9 +875,10 @@ select:focus{border-color:#1a1a1a;}
     <div class="field"><label>Anno / Stagione</label><input type="text" id="nc-season" placeholder="2026"/></div>
     <div class="field">
       <label>Accesso</label>
-      <select id="nc-access">
-        <option value="password">Password richiesta</option>
-        <option value="public">Pubblico (chiunque può vedere)</option>
+      <select id="nc-access" onchange="updateNcPassField(this.value)">
+        <option value="public">Pubblico — chiunque può richiedere iscrizione</option>
+        <option value="closed">Chiuso — solo chi inviti può iscriversi</option>
+        <option value="password">Password — accesso con codice</option>
       </select>
     </div>
     <div class="field" id="nc-pass-field">
@@ -852,6 +1116,7 @@ async function showHome() {
   const {data:profile} = await sb.auth.getUser();
   const username = profile?.user?.user_metadata?.username || currentUser?.email?.split('@')[0] || 'Utente';
   document.getElementById('home-username').textContent = username;
+  loadFriendships().then(cacheFriendProfiles);
   showPage('page-home');
   await loadChampionshipsHome();
   await loadDashboard();
@@ -934,8 +1199,9 @@ function renderFavs() {
 
 async function loadChampionshipsHome() {
   const [{data:champs, error}, ] = await Promise.all([
-    sb.from('championships').select('id,name,season,access,owner_id,created_at').order('created_at',{ascending:false}),
-    loadFavs()
+    sb.from('championships').select('id,name,season,access,closed,owner_id,created_at').order('created_at',{ascending:false}),
+    loadFavs(),
+    loadFriendships()
   ]);
   if (error) { showToast('Errore caricamento campionati'); return; }
 
@@ -988,9 +1254,12 @@ function renderAllChamps() {
 function champCard(c, inFavSection=false) {
   const mine = c.owner_id === currentUser.id;
   const fav  = isFav(c.id);
-  const badge = c.access==='public'
-    ? `<span class="badge-access badge-pub">🌐 Pubblico</span>`
-    : `<span class="badge-access badge-priv">🔒 Password</span>`;
+  const isClosed = c.access === 'closed' || c.closed;
+  const badge = isClosed
+    ? '<span class="badge-access badge-priv">🔒 Chiuso</span>'
+    : c.access==='public'
+      ? '<span class="badge-access badge-pub">🌐 Pubblico</span>'
+      : '<span class="badge-access badge-priv">🔒 Password</span>';
   const favStar = !mine && !inFavSection ? `<span class="card-fav-star ${fav?'active':''}" onclick="event.stopPropagation();toggleFavById('${c.id}')" title="${fav?'Rimuovi dai preferiti':'Aggiungi ai preferiti'}">${fav?'★':'☆'}</span>` : '';
   const favStarFavSection = inFavSection ? `<span class="card-fav-star active" onclick="event.stopPropagation();toggleFavById('${c.id}')" title="Rimuovi dai preferiti">★</span>` : '';
   return `<div class="champ-card ${mine?'champ-card-mine':''}" onclick="openChampionship('${c.id}')">
@@ -1292,12 +1561,20 @@ function renderJoinBanner() {
     return;
   }
 
-  // Non-member: show join button
+  // Non-member: show join button or "su invito" based on access type
   if (!status) {
-    el.innerHTML = '<div style="margin:12px 0;background:#f0f7ff;border:1px solid #b0d0f0;border-radius:12px;padding:14px;text-align:center;">'
-      + '<div style="font-size:13px;color:#555;margin-bottom:10px;">Vuoi partecipare a questo campionato?</div>'
-      + '<button onclick="requestJoin()" style="background:#1d7eda;color:#fff;border:none;border-radius:10px;padding:9px 24px;font-size:14px;font-weight:700;cursor:pointer;">Richiedi iscrizione</button>'
-      + '</div>';
+    const isClosed = currentChamp.access === 'closed' || currentChamp.closed;
+    const canRequest = !isClosed || isFriendOfOwner(currentChamp.owner_id);
+    if (canRequest) {
+      el.innerHTML = '<div style="margin:12px 0;background:#f0f7ff;border:1px solid #b0d0f0;border-radius:12px;padding:14px;text-align:center;">'
+        + '<div style="font-size:13px;color:#555;margin-bottom:10px;">Vuoi partecipare a questo campionato?</div>'
+        + '<button onclick="requestJoin()" style="background:#1d7eda;color:#fff;border:none;border-radius:10px;padding:9px 24px;font-size:14px;font-weight:700;cursor:pointer;">Richiedi iscrizione</button>'
+        + '</div>';
+    } else {
+      el.innerHTML = '<div style="margin:12px 0;background:#f5f3ef;border:1px solid #e0ddd6;border-radius:12px;padding:12px 14px;text-align:center;font-size:13px;color:#aaa;">'
+        + "🔒 Campionato su invito — solo gli amici dell'organizzatore possono richiedere l'iscrizione"
+        + '</div>';
+    }
     return;
   }
   if (status === 'pending') {
@@ -1958,33 +2235,46 @@ function saveLiveUrl(url){champData.liveUrl=url.trim();scheduleSave();renderLive
 
 // SETTINGS
 function renderManageSettings(){
-  document.getElementById('manage-body').innerHTML=`
-    <p class="manage-hint">Impostazioni del campionato</p>
-    <div style="font-family:monospace;font-size:11px;color:#aaa;background:#f5f3ef;border-radius:8px;padding:8px 12px;margin-bottom:12px;word-break:break-all;"><span style="font-size:10px;color:#bbb;display:block;margin-bottom:2px;">ID Campionato</span>${currentChamp?.id||'—'}</div>
-    <div class="prize-input-row" style="margin-bottom:10px;">
-      <span class="prize-input-icon">🏆</span>
-      <input class="prize-field" type="text" id="set-champ-name"
-        placeholder="Nome campionato anno"
-        value="${(champData.championship||'')+' '+(champData.season||'')}"
-        onblur="saveChampName(this.value)" onkeydown="if(event.key==='Enter')this.blur()"/>
-    </div>
-    <div style="height:1px;background:#f0ede6;margin:12px 0;"></div>
-    <p class="manage-hint" style="margin-bottom:8px;">Password accesso campionato</p>
-    <div class="prize-input-row" style="margin-bottom:10px;">
-      <span class="prize-input-icon">🔒</span>
-      <input class="prize-field" type="text" id="set-champ-pass"
-        placeholder="Nuova password..."
-        value="${currentChamp?.password_hash||''}"/>
-    </div>
-    <div class="prize-input-row" style="margin-bottom:10px;">
-      <span class="prize-input-icon">🌐</span>
-      <select class="prize-field" id="set-champ-access" style="border:none;outline:none;font-size:14px;background:transparent;">
-        <option value="password" ${currentChamp?.access==='password'?'selected':''}>Password richiesta</option>
-        <option value="public" ${currentChamp?.access==='public'?'selected':''}>Pubblico</option>
-      </select>
-    </div>
-    <button class="btn-primary" style="margin-top:8px;" onclick="saveChampSettings()">Salva impostazioni</button>`;
+  var champNameVal = ((champData.championship||'') + ' ' + (champData.season||'')).trim();
+  var html = '<p class="manage-hint">Impostazioni del campionato</p>';
+  html += '<div style="font-family:monospace;font-size:11px;color:#aaa;background:#f5f3ef;border-radius:8px;padding:8px 12px;margin-bottom:12px;word-break:break-all;"><span style="font-size:10px;color:#bbb;display:block;margin-bottom:2px;">ID Campionato</span>' + (currentChamp&&currentChamp.id||'—') + '</div>';
+  html += '<div class="prize-input-row" style="margin-bottom:10px;">';
+  html += '<span class="prize-input-icon">🏆</span>';
+  var safeChampName = champNameVal.split('"').join('&quot;');
+  html += '<input class="prize-field" type="text" id="set-champ-name" placeholder="Nome campionato anno" value="' + safeChampName + '" onblur="saveChampName(this.value)" onkeydown="if(event.key===\'Enter\')this.blur()"/>';
+  html += '</div>';
+  html += '<div style="height:1px;background:#f0ede6;margin:12px 0;"></div>';
+  html += '<p class="manage-hint" style="margin-bottom:8px;">Tipo di accesso</p>';
+  html += '<div class="prize-input-row" style="margin-bottom:10px;">';
+  html += '<span class="prize-input-icon">🌐</span>';
+  html += '<select class="prize-field" id="set-champ-access" style="border:none;outline:none;font-size:14px;background:transparent;">';
+  html += '<option value="public"' + (currentChamp&&currentChamp.access==='public'?' selected':'') + '>Pubblico — chiunque può richiedere iscrizione</option>';
+  html += '<option value="closed"' + (currentChamp&&(currentChamp.access==='closed'||currentChamp.closed)?' selected':'') + '>Chiuso — solo chi inviti può iscriversi</option>';
+  html += '<option value="password"' + (currentChamp&&currentChamp.access==='password'?' selected':'') + '>Password — accesso con codice</option>';
+  html += '</select></div>';
+  var showPass = currentChamp && currentChamp.access==='password';
+  html += '<div class="prize-input-row" style="margin-bottom:10px;' + (showPass?'':'display:none;') + '" id="set-pass-row">';
+  html += '<span class="prize-input-icon">🔒</span>';
+  html += '<input class="prize-field" type="text" id="set-champ-pass" placeholder="Password di accesso..." value="' + ((currentChamp&&currentChamp.password_hash)||'').replace(/"/g,'&quot;') + '"/>';
+  html += '</div>';
+  html += '<button class="btn-primary" style="margin-top:8px;" onclick="saveChampSettings()">Salva impostazioni</button>';
+  html += '<div class="invite-section">';
+  html += '<h4>Invita al campionato</h4>';
+  html += '<p style="font-size:12px;color:#aaa;margin-bottom:10px;">Cerca un utente per username o email e invitalo direttamente — non serve che sia tuo amico.</p>';
+  html += '<div class="search-friend-row" style="margin-bottom:6px;">';
+  html += '<input type="text" id="invite-input" placeholder="Username o email..."/>';
+  html += '<button onclick="inviteToChamp()">Invita</button>';
+  html += '</div>';
+  html += '<div id="invite-result" style="font-size:12px;min-height:16px;"></div>';
+  html += '</div>';
+  document.getElementById('manage-body').innerHTML = html;
+  var sel = document.getElementById('set-champ-access');
+  if (sel) sel.addEventListener('change', function(e){
+    var row = document.getElementById('set-pass-row');
+    if (row) row.style.display = e.target.value==='password' ? '' : 'none';
+  });
 }
+
 function saveChampName(val){
   val=val.trim();if(!val)return;
   const parts=val.split(' ');const last=parts[parts.length-1];
@@ -1993,17 +2283,26 @@ function saveChampName(val){
   scheduleSave();renderChamp();
 }
 async function saveChampSettings(){
-  const pass  =document.getElementById('set-champ-pass').value.trim();
-  const access=document.getElementById('set-champ-access').value;
-  // Sync name/season from champData (updated by saveChampName) to the top-level DB columns
+  const pass   = (document.getElementById('set-champ-pass')||{}).value?.trim() || '';
+  const access = document.getElementById('set-champ-access').value;
   const newName = [champData.championship, champData.season].filter(Boolean).join(' ') || currentChamp.name;
   const newSeason = champData.season || '';
-  const {error}=await sb.from('championships').update({access,password_hash:pass,name:newName,season:newSeason}).eq('id',currentChamp.id);
+  const closed = access === 'closed';
+  const {error} = await sb.from('championships').update({
+    access: closed ? 'public' : access, // store 'public' in access col, use closed flag
+    closed,
+    password_hash: pass,
+    name: newName,
+    season: newSeason
+  }).eq('id', currentChamp.id);
   if(error){showToast('Errore salvataggio');return;}
-  currentChamp.access=access;currentChamp.password_hash=pass;currentChamp.name=newName;currentChamp.season=newSeason;
-  // Aggiorna anche la cache home così la ricerca riflette il nuovo nome
+  currentChamp.access = closed ? 'closed' : access;
+  currentChamp.closed = closed;
+  currentChamp.password_hash = pass;
+  currentChamp.name = newName;
+  currentChamp.season = newSeason;
   const idx = allChamps.findIndex(c=>c.id===currentChamp.id);
-  if(idx!==-1){allChamps[idx].name=newName;allChamps[idx].season=newSeason;allChamps[idx].access=access;}
+  if(idx!==-1){allChamps[idx].name=newName;allChamps[idx].season=newSeason;allChamps[idx].access=currentChamp.access;allChamps[idx].closed=closed;}
   showToast('Impostazioni salvate!');
 }
 
@@ -2399,34 +2698,36 @@ function renderRRMatches() {
 
 
 // Round-robin scheduling — handles both single and double legs
+function scheduleLegs(legMatches, plist) {
+  var n = plist.length % 2 === 0 ? plist.length : plist.length + 1;
+  var rounds = [];
+  var list = plist.slice();
+  if (list.length % 2 !== 0) list.push('BYE');
+  for (var r = 0; r < n-1; r++) {
+    var round = [];
+    for (var i = 0; i < n/2; i++) {
+      var p1 = list[i], p2 = list[n-1-i];
+      if (p1==='BYE'||p2==='BYE') continue;
+      var match = legMatches.find(function(m){ return m.p1===p1&&m.p2===p2; });
+      if (!match) match = legMatches.find(function(m){ return m.p1===p2&&m.p2===p1; });
+      if (match) round.push(match);
+    }
+    if (round.length) rounds.push(round);
+    list.splice(1, 0, list.pop());
+  }
+  // Unscheduled
+  var scheduled = rounds.reduce(function(a,r){ return a.concat(r.map(function(m){return m.id;})); }, []);
+  var extra = legMatches.filter(function(m){ return scheduled.indexOf(m.id)===-1; });
+  if (extra.length) rounds.push(extra);
+  return rounds;
+}
+
 function groupRRRounds(matches, players) {
   if (players.length < 2) return [matches];
   var andataMatches  = matches.filter(function(m){ return !m.returnLeg; });
   var ritornoMatches = matches.filter(function(m){ return  m.returnLeg; });
 
-  function scheduleLegs(legMatches, plist) {
-    var n = plist.length % 2 === 0 ? plist.length : plist.length + 1;
-    var rounds = [];
-    var list = plist.slice();
-    if (list.length % 2 !== 0) list.push('BYE');
-    for (var r = 0; r < n-1; r++) {
-      var round = [];
-      for (var i = 0; i < n/2; i++) {
-        var p1 = list[i], p2 = list[n-1-i];
-        if (p1==='BYE'||p2==='BYE') continue;
-        var match = legMatches.find(function(m){ return m.p1===p1&&m.p2===p2; });
-        if (!match) match = legMatches.find(function(m){ return m.p1===p2&&m.p2===p1; });
-        if (match) round.push(match);
-      }
-      if (round.length) rounds.push(round);
-      list.splice(1, 0, list.pop());
-    }
-    // Unscheduled
-    var scheduled = rounds.reduce(function(a,r){ return a.concat(r.map(function(m){return m.id;})); }, []);
-    var extra = legMatches.filter(function(m){ return scheduled.indexOf(m.id)===-1; });
-    if (extra.length) rounds.push(extra);
-    return rounds;
-  }
+
 
   var andataRounds = scheduleLegs(andataMatches, players);
   if (ritornoMatches.length === 0) return andataRounds;
