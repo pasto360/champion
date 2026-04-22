@@ -470,11 +470,14 @@ select:focus{border-color:#1a1a1a;}
       </div>
       <button class="btn-new" onclick="openNewChampModal()">+ Nuovo campionato</button>
     </div>
-    <div class="sec-title" id="my-champs-title">I miei campionati</div>
-    <div class="champ-grid" id="my-champs-grid"></div>
+    <div class="sec-title" id="my-champs-title">Da me creati</div>
+    <div class="champ-grid list-grid" id="my-champs-grid"></div>
 
     <div class="sec-title" id="my-favs-title" style="display:none;">⭐ Preferiti</div>
-    <div class="champ-grid" id="my-favs-grid"></div>
+    <div class="champ-grid list-grid" id="my-favs-grid"></div>
+
+    <div class="sec-title" id="my-joined-title" style="display:none;">🎮 Partecipazione</div>
+    <div class="champ-grid list-grid" id="my-joined-grid"></div>
 
     <!-- SEARCH -->
     <div class="search-bar">
@@ -1030,6 +1033,24 @@ function renderFavs() {
   grid.innerHTML = favChamps.map(c => champCard(c, true)).join('');
 }
 
+async function renderJoinedChamps() {
+  // Get champ_ids where current user is player (not owner)
+  const { data: memberships } = await sb.from('champ_members')
+    .select('champ_id')
+    .eq('user_id', currentUser.id)
+    .eq('role', 'player');
+
+  const joinedIds = (memberships||[]).map(m => m.champ_id);
+  const joined = allChamps.filter(c => joinedIds.includes(c.id) && c.owner_id !== currentUser.id);
+
+  const title = document.getElementById('my-joined-title');
+  const grid  = document.getElementById('my-joined-grid');
+  if (!title || !grid) return;
+  title.style.display = joined.length ? 'block' : 'none';
+  grid.style.display  = joined.length ? '' : 'none';
+  grid.innerHTML = joined.map(c => champCard(c)).join('');
+}
+
 async function loadChampionshipsHome() {
   const [{data:champs, error}, ] = await Promise.all([
     sb.from('championships').select('id,name,season,access,closed,owner_id,created_at').order('created_at',{ascending:false}),
@@ -1045,6 +1066,9 @@ async function loadChampionshipsHome() {
   document.getElementById('my-champs-title').style.display = mine.length?'block':'none';
   myGrid.style.display = mine.length?'':'none';
   myGrid.innerHTML = mine.map(c=>champCard(c)).join('');
+
+  // Partecipazione: campionati dove sono player (non owner)
+  await renderJoinedChamps();
 
   renderFavs();
   currentPage = 1;
@@ -2707,7 +2731,8 @@ function renderElimBracketInline() {
   if (!el) return;
   const bracket = champData.elimBracket;
   if (!bracket) {
-    renderElimSetup(el);
+    if (isOwner) renderElimSetup(el);
+    else el.innerHTML = "<div style='color:#bbb;padding:16px;font-size:13px;'>Il tabellone non ancora creato dall'organizzatore.</div>";
     return;
   }
   propagateElimWinners();
@@ -2854,7 +2879,7 @@ function setupElimSize(n) {
   elimSetupSize = n;
   elimSetupSeeds = new Array(n).fill(null);
   const players = champData.players||[];
-  const el = document.getElementById('elim-content');
+  const el = document.getElementById('elim-bracket-inline') || document.getElementById('elim-content');
   let html = `<div class="sec-hdr"><span class="sec-lbl">Tabellone da ${n}</span></div>`;
   html += '<p style="font-size:12px;color:#888;margin-bottom:12px;">Assegna i giocatori ai seed (posizioni nel tabellone)</p>';
   html += '<div class="elim-setup-grid">';
@@ -2897,6 +2922,9 @@ function confirmElimBracket() {
   const n=elimSetupSize;
   if(elimSetupSeeds.slice(0,n).some(s=>!s)){showToast('Assegna tutti i seed');return;}
   champData.elimBracket=generateElimBracket(elimSetupSeeds.slice(0,n));
+  // Clear both possible containers
+  var ec = document.getElementById('elim-content');
+  if (ec) ec.innerHTML = '';
   scheduleSave();renderChamp();showToast('Tabellone creato!');
 }
 function resetElimBracket() {
