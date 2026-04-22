@@ -1,22 +1,12 @@
-<!DOCTYPE html>
-<html lang="it">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DUELIA</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
-
-
-
-
-</script>
+<!DOCTYPE htm</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{
-  --bg:#f5f4f0;--card:#fff;--border:#e8e6e0;--border2:#d0cdc5;
-  --text:#1a1a1a;--muted:#888;--faint:#bbb;
-  --accent:#1a1a1a;--red:#e63946;--gold:#d4a017;
+  --bg:#0d0d14;--card:#15151f;--border:#2a2a3a;--border2:#3a3a50;
+  --text:#e8e8f0;--muted:#8888aa;--faint:#44445a;
+  --accent:#8b5cf6;--red:#e63946;--gold:#d4a017;
+  --violet:#8b5cf6;--violet2:#6d28d9;--violet-glow:rgba(139,92,246,0.25);
   --green:#2dc653;--blue:#1d7eda;
 }
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
@@ -27,7 +17,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 /* ── SHARED HEADER ── */
 .app-header{
-  background:#7a9e7e;color:#fff;height:56px;
+  background:linear-gradient(135deg,var(--violet2),var(--violet));color:#fff;height:56px;
   display:flex;align-items:center;justify-content:space-between;
   padding:0 20px;position:sticky;top:0;z-index:100;
 }
@@ -39,17 +29,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 /* ── AUTH PAGE ── */
 .auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
-.auth-box{background:#fff;border-radius:20px;border:1px solid var(--border);padding:36px 32px;width:100%;max-width:400px;}
+.auth-box{background:rgba(15,15,28,0.95);border-radius:16px;border:1px solid var(--border);padding:32px 28px;width:100%;max-width:380px;backdrop-filter:blur(20px);}
 .auth-logo{font-size:28px;font-weight:800;text-align:center;margin-bottom:4px;}
 .auth-sub{font-size:13px;color:var(--muted);text-align:center;margin-bottom:28px;}
 .auth-tabs{display:flex;border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:24px;}
 .auth-tab{flex:1;padding:10px;text-align:center;font-size:13px;font-weight:600;background:none;border:none;cursor:pointer;color:var(--muted);}
-.auth-tab.active{background:#1a1a1a;color:#fff;}
+.auth-tab.active{background:var(--violet);color:#fff;}
 .field{margin-bottom:14px;}
 .field label{display:block;font-size:12px;font-weight:600;color:#666;margin-bottom:5px;}
-.field input{width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:10px;font-size:15px;outline:none;background:#fff;}
-.field input:focus{border-color:#1a1a1a;}
-.btn-primary{width:100%;padding:13px;background:#1a1a1a;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;margin-top:4px;}
+.field input{width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:10px;font-size:15px;outline:none;background:rgba(255,255,255,.06);color:var(--text);}
+.field input:focus{border-color:var(--violet);}
+.btn-primary{width:100%;padding:13px;background:var(--violet);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;margin-top:4px;}
 .btn-primary:active{opacity:.8;}
 .btn-primary:disabled{opacity:.4;cursor:not-allowed;}
 .auth-err{font-size:13px;color:var(--red);margin-top:10px;text-align:center;min-height:18px;}
@@ -59,13 +49,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .welcome-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px;}
 .welcome-bar h2{font-size:18px;font-weight:700;}
 .welcome-bar p{font-size:13px;color:var(--muted);margin-top:2px;}
-.btn-new{background:#7a9e7e;color:#1a1a1a;border:none;padding:10px 18px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;}
+.btn-new{background:var(--violet);color:#fff;border:none;padding:10px 18px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;}
 .btn-new:active{opacity:.8;}
 
 .sec-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#999;margin-bottom:12px;}
 
 .champ-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-bottom:32px;}
-.champ-card{background:#fff;border-radius:14px;border:1px solid var(--border);padding:16px 18px;cursor:pointer;transition:box-shadow .2s;}
+.champ-card{background:var(--card);border-radius:14px;border:1px solid var(--border);padding:16px 18px;cursor:pointer;transition:box-shadow .2s;}
 .champ-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.08);}
 .champ-card-name{font-size:16px;font-weight:700;margin-bottom:3px;}
 .champ-card-meta{font-size:12px;color:var(--muted);}
@@ -82,7 +72,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 /* ── ACCESS MODAL ── */
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;align-items:flex-end;justify-content:center;}
 .overlay.open{display:flex;}
-.sheet{background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:24px 24px 40px;position:relative;max-height:90vh;overflow-y:auto;}
+.sheet{background:var(--card);border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:24px 24px 40px;position:relative;max-height:90vh;overflow-y:auto;}
 @media(min-width:520px){.overlay{align-items:center;padding:20px;}.sheet{border-radius:18px;}}
 .drag-bar{width:36px;height:4px;background:#ddd;border-radius:2px;margin:0 auto 20px;}
 @media(min-width:520px){.drag-bar{display:none;}}
@@ -91,7 +81,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .sheet-close{position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:50%;border:none;background:#f0ede6;cursor:pointer;font-size:17px;display:flex;align-items:center;justify-content:center;color:#555;}
 
 /* ── CHAMPIONSHIP PAGE ── */
-.champ-page-header{background:#7a9e7e;color:#fff;padding:0 20px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.champ-page-header{background:linear-gradient(135deg,var(--violet2),var(--violet));color:#fff;padding:0 20px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
 .champ-page-header h1{font-size:16px;font-weight:700;}
 .champ-page-header .right{display:flex;align-items:center;gap:8px;}
 
@@ -106,7 +96,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .sync-dot.pulsing{animation:pulse 1s infinite;}
 
 /* tab bar */
-.tab-bar{display:none;position:fixed;bottom:0;left:0;right:0;z-index:90;background:#fff;border-top:1px solid var(--border);height:64px;padding-bottom:env(safe-area-inset-bottom,0);}
+.tab-bar{display:none;position:fixed;bottom:0;left:0;right:0;z-index:90;background:var(--card);border-top:1px solid var(--border);height:64px;padding-bottom:env(safe-area-inset-bottom,0);}
 .tab-bar-inner{display:flex;height:64px;}
 .tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:none;border:none;cursor:pointer;font-size:10px;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:.5px;}
 .tab-btn svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;}
@@ -132,7 +122,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .races-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start;}
 @media(max-width:400px){.races-grid{grid-template-columns:1fr;}}
 .races-grid.rr-grid{grid-template-columns:1fr;align-items:start;}
-.race-card{background:#fff;border-radius:14px;border:1px solid var(--border);overflow:hidden;}
+.race-card{background:var(--card);border-radius:14px;border:1px solid var(--border);overflow:hidden;}
 .race-banner{width:100%;height:76px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;}
 .race-banner.pending{background:#fff;color:#bbb;border-bottom:1px solid #f0ede6;}
 .race-banner.done{background:#1e7e34;color:#fff;}
@@ -160,7 +150,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .btn-race:disabled{opacity:.35;cursor:not-allowed;}
 
 /* standings */
-.standings-card{background:#fff;border-radius:14px;overflow:hidden;border:1px solid var(--border);margin-bottom:10px;}
+.standings-card{background:var(--card);border-radius:14px;overflow:hidden;border:1px solid var(--border);margin-bottom:10px;}
 .s-row{display:grid;grid-template-columns:38px 1fr 56px;align-items:center;padding:11px 15px;border-bottom:1px solid #f0ede6;}
 .s-row:last-child{border-bottom:none;}
 .s-row.leader{background:#fffbe6;}
@@ -214,7 +204,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .chart-wrap{position:relative;height:220px;}
 
 /* manage panel */
-.manage-panel{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:300;align-items:flex-end;justify-content:center;}
+.manage-panel{background:var(--card);display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:300;align-items:flex-end;justify-content:center;}
 .manage-panel.open{display:flex;}
 .manage-inner{background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:560px;max-height:92vh;display:flex;flex-direction:column;}
 .manage-drag{width:36px;height:4px;background:#ddd;border-radius:2px;margin:12px auto 0;flex-shrink:0;}
@@ -249,7 +239,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .prize-field{flex:1;border:none;outline:none;font-size:14px;font-weight:500;background:transparent;padding:0;color:#1a1a1a;}
 .prize-field::placeholder{color:#ccc;}
 .add-btn{width:100%;padding:11px;border:2px dashed var(--border2);background:transparent;border-radius:11px;font-size:13px;font-weight:600;color:#aaa;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:4px;}
-.add-btn:active{background:#faf9f6;}
+.add-btn:active{background:var(--card);}
 
 /* img picker */
 .img-picker-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:8px;}
@@ -290,7 +280,7 @@ select:focus{border-color:#1a1a1a;}
 
 /* ── Championship type cards ── */
 .type-card{display:flex;align-items:center;gap:12px;padding:12px 14px;border:2px solid var(--border);border-radius:12px;cursor:pointer;transition:border-color .15s,background .15s;}
-.type-card.active{border-color:#1d7eda;background:#f0f7ff;}
+.type-card.active{border-color:var(--violet);background:#f0f7ff;}
 .type-card-ico{font-size:22px;min-width:30px;text-align:center;}
 .type-card-name{font-size:14px;font-weight:700;color:#1a1a1a;}
 .type-card-desc{font-size:11px;color:#888;margin-top:1px;}
@@ -298,7 +288,7 @@ select:focus{border-color:#1a1a1a;}
 /* ── Round Robin ── */
 .rr-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:6px;}
 .rr-table th,.rr-table td{padding:6px 8px;border:1px solid #f0ede6;text-align:center;}
-.rr-table th{background:#faf9f6;font-weight:700;color:#555;}
+.rr-table th{background:var(--card);font-weight:700;color:#555;}
 .rr-table td:first-child{text-align:left;font-weight:600;}
 .rr-stand-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #f0ede6;}
 .rr-stand-row:last-child{border-bottom:none;}
@@ -306,8 +296,8 @@ select:focus{border-color:#1a1a1a;}
 .rr-stat{font-size:11px;color:#aaa;}
 .rr-pts-big{font-size:18px;font-weight:800;color:#1a1a1a;min-width:32px;text-align:right;}
 .rr-match-grid{display:flex;flex-direction:column;gap:8px;}
-.rr-match-card{background:#faf9f6;border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:8px;cursor:pointer;border:1px solid transparent;transition:border-color .15s;}
-.rr-match-card:hover{border-color:#1d7eda;}
+.rr-match-card{background:var(--card);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:8px;cursor:pointer;border:1px solid transparent;transition:border-color .15s;}
+.rr-match-card:hover{border-color:var(--violet);}
 .rr-match-card.done{border-color:#e0f0e0;}
 .rr-vs{font-size:11px;font-weight:700;color:#bbb;flex-shrink:0;}
 .rr-player-name{flex:1;font-size:13px;font-weight:600;text-align:center;}
@@ -318,17 +308,17 @@ select:focus{border-color:#1a1a1a;}
 .bracket{display:flex;gap:0;align-items:stretch;}
 .bracket-round{display:flex;flex-direction:column;justify-content:space-around;min-width:130px;padding:0 8px;}
 .bracket-round-title{font-size:10px;font-weight:700;color:#aaa;text-align:center;margin-bottom:8px;letter-spacing:.5px;text-transform:uppercase;}
-.bracket-match{background:#faf9f6;border:1px solid #e0ddd6;border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .15s;margin:6px 0;}
-.bracket-match:hover:not(.bye){border-color:#1d7eda;}
+.bracket-match{background:var(--card);border:1px solid #e0ddd6;border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .15s;margin:6px 0;}
+.bracket-match:hover:not(.bye){border-color:var(--violet);}
 .bracket-match.done{border-color:#b8ddb8;}
 .bracket-slot{padding:7px 10px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px;}
 .bracket-slot:first-child{border-bottom:1px solid #e0ddd6;}
-.bracket-slot.winner{background:#e8f8e8;color:#1a7a1a;}
+.bracket-slot.winner{background:rgba(45,198,83,0.15);color:#1a7a1a;}
 .bracket-slot.tbd{color:#bbb;font-style:italic;}
 .bracket-seed{font-size:10px;color:#bbb;min-width:14px;}
 .elim-setup-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;}
 .elim-slot-btn{padding:8px;border:2px solid #e0ddd6;border-radius:8px;background:#fff;cursor:pointer;font-size:12px;font-weight:600;transition:border-color .15s;}
-.elim-slot-btn.filled{border-color:#1d7eda;background:#f0f7ff;}
+.elim-slot-btn.filled{border-color:var(--violet);background:#f0f7ff;}
 
 
 /* fav button */
@@ -369,7 +359,7 @@ select:focus{border-color:#1a1a1a;}
 .champ-grid.list-grid .badge-access{margin-top:0;flex-shrink:0;}
 
 /* friends */
-.friends-btn{position:relative;background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:5px 10px;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:4px;}
+.friends-btn{position:relative;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:8px;padding:5px 10px;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:4px;}
 .friends-btn:hover{background:rgba(255,255,255,.3);}
 .notif-badge{position:absolute;top:-4px;right:-4px;background:#e05050;color:#fff;border-radius:50%;width:16px;height:16px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;display:none;}
 .friends-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;display:none;align-items:flex-start;justify-content:flex-end;padding:60px 16px 0;}
@@ -383,8 +373,8 @@ select:focus{border-color:#1a1a1a;}
 .friend-status{font-size:11px;color:#aaa;}
 .friend-actions{display:flex;gap:4px;}
 .f-btn{padding:4px 10px;border-radius:6px;border:none;font-size:12px;font-weight:600;cursor:pointer;}
-.f-btn.accept{background:#e8f8e8;color:#2dc653;}
-.f-btn.decline{background:#fde8e8;color:#e05050;}
+.f-btn.accept{background:rgba(45,198,83,0.15);color:#2dc653;}
+.f-btn.decline{background:rgba(230,57,70,0.15);color:#e05050;}
 .f-btn.remove{background:#f5f3ef;color:#aaa;}
 .search-friend-row{display:flex;gap:8px;margin-bottom:14px;}
 .search-friend-row input{flex:1;padding:8px 12px;border:1px solid #e0ddd6;border-radius:8px;font-size:13px;outline:none;}
@@ -399,13 +389,64 @@ select:focus{border-color:#1a1a1a;}
 .friends-book-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid #f0ede6;cursor:pointer;transition:background .12s;}
 .friends-book-item:last-child{border-bottom:none;}
 .friends-book-item:hover{background:#f5f3ef;}
-.friends-book-item.checked{background:#e8f8e8;}
+.friends-book-item.checked{background:rgba(45,198,83,0.15);}
 .friends-book-avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;}
 .friends-book-name{flex:1;font-size:13px;font-weight:600;}
 .friends-book-check{font-size:16px;color:#2dc653;display:none;}
 .friends-book-item.checked .friends-book-check{display:block;}
 .invite-from-book-btn{width:100%;margin-top:10px;padding:9px;background:#7a9e7e;color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;}
 .invite-from-book-btn:disabled{opacity:.4;cursor:not-allowed;}
+
+/* ── AUTH PAGE REDESIGN ─────────────────────────── */
+.auth-bg{
+  position:fixed;inset:0;
+  background-size:cover;background-position:center top;
+  z-index:0;
+}
+.auth-cta-wrap{
+  position:fixed;inset:0;
+  display:flex;align-items:flex-start;justify-content:center;
+  padding-top:70vh; /* 70% dall'alto */
+  z-index:1;
+}
+.auth-cta-btns{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;}
+.auth-cta-btn{
+  padding:14px 40px;
+  font-size:16px;font-weight:800;letter-spacing:.5px;
+  border:none;border-radius:50px;cursor:pointer;
+  transition:transform .15s,box-shadow .15s;
+  font-family:inherit;
+}
+.auth-cta-btn:hover{transform:translateY(-2px);}
+.auth-cta-login{
+  background:var(--violet);color:#fff;
+  box-shadow:0 0 24px var(--violet-glow);
+}
+.auth-cta-login:hover{box-shadow:0 0 40px var(--violet-glow);}
+.auth-cta-register{
+  background:rgba(255,255,255,.1);color:#fff;
+  border:1px solid rgba(255,255,255,.3);
+  backdrop-filter:blur(10px);
+}
+.auth-cta-register:hover{background:rgba(255,255,255,.18);}
+
+/* Auth modal overlay */
+.auth-modal-overlay{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,.7);backdrop-filter:blur(8px);
+  display:none;align-items:center;justify-content:center;
+  z-index:500;padding:20px;
+}
+.auth-modal-overlay.open{display:flex;}
+.auth-modal-box{
+  position:relative;
+  background:rgba(13,13,25,0.97);
+  border:1px solid var(--border);
+  border-radius:20px;
+  padding:32px 28px;
+  width:100%;max-width:360px;
+  box-shadow:0 0 60px rgba(139,92,246,.2);
+}
 </style>
 </head>
 <body>
@@ -421,29 +462,38 @@ select:focus{border-color:#1a1a1a;}
      PAGE: AUTH
 ══════════════════════════════════════════════════ -->
 <div class="page" id="page-auth">
-  <div class="auth-wrap">
-    <div class="auth-box">
-      <div class="auth-logo" style="font-size:26px;font-weight:900;letter-spacing:1px;">DUELIA</div>
-      <div class="auth-sub">Crea e gioca i tuoi campionati</div>
-      <div class="auth-tabs">
-        <button class="auth-tab active" id="tab-login-btn" onclick="switchAuthTab('login')">Accedi</button>
-        <button class="auth-tab" id="tab-reg-btn" onclick="switchAuthTab('register')">Registrati</button>
-      </div>
-      <!-- LOGIN -->
-      <div id="form-login">
-        <div class="field"><label>Email</label><input type="email" id="login-email" placeholder="tua@email.com"/></div>
-        <div class="field"><label>Password</label><input type="password" id="login-pass" placeholder="••••••••"/></div>
-        <button class="btn-primary" id="login-btn" onclick="doLogin()">Accedi</button>
-      </div>
-      <!-- REGISTER -->
-      <div id="form-register" style="display:none;">
-        <div class="field"><label>Nome utente</label><input type="text" id="reg-username" placeholder="pilota99"/></div>
-        <div class="field"><label>Email</label><input type="email" id="reg-email" placeholder="tua@email.com"/></div>
-        <div class="field"><label>Password</label><input type="password" id="reg-pass" placeholder="min. 6 caratteri"/></div>
-        <button class="btn-primary" id="reg-btn" onclick="doRegister()">Crea account</button>
-      </div>
-      <div class="auth-err" id="auth-err"></div>
+  <!-- Fullscreen background -->
+  <div class="auth-bg" style="background-image:url('sfondo.jpg');"></div>
+  <!-- CTA buttons at 70% height -->
+  <div class="auth-cta-wrap">
+    <div class="auth-cta-btns">
+      <button class="auth-cta-btn auth-cta-login" onclick="openAuthModal('login')">Accedi</button>
+      <button class="auth-cta-btn auth-cta-register" onclick="openAuthModal('register')">Registrati</button>
     </div>
+  </div>
+</div>
+
+<!-- Login modal -->
+<div class="auth-modal-overlay" id="auth-modal-overlay" onclick="if(event.target===this)closeAuthModal()">
+  <div class="auth-modal-box" id="auth-modal-box">
+    <button onclick="closeAuthModal()" style="position:absolute;top:12px;right:16px;background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;line-height:1;">×</button>
+    <div class="auth-logo" style="font-size:22px;font-weight:900;letter-spacing:1px;color:#fff;text-align:center;margin-bottom:4px;">DUELIA</div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-login-btn" onclick="switchAuthTab('login')">Accedi</button>
+      <button class="auth-tab" id="tab-reg-btn" onclick="switchAuthTab('register')">Registrati</button>
+    </div>
+    <div id="form-login">
+      <div class="field"><label>Email</label><input type="email" id="login-email" placeholder="tua@email.com" onkeydown="if(event.key==='Enter')doLogin()"/></div>
+      <div class="field"><label>Password</label><input type="password" id="login-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"/></div>
+      <button class="btn-primary" id="login-btn" onclick="doLogin()">Accedi</button>
+    </div>
+    <div id="form-register" style="display:none;">
+      <div class="field"><label>Username</label><input type="text" id="reg-username" placeholder="pilota99"/></div>
+      <div class="field"><label>Email</label><input type="email" id="reg-email" placeholder="tua@email.com"/></div>
+      <div class="field"><label>Password</label><input type="password" id="reg-pass" placeholder="min. 6 caratteri" onkeydown="if(event.key==='Enter')doRegister()"/></div>
+      <button class="btn-primary" id="reg-btn" onclick="doRegister()">Crea account</button>
+    </div>
+    <div class="auth-err" id="auth-err"></div>
   </div>
 </div>
 
@@ -1405,8 +1455,8 @@ function renderJoinBanner() {
         rows += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">'
              + '<div style="width:8px;height:8px;border-radius:50%;background:#e0c060;flex-shrink:0;"></div>'
              + '<span style="flex:1;font-size:13px;font-weight:600;">' + pm.username + '</span>'
-             + '<button onclick="acceptMember(' + "'" + pm.id + "'" + ')" style="background:#e8f8e8;border:1px solid #b0d8b0;border-radius:8px;padding:6px 14px;font-size:15px;cursor:pointer;font-weight:700;" title="Accetta">&#10003;</button>'
-             + '<button onclick="rejectMember(' + "'" + pm.id + "'" + ')" style="background:#fde8e8;border:1px solid #e0b0b0;border-radius:8px;padding:6px 14px;font-size:15px;cursor:pointer;font-weight:700;" title="Rifiuta">&#10007;</button>'
+             + '<button onclick="acceptMember(' + "'" + pm.id + "'" + ')" style="background:rgba(45,198,83,0.15);border:1px solid #b0d8b0;border-radius:8px;padding:6px 14px;font-size:15px;cursor:pointer;font-weight:700;" title="Accetta">&#10003;</button>'
+             + '<button onclick="rejectMember(' + "'" + pm.id + "'" + ')" style="background:rgba(230,57,70,0.15);border:1px solid #e0b0b0;border-radius:8px;padding:6px 14px;font-size:15px;cursor:pointer;font-weight:700;" title="Rifiuta">&#10007;</button>'
              + '</div>';
       }
       var label = pending.length > 1 ? 'richieste di iscrizione in attesa' : 'richiesta di iscrizione in attesa';
@@ -1428,9 +1478,9 @@ function renderJoinBanner() {
     const isClosed = currentChamp.access === 'closed' || currentChamp.closed;
     const canRequest = !isClosed || isFriendOfOwner(currentChamp.owner_id);
     if (canRequest) {
-      el.innerHTML = '<div style="margin:12px 0;background:#f0f7ff;border:1px solid #b0d0f0;border-radius:12px;padding:14px;text-align:center;">'
+      el.innerHTML = '<div style="margin:12px 0;background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.3);border-radius:12px;padding:14px;text-align:center;">'
         + '<div style="font-size:13px;color:#555;margin-bottom:10px;">Vuoi partecipare a questo campionato?</div>'
-        + '<button onclick="requestJoin()" style="background:#1d7eda;color:#fff;border:none;border-radius:10px;padding:9px 24px;font-size:14px;font-weight:700;cursor:pointer;">Richiedi iscrizione</button>'
+        + '<button onclick="requestJoin()" style="background:var(--violet);color:#fff;border:none;border-radius:10px;padding:9px 24px;font-size:14px;font-weight:700;cursor:pointer;">Richiedi iscrizione</button>'
         + '</div>';
     } else {
       el.innerHTML = '<div style="margin:12px 0;background:#f5f3ef;border:1px solid #e0ddd6;border-radius:12px;padding:12px 14px;text-align:center;font-size:13px;color:#aaa;">'
@@ -1446,7 +1496,7 @@ function renderJoinBanner() {
     return;
   }
   if (status === 'rejected') {
-    el.innerHTML = '<div style="margin:12px 0;background:#fde8e8;border:1px solid #e0b0b0;border-radius:12px;padding:12px 14px;text-align:center;font-size:13px;color:#a03030;">'
+    el.innerHTML = '<div style="margin:12px 0;background:rgba(230,57,70,0.15);border:1px solid #e0b0b0;border-radius:12px;padding:12px 14px;text-align:center;font-size:13px;color:#a03030;">'
       + '&#10007; La tua richiesta è stata rifiutata'
       + '</div>';
     return;
@@ -1485,8 +1535,8 @@ function renderManageRRMatches() {
   var rounds  = groupRRRounds(matches, players);
 
   var double = !!champData.doubleLegs;
-  var html = '<div style="display:flex;align-items:center;gap:10px;background:#faf9f6;border:1px solid #e0ddd6;border-radius:10px;padding:10px 14px;margin-bottom:14px;">'
-    + '<input type="checkbox" id="rr-double-legs" ' + (double ? 'checked' : '') + ' onchange="toggleDoubleLegs(this.checked)" style="width:18px;height:18px;cursor:pointer;accent-color:#1d7eda;"/>'
+  var html = '<div style="display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid #e0ddd6;border-radius:10px;padding:10px 14px;margin-bottom:14px;">'
+    + '<input type="checkbox" id="rr-double-legs" ' + (double ? 'checked' : '') + ' onchange="toggleDoubleLegs(this.checked)" style="width:18px;height:18px;cursor:pointer;accent-color:var(--violet);"/>'
     + '<div>'
     + '<div style="font-size:13px;font-weight:700;">Andata e ritorno</div>'
     + '<div style="font-size:11px;color:#aaa;margin-top:1px;">Ogni coppia si affronta due volte (casa e trasferta)</div>'
@@ -1516,13 +1566,13 @@ function renderManageRRMatches() {
     return mb.role === 'player' && players.indexOf(mb.username) === -1;
   });
   if (pendingNotAdded.length) {
-    html += '<div style="background:#f0f7ff;border:1px solid #b0d0f0;border-radius:10px;padding:10px 12px;margin-bottom:10px;">';
-    html += '<div style="font-size:11px;font-weight:700;color:#1d7eda;margin-bottom:8px;">Giocatori iscritti non ancora nel torneo</div>';
+    html += '<div style="background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.3);border-radius:10px;padding:10px 12px;margin-bottom:10px;">';
+    html += '<div style="font-size:11px;font-weight:700;color:var(--violet);margin-bottom:8px;">Giocatori iscritti non ancora nel torneo</div>';
     for (var ai = 0; ai < pendingNotAdded.length; ai++) {
       var am = pendingNotAdded[ai];
       html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">'
            + '<span style="flex:1;font-size:13px;font-weight:600;">' + am.username + '</span>'
-           + '<button onclick="addRRPlayerFromMember(\"' + am.username + '\")" style="background:#1d7eda;color:#fff;border:none;border-radius:7px;padding:4px 10px;font-size:12px;cursor:pointer;font-weight:700;">+ Aggiungi</button>'
+           + '<button onclick="addRRPlayerFromMember(\"' + am.username + '\")" style="background:var(--violet);color:#fff;border:none;border-radius:7px;padding:4px 10px;font-size:12px;cursor:pointer;font-weight:700;">+ Aggiungi</button>'
            + '</div>';
     }
     html += '</div>';
@@ -1998,8 +2048,8 @@ function renderManagePlayers(){
     var friendIds = getFriendIds();
     var friendsNotInChamp = friendIds.filter(function(fid){ return !memberUserIds.includes(fid); });
 
-    html += '<div style="background:#f0f7ff;border:1px solid #b0d0f0;border-radius:12px;padding:12px 14px;margin-bottom:14px;">';
-    html += '<div style="font-size:12px;font-weight:700;color:#1d7eda;margin-bottom:10px;">📨 ' + (isClosed ? 'Campionato chiuso — ' : '') + 'Invita partecipanti</div>';
+    html += '<div style="background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.3);border-radius:12px;padding:12px 14px;margin-bottom:14px;">';
+    html += '<div style="font-size:12px;font-weight:700;color:var(--violet);margin-bottom:10px;">📨 ' + (isClosed ? 'Campionato chiuso — ' : '') + 'Invita partecipanti</div>';
 
     // Rubrica amici
     if (friendsNotInChamp.length > 0) {
@@ -2027,9 +2077,9 @@ function renderManagePlayers(){
     html += '<div style="font-size:11px;color:#888;margin-top:12px;margin-bottom:6px;font-weight:600;">OPPURE CERCA PER USERNAME</div>';
     html += '<div class="search-friend-row" style="margin-bottom:6px;">';
     html += '<input type="text" id="invite-input-players" placeholder="Username..." style="flex:1;padding:8px 12px;border:1px solid #b0d0f0;border-radius:8px;font-size:13px;outline:none;"/>';
-    html += '<button onclick="inviteFromPlayersPanel()" style="padding:8px 14px;background:#1d7eda;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">Cerca</button>';
+    html += '<button onclick="inviteFromPlayersPanel()" style="padding:8px 14px;background:var(--violet);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">Cerca</button>';
     html += '</div>';
-    html += '<div id="invite-result-players" style="font-size:12px;min-height:16px;color:#1d7eda;"></div>';
+    html += '<div id="invite-result-players" style="font-size:12px;min-height:16px;color:var(--violet);"></div>';
     html += '</div>';
   }
 
@@ -2054,8 +2104,8 @@ function renderManagePlayers(){
       html += '<div class="player-item" style="background:#fffbf0;border-radius:10px;padding:8px 10px;margin-bottom:6px;">'
            + '<div class="color-dot" style="background:#e0c060"></div>'
            + '<span style="flex:1;font-size:13px;font-weight:600;">' + qm.username + '</span>'
-           + '<button onclick="acceptMember(' + "'" + qm.id + "'" + ')" style="background:#e8f8e8;border:none;border-radius:8px;padding:5px 10px;font-size:15px;cursor:pointer;margin-right:4px;" title="Accetta">&#10003;</button>'
-           + '<button onclick="rejectMember(' + "'" + qm.id + "'" + ')" style="background:#fde8e8;border:none;border-radius:8px;padding:5px 10px;font-size:15px;cursor:pointer;" title="Rifiuta">&#10007;</button>'
+           + '<button onclick="acceptMember(' + "'" + qm.id + "'" + ')" style="background:rgba(45,198,83,0.15);border:none;border-radius:8px;padding:5px 10px;font-size:15px;cursor:pointer;margin-right:4px;" title="Accetta">&#10003;</button>'
+           + '<button onclick="rejectMember(' + "'" + qm.id + "'" + ')" style="background:rgba(230,57,70,0.15);border:none;border-radius:8px;padding:5px 10px;font-size:15px;cursor:pointer;" title="Rifiuta">&#10007;</button>'
            + '</div>';
     }
   }
@@ -2069,7 +2119,7 @@ function renderManagePlayers(){
            + '<div class="color-dot" style="background:#ccc"></div>'
            + '<span style="flex:1;font-size:13px;">' + rm.username + '</span>'
            + '<button onclick="acceptMember(' + "'" + rm.id + "'" + ')" style="background:#f0f7ff;border:none;border-radius:8px;padding:4px 8px;font-size:12px;cursor:pointer;">Riammetti</button>'
-           + '<button onclick="kickMember(' + "'" + rm.id + "'" + ')" style="background:#fde8e8;border:none;border-radius:8px;padding:4px 8px;font-size:12px;cursor:pointer;margin-left:4px;">Rimuovi</button>'
+           + '<button onclick="kickMember(' + "'" + rm.id + "'" + ')" style="background:rgba(230,57,70,0.15);border:none;border-radius:8px;padding:4px 8px;font-size:12px;cursor:pointer;margin-left:4px;">Rimuovi</button>'
            + '</div>';
     }
   }
@@ -2098,13 +2148,13 @@ function renderManageRaces(){
             <div class="sort-name">${r.name}</div>
             <input type="text" placeholder="Link YouTube replay..." value="${r.replayUrl||''}"
               onchange="saveReplayLink('${r.id}',this.value)" onclick="event.stopPropagation()"
-              style="margin-top:4px;font-size:11px;padding:4px 7px;border:1px solid #e0ddd6;border-radius:6px;width:100%;outline:none;color:#666;background:#faf9f6;"/>
+              style="margin-top:4px;font-size:11px;padding:4px 7px;border:1px solid #e0ddd6;border-radius:6px;width:100%;outline:none;color:#666;background:var(--card);"/>
             <input type="date" value="${r.date||''}"
               onchange="saveRaceDate('${r.id}',this.value)" onclick="event.stopPropagation()"
-              style="margin-top:4px;font-size:11px;padding:4px 7px;border:1px solid #e0ddd6;border-radius:6px;width:100%;outline:none;color:#666;background:#faf9f6;"/>
+              style="margin-top:4px;font-size:11px;padding:4px 7px;border:1px solid #e0ddd6;border-radius:6px;width:100%;outline:none;color:#666;background:var(--card);"/>
           </div>
           <span class="sort-num">${idx+1}</span>
-          <button class="sort-del" style="background:#e8f0fe;color:#1d7eda;" onclick="openEditRace('${r.id}')">✎</button>
+          <button class="sort-del" style="background:#e8f0fe;color:var(--violet);" onclick="openEditRace('${r.id}')">✎</button>
           <button class="sort-del" onclick="deleteRace('${r.id}')">×</button>
         </li>`;}).join('')}
     </ul>
@@ -3392,7 +3442,7 @@ function renderTTRuns() {
     var color = PLAYER_COLORS[(players||[]).indexOf(p) % PLAYER_COLORS.length];
     var playerRuns = (runs[p] || []);
     var best = ps.best;
-    html += '<div style="background:#faf9f6;border-radius:12px;padding:12px 14px;margin-bottom:8px;">';
+    html += '<div style="background:var(--card);border-radius:12px;padding:12px 14px;margin-bottom:8px;">';
     html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">';
     html += '<div style="width:10px;height:10px;border-radius:50%;background:' + color + ';flex-shrink:0;"></div>';
     html += '<div style="flex:1;font-size:13px;font-weight:700;">' + p + '</div>';
