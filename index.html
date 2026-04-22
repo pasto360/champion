@@ -8,6 +8,7 @@
 
 
 
+
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
@@ -392,6 +393,19 @@ select:focus{border-color:#1a1a1a;}
 .invite-section h4{font-size:13px;font-weight:700;margin-bottom:10px;color:#555;}
 .badge-closed{background:#2a1a1a;color:#e08080;font-size:10px;font-weight:700;border-radius:4px;padding:2px 6px;margin-left:4px;}
 .badge-closed-card{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;background:#fff0f0;color:#c04040;}
+
+/* rubrica amici nell'invito */
+.friends-book{margin-top:10px;border:1px solid #e0ddd6;border-radius:10px;overflow:hidden;}
+.friends-book-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid #f0ede6;cursor:pointer;transition:background .12s;}
+.friends-book-item:last-child{border-bottom:none;}
+.friends-book-item:hover{background:#f5f3ef;}
+.friends-book-item.checked{background:#e8f8e8;}
+.friends-book-avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;}
+.friends-book-name{flex:1;font-size:13px;font-weight:600;}
+.friends-book-check{font-size:16px;color:#2dc653;display:none;}
+.friends-book-item.checked .friends-book-check{display:block;}
+.invite-from-book-btn{width:100%;margin-top:10px;padding:9px;background:#7a9e7e;color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;}
+.invite-from-book-btn:disabled{opacity:.4;cursor:not-allowed;}
 </style>
 </head>
 <body>
@@ -1954,12 +1968,42 @@ function renderManagePlayers(){
   let html = '<p class="manage-hint">Giocatori attivi: ' + players.length + '</p>';
 
   // Invite section — prominente per campionati chiusi
-  if (isClosed) {
+  if (isOwner) {
+    // Build friends rubrica — friends not yet in champ
+    var memberUserIds = champMembers.map(function(m){ return m.user_id; });
+    var friendIds = getFriendIds();
+    var friendsNotInChamp = friendIds.filter(function(fid){ return !memberUserIds.includes(fid); });
+
     html += '<div style="background:#f0f7ff;border:1px solid #b0d0f0;border-radius:12px;padding:12px 14px;margin-bottom:14px;">';
-    html += '<div style="font-size:12px;font-weight:700;color:#1d7eda;margin-bottom:8px;">📨 Campionato chiuso — invita i partecipanti</div>';
+    html += '<div style="font-size:12px;font-weight:700;color:#1d7eda;margin-bottom:10px;">📨 ' + (isClosed ? 'Campionato chiuso — ' : '') + 'Invita partecipanti</div>';
+
+    // Rubrica amici
+    if (friendsNotInChamp.length > 0) {
+      html += '<div style="font-size:11px;color:#888;margin-bottom:6px;font-weight:600;">DALLA TUA RUBRICA AMICI</div>';
+      html += '<div class="friends-book" id="friends-book">';
+      friendsNotInChamp.forEach(function(fid) {
+        var profile = allFriendProfiles[fid] || { username: fid.substring(0,8)+'...' };
+        var initial = ((profile.username||'?')[0]||'?').toUpperCase();
+        var color = PLAYER_COLORS[Math.abs(fid.charCodeAt(0) - 65) % PLAYER_COLORS.length];
+        html += '<div class="friends-book-item" data-uid="' + fid + '" data-username="' + (profile.username||'') + '" onclick="toggleFriendBookItem(this)">'
+             + '<div class="friends-book-avatar" style="background:' + color + ';">' + initial + '</div>'
+             + '<div class="friends-book-name">' + (profile.username||'—') + '</div>'
+             + '<div class="friends-book-check">✓</div>'
+             + '</div>';
+      });
+      html += '</div>';
+      html += '<button class="invite-from-book-btn" id="invite-book-btn" onclick="inviteCheckedFriends()" disabled>Invita selezionati</button>';
+    } else if (friendIds.length === 0) {
+      html += '<div style="font-size:12px;color:#aaa;margin-bottom:10px;">Non hai ancora amici — aggiungili dal pulsante 👥 in alto</div>';
+    } else {
+      html += '<div style="font-size:12px;color:#aaa;margin-bottom:10px;">Tutti i tuoi amici sono già nel campionato</div>';
+    }
+
+    // Ricerca manuale
+    html += '<div style="font-size:11px;color:#888;margin-top:12px;margin-bottom:6px;font-weight:600;">OPPURE CERCA PER USERNAME</div>';
     html += '<div class="search-friend-row" style="margin-bottom:6px;">';
-    html += '<input type="text" id="invite-input-players" placeholder="Username o email..." style="flex:1;padding:8px 12px;border:1px solid #b0d0f0;border-radius:8px;font-size:13px;outline:none;"/>';
-    html += '<button onclick="inviteFromPlayersPanel()" style="padding:8px 14px;background:#1d7eda;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">Invita</button>';
+    html += '<input type="text" id="invite-input-players" placeholder="Username..." style="flex:1;padding:8px 12px;border:1px solid #b0d0f0;border-radius:8px;font-size:13px;outline:none;"/>';
+    html += '<button onclick="inviteFromPlayersPanel()" style="padding:8px 14px;background:#1d7eda;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">Cerca</button>';
     html += '</div>';
     html += '<div id="invite-result-players" style="font-size:12px;min-height:16px;color:#1d7eda;"></div>';
     html += '</div>';
@@ -3439,6 +3483,38 @@ async function saveTTSettings() {
   scheduleSave(); renderChamp();
   showToast('Impostazioni Time Trial salvate!');
 }
+// ── RUBRICA AMICI INVITO ──────────────────────────
+function toggleFriendBookItem(el) {
+  el.classList.toggle('checked');
+  var btn = document.getElementById('invite-book-btn');
+  if (!btn) return;
+  var anyChecked = document.querySelectorAll('.friends-book-item.checked').length > 0;
+  btn.disabled = !anyChecked;
+}
+
+async function inviteCheckedFriends() {
+  var checked = document.querySelectorAll('.friends-book-item.checked');
+  if (!checked.length) return;
+  var btn = document.getElementById('invite-book-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Invito in corso...'; }
+  var errors = [];
+  for (var i = 0; i < checked.length; i++) {
+    var el = checked[i];
+    var uid = el.getAttribute('data-uid');
+    var username = el.getAttribute('data-username') || uid;
+    var { data: existing } = await sb.from('champ_members').select('id').eq('champ_id', currentChamp.id).eq('user_id', uid).maybeSingle();
+    if (existing) continue;
+    var { error } = await sb.from('champ_members').insert({ champ_id: currentChamp.id, user_id: uid, username: username, role: 'player' });
+    if (error) errors.push(username);
+  }
+  await loadChampMembers();
+  await scheduleSaveImmediate();
+  renderChamp();
+  renderManagePlayers();
+  if (errors.length) showToast('Errore per: ' + errors.join(', '));
+  else showToast('✓ ' + checked.length + ' amico/i aggiunto/i!');
+}
+
 </script>
 </body>
 </html>
