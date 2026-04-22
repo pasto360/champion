@@ -1949,8 +1949,21 @@ function renderManagePlayers(){
   const players  = champMembers.filter(m=>m.role==='owner'||m.role==='player');
   const pending  = champMembers.filter(m=>m.role==='pending');
   const rejected = champMembers.filter(m=>m.role==='rejected');
+  const isClosed = currentChamp && (currentChamp.access==='closed' || currentChamp.closed);
 
   let html = '<p class="manage-hint">Giocatori attivi: ' + players.length + '</p>';
+
+  // Invite section — prominente per campionati chiusi
+  if (isClosed) {
+    html += '<div style="background:#f0f7ff;border:1px solid #b0d0f0;border-radius:12px;padding:12px 14px;margin-bottom:14px;">';
+    html += '<div style="font-size:12px;font-weight:700;color:#1d7eda;margin-bottom:8px;">📨 Campionato chiuso — invita i partecipanti</div>';
+    html += '<div class="search-friend-row" style="margin-bottom:6px;">';
+    html += '<input type="text" id="invite-input-players" placeholder="Username o email..." style="flex:1;padding:8px 12px;border:1px solid #b0d0f0;border-radius:8px;font-size:13px;outline:none;"/>';
+    html += '<button onclick="inviteFromPlayersPanel()" style="padding:8px 14px;background:#1d7eda;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">Invita</button>';
+    html += '</div>';
+    html += '<div id="invite-result-players" style="font-size:12px;min-height:16px;color:#1d7eda;"></div>';
+    html += '</div>';
+  }
 
   // Active players list
   for (var pi = 0; pi < players.length; pi++) {
@@ -3153,9 +3166,24 @@ function isFriendOfOwner(ownerId) {
 }
 
 // ── INVITI CAMPIONATO (diretti, no amicizia) ──
+async function inviteFromPlayersPanel() {
+  await inviteUser(
+    document.getElementById('invite-input-players'),
+    document.getElementById('invite-result-players')
+  );
+}
+
 async function inviteToChamp() {
-  const q = document.getElementById('invite-input').value.trim();
-  const res = document.getElementById('invite-result');
+  await inviteUser(
+    document.getElementById('invite-input'),
+    document.getElementById('invite-result')
+  );
+}
+
+async function inviteUser(inputEl, resEl) {
+  if (!inputEl || !resEl) return;
+  const q = inputEl.value.trim();
+  const res = resEl;
   if (!q || !currentChamp) return;
   res.textContent = 'Ricerca...';
   const { data } = await sb.from('profiles')
