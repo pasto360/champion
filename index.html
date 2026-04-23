@@ -411,20 +411,20 @@ select:focus{border-color:#1a1a1a;}
   z-index:0;
 }
 .auth-cta-wrap{
-  position:fixed;inset:0;
-  display:flex;align-items:flex-start;justify-content:center;
-  padding-top:70vh; /* 70% dall'alto */
-  z-index:1;
+  position:fixed;top:0;left:0;right:0;
+  display:flex;align-items:center;justify-content:flex-end;
+  padding:18px 28px;
+  z-index:2;
 }
-.auth-cta-btns{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;}
+.auth-cta-btns{display:flex;gap:10px;align-items:center;}
 .auth-cta-btn{
-  padding:14px 40px;
-  font-size:16px;font-weight:800;letter-spacing:.5px;
+  padding:9px 22px;
+  font-size:14px;font-weight:700;letter-spacing:.3px;
   border:none;border-radius:50px;cursor:pointer;
-  transition:transform .15s,box-shadow .15s;
+  transition:transform .12s,box-shadow .12s,background .12s;
   font-family:inherit;
 }
-.auth-cta-btn:hover{transform:translateY(-2px);}
+.auth-cta-btn:hover{transform:translateY(-1px);}
 .auth-cta-login{
   background:var(--violet);color:#fff;
   box-shadow:0 0 24px var(--violet-glow);
@@ -473,7 +473,7 @@ select:focus{border-color:#1a1a1a;}
 <div class="page" id="page-auth">
   <!-- Fullscreen background -->
   <div class="auth-bg" style="background-image:url('sfondo.jpg');"></div>
-  <!-- CTA buttons at 70% height -->
+  <!-- Top-right auth buttons -->
   <div class="auth-cta-wrap">
     <div class="auth-cta-btns">
       <button class="auth-cta-btn auth-cta-login" onclick="openAuthModal('login')">Accedi</button>
@@ -876,6 +876,22 @@ select:focus{border-color:#1a1a1a;}
 const SUPA_URL = 'https://jhoruzazoqpqlytcbjev.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impob3J1emF6b3FwcWx5dGNiamV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyNjg2MjcsImV4cCI6MjA5MTg0NDYyN30.wcQgwe3KJwSugqPW57JR2Qn5q5RZXLxGMSL9xNsKYSk';
 const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+function openAuthModal(tab) {
+  var overlay = document.getElementById('auth-modal-overlay');
+  if (overlay) { overlay.classList.add('open'); }
+  switchAuthTab(tab || 'login');
+  setTimeout(function() {
+    var id = (tab === 'register') ? 'reg-username' : 'login-email';
+    var el = document.getElementById(id);
+    if (el) el.focus();
+  }, 120);
+}
+function closeAuthModal() {
+  var overlay = document.getElementById('auth-modal-overlay');
+  if (overlay) overlay.classList.remove('open');
+}
+
 
 // ── CONSTANTS ─────────────────────────────────────
 const PLAYER_COLORS = ['#e63946','#1d7eda','#2dc653','#f4a261','#9b5de5','#00b4d8','#ff6b6b','#06d6a0','#ffd166','#ef476f','#118ab2','#8338ec','#3a86ff','#fb5607','#ffbe0b','#44cf6c','#f72585','#4cc9f0','#7209b7','#073b4c'];
