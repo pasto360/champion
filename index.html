@@ -455,6 +455,9 @@ select:focus{border-color:#1a1a1a;}
   box-shadow:0 0 60px rgba(139,92,246,.2);
 }
 
+
+.champ-card-locked{cursor:default;pointer-events:none;opacity:.55;filter:grayscale(.5);}
+.champ-card-locked:hover{transform:none;box-shadow:none;}
 </style>
 </head>
 <body>
@@ -771,9 +774,9 @@ select:focus{border-color:#1a1a1a;}
     <div class="field">
       <label>Accesso</label>
       <select id="nc-access" onchange="updateNcPassField(this.value)">
-        <option value="public">Pubblico — chiunque può richiedere iscrizione</option>
-        <option value="closed">Chiuso — solo chi inviti può iscriversi</option>
-        <option value="password">Password — accesso con codice</option>
+        <option value="public">🌐 Pubblico — visibile a tutti, chiunque può richiedere iscrizione</option>
+        <option value="closed">🔐 Chiuso — visibile solo ai partecipanti, solo su invito</option>
+        <option value="password">🔒 Privato — visibile a tutti, accesso con password</option>
       </select>
     </div>
     <div class="field" id="nc-pass-field">
@@ -979,6 +982,7 @@ async function doLogin() {
   if (error) { document.getElementById('auth-err').textContent = error.message; return; }
   const {data:{session}} = await sb.auth.getSession();
   currentUser = session.user;
+  closeAuthModal();
   await showHome();
 }
 
@@ -1013,7 +1017,7 @@ async function doRegister() {
 
 async function doLogout() {
   await sb.auth.signOut();
-  currentUser = null; currentChamp = null; champMembers = []; userFavIds = [];
+  currentUser = null; currentChamp = null; champMembers = []; userFavIds = []; closedMemberships = new Set();
   showPage('page-auth');
 }
 
@@ -1040,6 +1044,7 @@ const PAGE_SIZE = 10;
 
 // ── FAVOURITES (Supabase) ─────────────────────────
 let userFavIds = []; // cache locale — array di champ_id (string)
+let closedMemberships = new Set(); // champ_ids dove l'utente è membro
 
 async function loadFavs() {
   const { data, error } = await sb.from('user_favourites')
@@ -1127,11 +1132,14 @@ async function renderJoinedChamps() {
 }
 
 async function loadChampionshipsHome() {
-  const [{data:champs, error}, ] = await Promise.all([
+  const [{data:champs, error}, {data:myMemberships}] = await Promise.all([
     sb.from('championships').select('id,name,season,access,closed,owner_id,created_at').order('created_at',{ascending:false}),
+    sb.from('champ_members').select('champ_id').eq('user_id', currentUser.id).in('role', ['owner','player']),
     loadFavs(),
     loadFriendships()
   ]);
+  // Build set of champ IDs where user is member (for closed champ access check)
+  closedMemberships = new Set((myMemberships||[]).map(m => m.champ_id));
   if (error) { showToast('Errore caricamento campionati'); return; }
 
   allChamps = champs;
@@ -1157,9 +1165,15 @@ function onSearchInput() {
 
 function renderAllChamps() {
   const query = (document.getElementById('champ-search')?.value||'').toLowerCase().trim();
-  const filtered = query
+  const filtered = (query
     ? allChamps.filter(c=>c.name.toLowerCase().includes(query))
-    : allChamps.filter(c=>c.owner_id!==currentUser.id);
+    : allChamps.filter(c=>c.owner_id!==currentUser.id)
+  ).filter(function(c) {
+    // Campionati chiusi: visibili solo ai membri (non appaiono agli altri)
+    var isClosed = c.access === 'closed' || !!c.closed;
+    if (isClosed && !closedMemberships.has(c.id)) return false;
+    return true;
+  });
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   if (currentPage > totalPages) currentPage = totalPages;
@@ -1183,22 +1197,47 @@ function renderAllChamps() {
   pag.innerHTML = html;
 }
 
+function isMemberOf(champId) {
+  // Check if current user is owner or player of this champ (from allChamps cache)
+  // For closed champs we check champ_members — but since this is sync, use a flag set at load time
+  return closedMemberships.has(champId);
+}
+
 function champCard(c, inFavSection=false) {
   const mine = c.owner_id === currentUser.id;
   const fav  = isFav(c.id);
-  const isClosed = c.access === 'closed' || c.closed;
-  const badge = isClosed
-    ? '<span class="badge-access badge-priv">🔒 Chiuso</span>'
-    : c.access==='public'
-      ? '<span class="badge-access badge-pub">🌐 Pubblico</span>'
-      : '<span class="badge-access badge-priv">🔒 Password</span>';
-  const favStar = !mine && !inFavSection ? `<span class="card-fav-star ${fav?'active':''}" onclick="event.stopPropagation();toggleFavById('${c.id}')" title="${fav?'Rimuovi dai preferiti':'Aggiungi ai preferiti'}">${fav?'★':'☆'}</span>` : '';
-  const favStarFavSection = inFavSection ? `<span class="card-fav-star active" onclick="event.stopPropagation();toggleFavById('${c.id}')" title="Rimuovi dai preferiti">★</span>` : '';
-  return `<div class="champ-card ${mine?'champ-card-mine':''}" onclick="openChampionship('${c.id}')">
-    <div class="champ-card-name">${c.name}${favStarFavSection||favStar}</div>
-    <div class="champ-card-meta">${c.season||''}${mine?' · <strong>Mio</strong>':''}</div>
-    ${badge}
-  </div>`;
+  const isClosed   = c.access === 'closed' || !!c.closed;
+  const isPassword = c.access === 'password' && !isClosed;
+  const isMember   = mine || isMemberOf(c.id);
+
+  // Badge
+  var badge = isClosed
+    ? '<span class="badge-access badge-priv">🔐 Chiuso</span>'
+    : isPassword
+      ? '<span class="badge-access badge-priv">🔒 Privato</span>'
+      : '<span class="badge-access badge-pub">🌐 Pubblico</span>';
+
+  // Per campionati chiusi non membri: card grigia non cliccabile
+  if (isClosed && !isMember) {
+    return '<div class="champ-card champ-card-locked" title="Campionato chiuso — solo su invito">'
+      + '<div class="champ-card-name" style="opacity:.4;">' + c.name + ' <span style="font-size:11px;">🔐</span></div>'
+      + '<div class="champ-card-meta" style="opacity:.3;">' + (c.season||'') + '</div>'
+      + badge
+      + '</div>';
+  }
+
+  const favStar = !mine && !inFavSection
+    ? ('<span class="card-fav-star ' + (fav?'active':'') + '" onclick="event.stopPropagation();toggleFavById(\'' + c.id + '\')" title="' + (fav?'Rimuovi':'Aggiungi') + '">' + (fav?'★':'☆') + '</span>')
+    : '';
+  const favStarFav = inFavSection
+    ? ('<span class="card-fav-star active" onclick="event.stopPropagation();toggleFavById(\'' + c.id + '\')" title="Rimuovi dai preferiti">★</span>')
+    : '';
+
+  return '<div class="champ-card ' + (mine?'champ-card-mine':'') + '" data-champid="' + c.id + '" onclick="openChampionship(this.getAttribute(\'data-champid\'))">'
+    + '<div class="champ-card-name">' + c.name + (favStarFav||favStar) + '</div>'
+    + '<div class="champ-card-meta">' + (c.season||'') + (mine?' · <strong>Mio</strong>':'') + '</div>'
+    + badge
+    + '</div>';
 }
 // ── DASHBOARD ─────────────────────────────────────
 async function loadDashboard() {
@@ -1314,9 +1353,16 @@ async function openChampionship(id) {
     .select('role').eq('champ_id', id).eq('user_id', currentUser.id).maybeSingle();
   const isMember = membership && (membership.role === 'owner' || membership.role === 'player');
 
-  // Access check
-  if (champ.access === 'password' && !isOwnerCheck && !isMember) {
-    // Check in-session cache
+  const isClosed   = champ.access === 'closed' || !!champ.closed;
+  const isPassword = champ.access === 'password' && !isClosed;
+
+  // Campionato CHIUSO: solo membri accedono (gli altri non dovrebbero nemmeno vedere la card)
+  if (isClosed && !isOwnerCheck && !isMember) {
+    showToast("Campionato su invito — contatta l'organizzatore");
+    return;
+  }
+  // Campionato PRIVATO (password): chiunque vede la card, ma serve password per entrare
+  if (isPassword && !isOwnerCheck && !isMember) {
     if (sessionAccess.get(id)) {
       await loadChampPage(champ);
     } else {
@@ -1327,9 +1373,10 @@ async function openChampionship(id) {
       document.getElementById('access-err').textContent = '';
       openOverlay('access-overlay');
     }
-  } else {
-    await loadChampPage(champ);
+    return;
   }
+  // Campionato PUBBLICO o membro/owner: accesso diretto
+  await loadChampPage(champ);
 }
 
 async function submitAccess() {
@@ -1498,18 +1545,18 @@ function renderJoinBanner() {
     return;
   }
 
-  // Non-member: show join button or "su invito" based on access type
+  // Non-member
   if (!status) {
-    const isClosed = currentChamp.access === 'closed' || currentChamp.closed;
-    const canRequest = !isClosed || isFriendOfOwner(currentChamp.owner_id);
-    if (canRequest) {
-      el.innerHTML = '<div style="margin:12px 0;background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.3);border-radius:12px;padding:14px;text-align:center;">'
-        + '<div style="font-size:13px;color:#555;margin-bottom:10px;">Vuoi partecipare a questo campionato?</div>'
-        + '<button onclick="requestJoin()" style="background:var(--violet);color:#fff;border:none;border-radius:10px;padding:9px 24px;font-size:14px;font-weight:700;cursor:pointer;">Richiedi iscrizione</button>'
-        + '</div>';
+    var isClosed   = currentChamp.access === 'closed' || !!currentChamp.closed;
+    var isPassword = currentChamp.access === 'password' && !isClosed;
+
+    if (isClosed) {
+      el.innerHTML = '<div style="margin:12px 0;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;text-align:center;font-size:13px;color:var(--muted);">🔐 Campionato chiuso — solo su invito diretto</div>';
     } else {
-      el.innerHTML = '<div style="margin:12px 0;background:#f5f3ef;border:1px solid #e0ddd6;border-radius:12px;padding:12px 14px;text-align:center;font-size:13px;color:#aaa;">'
-        + "🔒 Campionato su invito — solo gli amici dell'organizzatore possono richiedere l'iscrizione"
+      // Pubblico o Privato (password già inserita): mostra pulsante richiesta
+      el.innerHTML = '<div style="margin:12px 0;background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.3);border-radius:12px;padding:14px;text-align:center;">'
+        + '<div style="font-size:13px;color:var(--muted);margin-bottom:10px;">Vuoi partecipare a questo campionato?</div>'
+        + '<button onclick="requestJoin()" style="background:var(--violet);color:#fff;border:none;border-radius:10px;padding:9px 24px;font-size:14px;font-weight:700;cursor:pointer;">Richiedi iscrizione</button>'
         + '</div>';
     }
     return;
@@ -2237,9 +2284,9 @@ function renderManageSettings(){
   html += '<div class="prize-input-row" style="margin-bottom:10px;">';
   html += '<span class="prize-input-icon">🌐</span>';
   html += '<select class="prize-field" id="set-champ-access" style="border:none;outline:none;font-size:14px;background:transparent;">';
-  html += '<option value="public"' + (currentChamp&&currentChamp.access==='public'?' selected':'') + '>Pubblico — chiunque può richiedere iscrizione</option>';
-  html += '<option value="closed"' + (currentChamp&&(currentChamp.access==='closed'||currentChamp.closed)?' selected':'') + '>Chiuso — solo chi inviti può iscriversi</option>';
-  html += '<option value="password"' + (currentChamp&&currentChamp.access==='password'?' selected':'') + '>Password — accesso con codice</option>';
+  html += '<option value="public"' + (currentChamp&&currentChamp.access==='public'&&!currentChamp.closed?' selected':'') + '>🌐 Pubblico — visibile a tutti, chiunque può richiedere iscrizione</option>';
+  html += '<option value="closed"' + (currentChamp&&(currentChamp.access==='closed'||currentChamp.closed)?' selected':'') + '>🔐 Chiuso — visibile solo ai partecipanti, solo su invito</option>';
+  html += '<option value="password"' + (currentChamp&&currentChamp.access==='password'&&!currentChamp.closed?' selected':'') + '>🔒 Privato — visibile a tutti, accesso con password</option>';
   html += '</select></div>';
   var showPass = currentChamp && currentChamp.access==='password';
   html += '<div class="prize-input-row" style="margin-bottom:10px;' + (showPass?'':'display:none;') + '" id="set-pass-row">';
