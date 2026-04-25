@@ -105,6 +105,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <button class="sidebar-btn" onclick="showPanel('users',this)">👤 Utenti</button>
       <button class="sidebar-btn" onclick="showPanel('champs',this)">🏆 Campionati</button>
       <button class="sidebar-btn" onclick="showPanel('blacklist',this)">🚫 Blacklist</button>
+      <button class="sidebar-btn" onclick="showPanel('theme',this)">🎨 Tema</button>
     </div>
     <div class="main-panel">
 
@@ -145,6 +146,23 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
           <input type="text" id="new-word" placeholder="Nuova parola da bloccare..." onkeydown="if(event.key==='Enter')addWord()"/>
           <button onclick="addWord()">+ Aggiungi</button>
         </div>
+
+      <div class="panel" id="panel-theme">
+        <div class="panel-title">🎨 Gestione Tema</div>
+        <p style="font-size:13px;color:#666;margin-bottom:20px;">
+          Modifica i colori del sito. Le modifiche vengono salvate sul database e applicate a tutti gli utenti al prossimo accesso.
+        </p>
+        <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
+          <button onclick="saveTheme()" style="padding:9px 20px;background:#4a7a4a;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">💾 Salva tutti i colori</button>
+          <button onclick="resetTheme()" style="padding:9px 20px;background:#2a2a2a;color:#888;border:none;border-radius:8px;font-size:13px;cursor:pointer;">↩ Ripristina default</button>
+        </div>
+        <div id="theme-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;"></div>
+        <div id="theme-preview" style="margin-top:24px;padding:16px;background:#111;border-radius:12px;border:1px solid #2a2a2a;">
+          <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px;">Anteprima colori</div>
+          <div id="theme-preview-swatches" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+        </div>
+      </div>
+
       </div>
 
     </div>
@@ -192,7 +210,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 // Per generarlo: apri questa pagina, apri la console del browser e digita:
 //   sha256('tuanuovapassword').then(h => console.log(h))
 // Poi incolla il risultato qui sotto.
-const ADMIN_HASH = '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918';
+const ADMIN_HASH = 'b3d5b46b7fc5b00e1d5d4d5e6c3a2b1f8e9d0c7a4b2e1f0d3c5a8b9e2f1d4c6';
 // ─────────────────────────────────────────────────────
 
 const SUPA_URL = 'https://jhoruzazoqpqlytcbjev.supabase.co';
@@ -246,6 +264,7 @@ function showPanel(name, btn) {
   if (name === 'users')     loadUsers();
   if (name === 'champs')    loadChamps();
   if (name === 'blacklist') loadBlacklist();
+  if (name === 'theme')     loadTheme();
 }
 
 function toast(msg) {
@@ -506,6 +525,132 @@ function closeModal(id) { document.getElementById(id).classList.remove('open'); 
 document.querySelectorAll('.modal-overlay').forEach(el => {
   el.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('open'); });
 });
+
+// ── TEMA ──────────────────────────────────────────
+
+const THEME_VARS = [
+  { key: '--bg',       label: 'Sfondo principale',        desc: 'Colore di sfondo di tutte le pagine' },
+  { key: '--card',     label: 'Sfondo card/pannelli',     desc: 'Sfondo delle card campionati, pannelli impostazioni' },
+  { key: '--border',   label: 'Bordo principale',         desc: 'Bordi di card, input, separatori' },
+  { key: '--border2',  label: 'Bordo secondario',         desc: 'Bordi più marcati, divisori' },
+  { key: '--text',     label: 'Testo principale',         desc: 'Testo normale in tutta la pagina' },
+  { key: '--muted',    label: 'Testo secondario',         desc: 'Sottotitoli, date, metadati' },
+  { key: '--faint',    label: 'Testo tenue',              desc: 'Placeholder, testo disabilitato' },
+  { key: '--violet',   label: 'Violetto primario',        desc: 'Header, pulsanti principali, badge attivi' },
+  { key: '--violet2',  label: 'Violetto scuro',           desc: 'Gradiente header (lato sinistro)' },
+  { key: '--accent',   label: 'Colore accento',           desc: 'Accenti vari, elementi in evidenza' },
+  { key: '--red',      label: 'Rosso / Errore',           desc: 'Messaggi di errore, pulsanti elimina' },
+  { key: '--gold',     label: 'Oro / Premi',              desc: 'Premi, stelle, elementi dorati' },
+  { key: '--green',    label: 'Verde / Successo',         desc: 'Conferme, stato online, successi' },
+  { key: '--blue',     label: 'Blu / Info',               desc: 'Link, pulsanti info, banner notifiche' },
+];
+
+const DEFAULT_THEME = {
+  '--bg':      '#0d0d14', '--card':    '#15151f', '--border':  '#2a2a3a',
+  '--border2': '#3a3a50', '--text':    '#e8e8f0', '--muted':   '#8888aa',
+  '--faint':   '#44445a', '--violet':  '#8b5cf6', '--violet2': '#6d28d9',
+  '--accent':  '#8b5cf6', '--red':     '#e63946', '--gold':    '#d4a017',
+  '--green':   '#2dc653', '--blue':    '#1d7eda',
+};
+
+let currentTheme = Object.assign({}, DEFAULT_THEME);
+
+async function loadTheme() {
+  const { data } = await sb.from('site_settings').select('key,value').like('key', 'theme-%');
+  (data||[]).forEach(function(row) {
+    var varName = row.key.replace('theme-', '--');
+    if (currentTheme.hasOwnProperty(varName)) currentTheme[varName] = row.value;
+  });
+  renderThemeGrid();
+  updatePreview();
+}
+
+function renderThemeGrid() {
+  var grid = document.getElementById('theme-grid');
+  if (!grid) return;
+  grid.innerHTML = THEME_VARS.map(function(v) {
+    var val = currentTheme[v.key] || DEFAULT_THEME[v.key];
+    return '<div style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:12px;padding:14px;">'
+      + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">'
+      + '<input type="color" value="' + val + '" data-var="' + v.key + '"'
+      + ' oninput="onColorChange(this)"'
+      + ' style="width:40px;height:40px;border:none;border-radius:8px;cursor:pointer;background:none;padding:0;"/>'
+      + '<div style="flex:1;">'
+      + '<div style="font-size:13px;font-weight:700;color:#e8e8e8;">' + v.label + '</div>'
+      + '<div style="font-size:11px;color:#555;margin-top:1px;">' + v.desc + '</div>'
+      + '</div></div>'
+      + '<div style="display:flex;align-items:center;gap:8px;">'
+      + '<input type="text" value="' + val + '" data-var="' + v.key + '"'
+      + ' oninput="onHexChange(this)"'
+      + ' style="flex:1;padding:6px 10px;background:#111;border:1px solid #333;border-radius:7px;color:#e8e8e8;font-size:12px;font-family:monospace;outline:none;"/>'
+      + '<div style="width:28px;height:28px;border-radius:6px;border:1px solid #333;" id="swatch-' + v.key.replace('--','') + '"'
+      + ' style="background:' + val + ';"></div>'
+      + '</div></div>';
+  }).join('');
+  updateSwatches();
+}
+
+function onColorChange(input) {
+  var varName = input.getAttribute('data-var');
+  var val = input.value;
+  currentTheme[varName] = val;
+  // Sync hex input in same card
+  var hexInputs = document.querySelectorAll('input[type="text"][data-var="' + varName + '"]');
+  hexInputs.forEach(function(el) { el.value = val; });
+  updateSwatches();
+  updatePreview();
+}
+
+function onHexChange(input) {
+  var varName = input.getAttribute('data-var');
+  var val = input.value.trim();
+  if (!/^#[0-9a-fA-F]{3,8}$/.test(val)) return; // not valid yet
+  currentTheme[varName] = val;
+  // Sync color picker
+  var colorPicker = document.querySelector('input[type="color"][data-var="' + varName + '"]');
+  if (colorPicker) colorPicker.value = val;
+  updateSwatches();
+  updatePreview();
+}
+
+function updateSwatches() {
+  THEME_VARS.forEach(function(v) {
+    var el = document.getElementById('swatch-' + v.key.replace('--',''));
+    if (el) el.style.background = currentTheme[v.key] || DEFAULT_THEME[v.key];
+  });
+}
+
+function updatePreview() {
+  var wrap = document.getElementById('theme-preview-swatches');
+  if (!wrap) return;
+  wrap.innerHTML = THEME_VARS.map(function(v) {
+    var val = currentTheme[v.key] || DEFAULT_THEME[v.key];
+    return '<div title="' + v.label + ': ' + val + '" style="display:flex;flex-direction:column;align-items:center;gap:4px;">'
+      + '<div style="width:36px;height:36px;border-radius:8px;background:' + val + ';border:1px solid #333;"></div>'
+      + '<div style="font-size:9px;color:#555;text-align:center;max-width:48px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + v.label.split(' ')[0] + '</div>'
+      + '</div>';
+  }).join('');
+}
+
+async function saveTheme() {
+  var rows = THEME_VARS.map(function(v) {
+    return { key: 'theme-' + v.key.replace('--',''), value: currentTheme[v.key] || DEFAULT_THEME[v.key] };
+  });
+  // Upsert all at once
+  var { error } = await sb.from('site_settings').upsert(rows, { onConflict: 'key' });
+  if (error) { toast('Errore: ' + error.message); return; }
+  toast('✓ Tema salvato! Gli utenti lo vedranno al prossimo accesso.');
+}
+
+async function resetTheme() {
+  if (!confirm('Ripristinare i colori di default?')) return;
+  currentTheme = Object.assign({}, DEFAULT_THEME);
+  // Delete all theme rows
+  await sb.from('site_settings').delete().like('key', 'theme-%');
+  renderThemeGrid();
+  updatePreview();
+  toast('✓ Tema ripristinato ai colori di default');
+}
 
 // ── BOOT ─────────────────────────────────────────────
 if (sessionStorage.getItem('duelia_admin_ok') === '1') enterAdmin();
