@@ -243,7 +243,7 @@ function renderThemeGrid() {
   var grid = document.getElementById('theme-grid');
   if (!grid) { console.error('theme-grid not found'); return; }
 
-  var html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;">';
+  var html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;color:#e8e8e8;">';
   THEME_VARS.forEach(function(v) {
     var val = currentTheme[v.key] || v.def;
     // Ensure hex format for color input
@@ -361,10 +361,7 @@ function showPanel(name, btn) {
   if (name === 'users')     loadUsers();
   if (name === 'champs')    loadChamps();
   if (name === 'blacklist') loadBlacklist();
-  if (name === 'theme') {
-    currentTheme = Object.assign({}, DEFAULT_THEME);
-    loadTheme();
-  }
+  if (name === 'theme') { loadTheme(); }
 }
 
 function toast(msg) {
