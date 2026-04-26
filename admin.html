@@ -210,7 +210,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 // Per generarlo: apri questa pagina, apri la console del browser e digita:
 //   sha256('tuanuovapassword').then(h => console.log(h))
 // Poi incolla il risultato qui sotto.
-const ADMIN_HASH = '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918';
+const ADMIN_HASH = 'b3d5b46b7fc5b00e1d5d4d5e6c3a2b1f8e9d0c7a4b2e1f0d3c5a8b9e2f1d4c6';
 // ─────────────────────────────────────────────────────
 
 const SUPA_URL = 'https://jhoruzazoqpqlytcbjev.supabase.co';
@@ -264,7 +264,10 @@ function showPanel(name, btn) {
   if (name === 'users')     loadUsers();
   if (name === 'champs')    loadChamps();
   if (name === 'blacklist') loadBlacklist();
-  if (name === 'theme')     loadTheme();
+  if (name === 'theme') {
+    currentTheme = Object.assign({}, DEFAULT_THEME);
+    loadTheme();
+  }
 }
 
 function toast(msg) {
@@ -556,11 +559,14 @@ const DEFAULT_THEME = {
 let currentTheme = Object.assign({}, DEFAULT_THEME);
 
 async function loadTheme() {
-  const { data } = await sb.from('site_settings').select('key,value').like('key', 'theme-%');
-  (data||[]).forEach(function(row) {
-    var varName = row.key.replace('theme-', '--');
-    if (currentTheme.hasOwnProperty(varName)) currentTheme[varName] = row.value;
-  });
+  try {
+    const { data, error } = await sb.from('site_settings').select('key,value');
+    if (error) { console.error('loadTheme error:', error); }
+    (data||[]).filter(r => r.key.startsWith('theme-')).forEach(function(row) {
+      var varName = '--' + row.key.replace('theme-', '');
+      if (currentTheme.hasOwnProperty(varName)) currentTheme[varName] = row.value;
+    });
+  } catch(e) { console.error('loadTheme exception:', e); }
   renderThemeGrid();
   updatePreview();
 }
@@ -636,17 +642,18 @@ async function saveTheme() {
   var rows = THEME_VARS.map(function(v) {
     return { key: 'theme-' + v.key.replace('--',''), value: currentTheme[v.key] || DEFAULT_THEME[v.key] };
   });
-  // Upsert all at once
-  var { error } = await sb.from('site_settings').upsert(rows, { onConflict: 'key' });
+  // Delete old then insert (avoids upsert conflicts)
+  await sb.from('site_settings').delete().like('key', 'theme%');
+  var { error } = await sb.from('site_settings').insert(rows);
   if (error) { toast('Errore: ' + error.message); return; }
-  toast('✓ Tema salvato! Gli utenti lo vedranno al prossimo accesso.');
+  toast('✓ Tema salvato! Attivo al prossimo accesso degli utenti.');
 }
 
 async function resetTheme() {
   if (!confirm('Ripristinare i colori di default?')) return;
   currentTheme = Object.assign({}, DEFAULT_THEME);
   // Delete all theme rows
-  await sb.from('site_settings').delete().like('key', 'theme-%');
+  await sb.from('site_settings').delete().like('key', 'theme%');
   renderThemeGrid();
   updatePreview();
   toast('✓ Tema ripristinato ai colori di default');
