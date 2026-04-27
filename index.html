@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DUELIA</title>
+<title>COMPETEO</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
@@ -197,8 +197,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .search-input:focus{border-color:var(--text);}
 
 /* pagination */
-.pagination{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:16px;}
-.page-btn{padding:7px 13px;border-radius:8px;border:1px solid var(--border);background:var(--card);font-size:13px;font-weight:600;cursor:pointer;color:var(--muted);}
+.pagination{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:18px;padding-bottom:8px;}
+.page-btn{padding:6px 12px;border:1px solid var(--border);border-radius:7px;background:var(--card);color:var(--text);font-size:13px;cursor:pointer;transition:background .15s;}
+.page-btn:hover{background:var(--faint);}
+.page-btn.active-pg{background:var(--violet);color:#fff;border-color:var(--violet);}
 .page-btn:disabled{opacity:.35;cursor:not-allowed;}
 .page-btn.active-pg{background:#1a1a1a;color:#fff;border-color:var(--text);}
 .page-info{font-size:13px;color:var(--muted);}
@@ -220,7 +222,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .manage-tabs{display:flex;padding:12px 18px 0;border-bottom:1px solid var(--border);flex-shrink:0;overflow-x:auto;}
 .manage-tab{flex-shrink:0;padding:8px 10px;font-size:12px;font-weight:600;color:var(--muted);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;}
 .manage-tab.active{color:var(--text);border-bottom-color:var(--text);}
-.manage-body{overflow-y:auto;flex:1;padding:14px 16px 28px;color:var(--text);}
+.manage-body{overflow-y:auto;flex:1;padding:14px 16px 28px;color:var(--text);scrollbar-width:none;-ms-overflow-style:none;}
+.manage-body::-webkit-scrollbar{display:none;}
 .manage-hint{font-size:11px;color:var(--faint);margin-bottom:10px;text-align:center;}
 
 /* sort list */
@@ -239,7 +242,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 /* player / prize inputs */
 .player-item{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--border);border-radius:11px;padding:9px 11px;margin-bottom:7px;color:var(--text);}
 .color-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;}
-.name-input{flex:1;border:none;outline:none;font-size:14px;font-weight:500;background:transparent;padding:0;}
+.name-input{flex:1;border:none;outline:none;font-size:14px;font-weight:500;background:transparent;padding:0;color:var(--text);}
 .del-btn{width:26px;height:26px;border-radius:50%;border:none;background:#fdecea;color:#c0392b;font-size:16px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
 .prize-input-row{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--border);border-radius:11px;padding:9px 11px;margin-bottom:7px;}
 .prize-input-icon{font-size:20px;flex-shrink:0;}
@@ -535,7 +538,7 @@ select:focus{border-color:var(--text);}
 <div class="auth-modal-overlay" id="auth-modal-overlay" onclick="if(event.target===this)closeAuthModal()">
   <div class="auth-modal-box" id="auth-modal-box">
     <button onclick="closeAuthModal()" style="position:absolute;top:12px;right:16px;background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;line-height:1;">×</button>
-    <div class="auth-logo" style="font-size:22px;font-weight:900;letter-spacing:1px;color:#fff;text-align:center;margin-bottom:4px;">DUELIA</div>
+    <div class="auth-logo" style="font-size:22px;font-weight:900;letter-spacing:1px;color:#fff;text-align:center;margin-bottom:4px;">COMPETEO</div>
     <div class="auth-tabs">
       <button class="auth-tab active" id="tab-login-btn" onclick="switchAuthTab('login')">Accedi</button>
       <button class="auth-tab" id="tab-reg-btn" onclick="switchAuthTab('register')">Registrati</button>
@@ -560,7 +563,7 @@ select:focus{border-color:var(--text);}
 ══════════════════════════════════════════════════ -->
 <div class="page" id="page-home">
   <header class="app-header">
-    <h1 style="font-size:20px;font-weight:900;letter-spacing:1px;">DUELIA</h1>
+    <h1 style="font-size:20px;font-weight:900;letter-spacing:1px;">COMPETEO</h1>
     <div class="right">
       <span id="home-username" style="font-size:13px;color:rgba(255,255,255,.7);"></span>
       <button class="friends-btn" onclick="openFriendsPanel()" title="Amici">
@@ -2242,7 +2245,7 @@ function renderManagePlayers(){
     var kickId = pm.id;
     html += '<div class="player-item">'
          + '<div class="color-dot" style="background:' + color + '"></div>'
-         + '<span class="name-input" style="flex:1;font-size:13px;font-weight:600;color:#1a1a1a;">' + pm.username + (pm.role==='owner'?' 👑':'') + '</span>'
+         + '<span class="name-input" style="flex:1;font-size:13px;font-weight:600;color:var(--text);">' + pm.username + (pm.role==='owner'?' 👑':'') + '</span>'
          + (canKick ? '<button class="del-btn" onclick="kickMember(' + "'" + kickId + "'" + ')" title="Escludi dal campionato" style="font-size:18px;color:#c0392b;">×</button>' : '')
          + '</div>';
   }
@@ -3780,8 +3783,8 @@ function showFooterPage(page) {
         <a href="#" onclick="showFooterPage('cookies');return false;">Cookie Policy</a>
       </div>
       <div class="footer-bottom">
-        <span class="footer-logo-txt">DUELIA</span>
-        <span class="footer-copy">&copy; 2025 Duelia &mdash; Tutti i diritti riservati.</span>
+        <span class="footer-logo-txt">COMPETEO</span>
+        <span class="footer-copy">&copy; 2025 Competeo &mdash; Tutti i diritti riservati.</span>
       </div>
     </div>
   </div>
