@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Note Legali & Privacy — COMPETEO</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#080b14;--card:#0f1628;--border:#1e2a4a;--border2:#2d3f6e;
+  --text:#f0f2ff;--muted:#7b8ab8;--faint:#3a4468;
+  --violet:#7c3aed;--violet2:#4c1d95;--navy:#1e3a8a;
+  --accent:#818cf8;--green:#10b981;
+}
+html{scroll-behavior:smooth;}
+body{
+  font-family:'Segoe UI',system-ui,sans-serif;
+  background:var(--bg);color:var(--text);
+  min-height:100vh;line-height:1.7;
+}
+
+/* ── HEADER ── */
+.site-header{
+  background:linear-gradient(90deg,var(--violet2) 0%,var(--violet) 50%,var(--navy) 100%);
+  padding:0 24px;height:54px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100;
+}
+.logo{
+  font-size:17px;font-weight:900;letter-spacing:1.5px;color:#fff;
+  text-decoration:none;
+}
+.back-btn{
+  font-size:13px;color:rgba(255,255,255,.8);text-decoration:none;
+  display:flex;align-items:center;gap:5px;
+  transition:color .15s;
+}
+.back-btn:hover{color:#fff;}
+
+/* ── HERO ── */
+.hero{
+  background:linear-gradient(135deg,var(--violet2),var(--navy));
+  padding:48px 24px 40px;text-align:center;
+  border-bottom:1px solid var(--border);
+}
+.hero h1{font-size:28px;font-weight:800;letter-spacing:.5px;margin-bottom:8px;}
+.hero p{font-size:14px;color:rgba(255,255,255,.65);max-width:480px;margin:0 auto;}
+.last-update{
+  display:inline-block;margin-top:14px;
+  padding:4px 12px;border-radius:20px;
+  background:rgba(255,255,255,.1);font-size:11px;
+  color:rgba(255,255,255,.6);letter-spacing:.3px;
+}
+
+/* ── NAV PILLS ── */
+.nav-pills{
+  display:flex;justify-content:center;gap:8px;
+  padding:20px 24px;flex-wrap:wrap;
+  background:var(--card);border-bottom:1px solid var(--border);
+  position:sticky;top:54px;z-index:90;
+}
+.nav-pill{
+  padding:7px 18px;border-radius:50px;font-size:13px;font-weight:600;
+  text-decoration:none;color:var(--muted);
+  border:1px solid var(--border);background:transparent;
+  transition:all .2s;cursor:pointer;
+}
+.nav-pill:hover,.nav-pill.active{
+  background:var(--violet);color:#fff;border-color:var(--violet);
+}
+
+/* ── LAYOUT ── */
+.container{max-width:780px;margin:0 auto;padding:40px 24px 60px;}
+
+/* ── SECTION ── */
+.section{margin-bottom:48px;scroll-margin-top:120px;}
+.section-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:4px 12px;border-radius:6px;font-size:11px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.8px;margin-bottom:14px;
+  background:rgba(124,58,237,.2);color:var(--accent);border:1px solid rgba(124,58,237,.3);
+}
+.section h2{
+  font-size:22px;font-weight:800;margin-bottom:20px;
+  padding-bottom:12px;border-bottom:1px solid var(--border);
+}
+.section h3{font-size:15px;font-weight:700;margin:24px 0 8px;color:var(--accent);}
+
+/* ── PROSE ── */
+p{font-size:14px;color:rgba(240,242,255,.8);margin-bottom:12px;}
+ul,ol{padding-left:20px;margin-bottom:12px;}
+li{font-size:14px;color:rgba(240,242,255,.8);margin-bottom:6px;}
+strong{color:var(--text);font-weight:600;}
+a{color:var(--accent);text-decoration:none;}
+a:hover{text-decoration:underline;}
+
+/* ── INFO CARD ── */
+.info-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:12px;padding:16px 18px;margin-bottom:16px;
+}
+.info-card h4{font-size:13px;font-weight:700;color:var(--accent);margin-bottom:8px;}
+.info-card p{margin:0;font-size:13px;}
+
+/* ── TABLE ── */
+.data-table{width:100%;border-collapse:collapse;margin-bottom:16px;font-size:13px;}
+.data-table th{
+  text-align:left;padding:10px 12px;
+  background:var(--faint);color:var(--muted);
+  font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;
+}
+.data-table td{padding:10px 12px;border-bottom:1px solid var(--border);}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table tr:hover td{background:rgba(255,255,255,.02);}
+
+/* ── CONTACT BOX ── */
+.contact-box{
+  background:linear-gradient(135deg,rgba(124,58,237,.15),rgba(30,58,138,.15));
+  border:1px solid rgba(124,58,237,.3);border-radius:14px;
+  padding:20px 22px;margin-top:20px;
+  display:flex;align-items:center;gap:14px;
+}
+.contact-icon{font-size:28px;flex-shrink:0;}
+.contact-box h4{font-size:14px;font-weight:700;margin-bottom:4px;}
+.contact-box p{font-size:13px;color:var(--muted);margin:0;}
+
+/* ── COOKIE TABLE ── */
+.cookie-type{
+  display:inline-block;padding:2px 8px;border-radius:4px;
+  font-size:11px;font-weight:700;
+}
+.cookie-type.essential{background:rgba(16,185,129,.2);color:var(--green);}
+.cookie-type.analytics{background:rgba(129,140,248,.2);color:var(--accent);}
+.cookie-type.marketing{background:rgba(245,158,11,.2);color:#f59e0b;}
+
+/* ── FOOTER ── */
+.page-footer{
+  text-align:center;padding:24px;
+  border-top:1px solid var(--border);
+  font-size:12px;color:var(--faint);
+}
+
+/* ── SCROLL SPY ── */
+@media(max-width:600px){
+  .hero h1{font-size:22px;}
+  .container{padding:28px 16px 48px;}
+}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="index.html">COMPETEO</a>
+  <a class="back-btn" href="index.html">← Torna al sito</a>
+</header>
+
+<div class="hero">
+  <h1>Documenti Legali</h1>
+  <p>Privacy, Note Legali e Cookie Policy di Competeo</p>
+  <span class="last-update">Ultimo aggiornamento: Gennaio 2025</span>
+</div>
+
+<nav class="nav-pills">
+  <a class="nav-pill active" href="#privacy" onclick="setActive(this)">🔒 Privacy Policy</a>
+  <a class="nav-pill" href="#legal" onclick="setActive(this)">📄 Note Legali</a>
+  <a class="nav-pill" href="#cookies" onclick="setActive(this)">🍪 Cookie Policy</a>
+</nav>
+
+<div class="container">
+
+  <!-- ══ PRIVACY POLICY ══ -->
+  <section class="section" id="privacy">
+    <div class="section-badge">🔒 Privacy Policy</div>
+    <h2>Informativa sul Trattamento dei Dati Personali</h2>
+    <p>Ai sensi del Regolamento (UE) 2016/679 (<strong>GDPR</strong>) e del D.Lgs. 196/2003 come modificato dal D.Lgs. 101/2018, la presente informativa descrive le modalità di raccolta, utilizzo e protezione dei dati personali degli utenti che utilizzano la piattaforma <strong>Competeo</strong>.</p>
+
+    <h3>1. Titolare del Trattamento</h3>
+    <div class="info-card">
+      <h4>Titolare</h4>
+      <p><strong>Mario Rossi</strong><br>
+      Via Italia 1<br>
+      Email: <a href="mailto:info@competeo.it">info@competeo.it</a></p>
+    </div>
+
+    <h3>2. Dati Raccolti</h3>
+    <p>Competeo raccoglie i seguenti dati personali:</p>
+    <table class="data-table">
+      <thead><tr><th>Dato</th><th>Finalità</th><th>Base Giuridica</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Indirizzo email</strong></td><td>Registrazione e autenticazione account</td><td>Esecuzione del contratto (Art. 6.1.b GDPR)</td></tr>
+        <tr><td><strong>Username</strong></td><td>Identificazione nella piattaforma</td><td>Esecuzione del contratto (Art. 6.1.b GDPR)</td></tr>
+        <tr><td><strong>Dati di gioco</strong></td><td>Gestione campionati, classifiche, risultati</td><td>Esecuzione del contratto (Art. 6.1.b GDPR)</td></tr>
+        <tr><td><strong>Dati tecnici</strong></td><td>Sicurezza e funzionamento del servizio</td><td>Legittimo interesse (Art. 6.1.f GDPR)</td></tr>
+      </tbody>
+    </table>
+
+    <h3>3. Modalità di Trattamento</h3>
+    <p>I dati sono trattati con strumenti informatici e memorizzati su infrastruttura cloud fornita da <strong>Supabase Inc.</strong> (USA), con garanzie adeguate ai sensi del GDPR tramite Clausole Contrattuali Standard. I dati non sono ceduti a terzi per finalità di marketing.</p>
+
+    <h3>4. Conservazione dei Dati</h3>
+    <p>I dati vengono conservati per l'intera durata del rapporto contrattuale e per ulteriori <strong>24 mesi</strong> successivi alla cancellazione dell'account, salvo obblighi di legge che impongano periodi più lunghi.</p>
+
+    <h3>5. Diritti dell'Interessato</h3>
+    <p>In qualità di interessato, hai il diritto di:</p>
+    <ul>
+      <li><strong>Accesso</strong> — ottenere conferma del trattamento e copia dei dati (Art. 15 GDPR)</li>
+      <li><strong>Rettifica</strong> — correggere dati inesatti o incompleti (Art. 16 GDPR)</li>
+      <li><strong>Cancellazione</strong> — richiedere la cancellazione dei dati ("diritto all'oblio", Art. 17 GDPR)</li>
+      <li><strong>Limitazione</strong> — limitare il trattamento in determinati casi (Art. 18 GDPR)</li>
+      <li><strong>Portabilità</strong> — ricevere i dati in formato strutturato (Art. 20 GDPR)</li>
+      <li><strong>Opposizione</strong> — opporti al trattamento per legittimo interesse (Art. 21 GDPR)</li>
+      <li><strong>Reclamo</strong> — proporre reclamo al Garante per la Protezione dei Dati Personali (<a href="https://www.garanteprivacy.it" target="_blank">garanteprivacy.it</a>)</li>
+    </ul>
+    <p>Per esercitare i tuoi diritti, scrivi a: <a href="mailto:info@competeo.it">info@competeo.it</a></p>
+
+    <h3>6. Minori</h3>
+    <p>Il servizio è rivolto a utenti che hanno compiuto i <strong>16 anni di età</strong>. Non raccogliamo consapevolmente dati di minori di 16 anni. Se sei genitore o tutore e ritieni che tuo figlio abbia fornito dati personali, contattaci immediatamente.</p>
+
+    <div class="contact-box">
+      <div class="contact-icon">✉️</div>
+      <div>
+        <h4>Richieste Privacy</h4>
+        <p>Per qualsiasi domanda relativa alla privacy, scrivi a <a href="mailto:info@competeo.it">info@competeo.it</a>. Risponderemo entro 30 giorni dalla ricezione.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ NOTE LEGALI ══ -->
+  <section class="section" id="legal">
+    <div class="section-badge">📄 Note Legali</div>
+    <h2>Note Legali e Termini di Servizio</h2>
+
+    <h3>1. Proprietà del Sito</h3>
+    <p>Il sito web <strong>Competeo</strong> è di proprietà di <strong>Mario Rossi</strong>, Via Italia 1. Email: <a href="mailto:info@competeo.it">info@competeo.it</a>.</p>
+
+    <h3>2. Descrizione del Servizio</h3>
+    <p>Competeo è una piattaforma web gratuita che consente agli utenti registrati di creare e partecipare a campionati multiplayer tra amici, gestire classifiche e risultati di gioco. Il servizio è fornito "così com'è" e potrebbe essere soggetto a modifiche senza preavviso.</p>
+
+    <h3>3. Registrazione e Account</h3>
+    <p>Per utilizzare le funzionalità della piattaforma è necessario registrarsi fornendo un indirizzo email valido e un username. L'utente è responsabile della riservatezza delle proprie credenziali e di tutte le attività effettuate tramite il proprio account. È vietato:</p>
+    <ul>
+      <li>Cedere o condividere le proprie credenziali di accesso a terzi</li>
+      <li>Creare account falsi o multipli con finalità fraudolente</li>
+      <li>Utilizzare username offensivi, volgari o che violino diritti di terzi</li>
+      <li>Caricare contenuti illegali, diffamatori o che violino diritti d'autore</li>
+    </ul>
+
+    <h3>4. Proprietà Intellettuale</h3>
+    <p>Il marchio "Competeo", il logo, il codice sorgente, il design e tutti i contenuti originali della piattaforma sono di proprietà di Mario Rossi e sono protetti dalla normativa applicabile in materia di proprietà intellettuale. È vietata qualsiasi riproduzione, distribuzione o utilizzo commerciale non autorizzato.</p>
+
+    <h3>5. Limitazione di Responsabilità</h3>
+    <p>Il Titolare non è responsabile per:</p>
+    <ul>
+      <li>Danni diretti o indiretti derivanti dall'utilizzo o dall'impossibilità di utilizzo del servizio</li>
+      <li>Interruzioni del servizio per manutenzione, guasti tecnici o cause di forza maggiore</li>
+      <li>Contenuti pubblicati dagli utenti all'interno della piattaforma</li>
+      <li>Perdita di dati causata da eventi al di fuori del ragionevole controllo del Titolare</li>
+    </ul>
+
+    <h3>6. Sospensione e Cancellazione Account</h3>
+    <p>Il Titolare si riserva il diritto di sospendere o cancellare account che violino i presenti Termini, senza preavviso e senza diritto a rimborso. L'utente può richiedere la cancellazione del proprio account in qualsiasi momento scrivendo a <a href="mailto:info@competeo.it">info@competeo.it</a>.</p>
+
+    <h3>7. Modifiche ai Termini</h3>
+    <p>Il Titolare si riserva il diritto di modificare i presenti Termini in qualsiasi momento. Le modifiche saranno comunicate agli utenti tramite il sito. L'uso continuato del servizio dopo la pubblicazione delle modifiche costituisce accettazione delle stesse.</p>
+
+    <h3>8. Legge Applicabile e Foro Competente</h3>
+    <p>I presenti Termini sono regolati dalla legge italiana. Per qualsiasi controversia relativa all'utilizzo del servizio sarà competente il Tribunale del luogo di residenza del Titolare, salvo diversa disposizione inderogabile di legge a favore del consumatore.</p>
+  </section>
+
+  <!-- ══ COOKIE POLICY ══ -->
+  <section class="section" id="cookies">
+    <div class="section-badge">🍪 Cookie Policy</div>
+    <h2>Cookie Policy</h2>
+    <p>Questa Cookie Policy descrive i tipi di cookie e tecnologie simili utilizzati da Competeo e le modalità per gestirli, ai sensi del D.Lgs. 69/2012 e dell'art. 122 del D.Lgs. 196/2003.</p>
+
+    <h3>1. Cosa sono i Cookie</h3>
+    <p>I cookie sono piccoli file di testo che i siti web salvano sul dispositivo dell'utente durante la navigazione. Sono utilizzati per far funzionare i siti in modo efficiente, memorizzare le preferenze dell'utente e fornire informazioni ai proprietari del sito.</p>
+
+    <h3>2. Cookie Utilizzati da Competeo</h3>
+    <table class="data-table">
+      <thead><tr><th>Nome</th><th>Tipo</th><th>Durata</th><th>Finalità</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>sb-access-token</strong></td>
+          <td><span class="cookie-type essential">Tecnico</span></td>
+          <td>Sessione</td>
+          <td>Autenticazione utente (Supabase)</td>
+        </tr>
+        <tr>
+          <td><strong>sb-refresh-token</strong></td>
+          <td><span class="cookie-type essential">Tecnico</span></td>
+          <td>7 giorni</td>
+          <td>Rinnovo automatico sessione (Supabase)</td>
+        </tr>
+        <tr>
+          <td><strong>localStorage</strong></td>
+          <td><span class="cookie-type essential">Tecnico</span></td>
+          <td>Persistente</td>
+          <td>Preferenze di sessione e cache locale</td>
+        </tr>
+      </tbody>
+    </table>
+    <p>Competeo utilizza esclusivamente cookie <strong>tecnici e strettamente necessari</strong> al funzionamento del servizio. Non vengono utilizzati cookie di profilazione o di tracciamento per finalità pubblicitarie proprie.</p>
+
+    <h3>3. Cookie di Terze Parti</h3>
+    <p>Il sito potrebbe visualizzare banner pubblicitari di terze parti. Tali soggetti possono installare cookie propri per la misurazione delle performance pubblicitarie. Ti invitiamo a consultare le rispettive informative privacy:</p>
+    <ul>
+      <li><a href="https://policies.google.com/privacy" target="_blank">Google Privacy Policy</a> (eventuale Google AdSense)</li>
+      <li><a href="https://supabase.com/privacy" target="_blank">Supabase Privacy Policy</a> (infrastruttura backend)</li>
+    </ul>
+
+    <h3>4. Come Gestire i Cookie</h3>
+    <p>Poiché i cookie tecnici sono necessari al funzionamento del servizio, la loro disabilitazione potrebbe impedire l'utilizzo della piattaforma. È possibile gestire o eliminare i cookie tramite le impostazioni del proprio browser:</p>
+    <ul>
+      <li><a href="https://support.google.com/chrome/answer/95647" target="_blank">Google Chrome</a></li>
+      <li><a href="https://support.mozilla.org/it/kb/protezione-antitracciamento-avanzata-firefox" target="_blank">Mozilla Firefox</a></li>
+      <li><a href="https://support.apple.com/it-it/guide/safari/sfri11471/mac" target="_blank">Safari</a></li>
+      <li><a href="https://support.microsoft.com/it-it/microsoft-edge/eliminare-i-cookie-in-microsoft-edge-63947406-40ac-c3b8-57b9-2a946a29ae09" target="_blank">Microsoft Edge</a></li>
+    </ul>
+
+    <h3>5. Aggiornamenti alla Cookie Policy</h3>
+    <p>La presente Cookie Policy può essere aggiornata periodicamente per riflettere cambiamenti tecnici o normativi. La data di ultimo aggiornamento è indicata in cima alla pagina.</p>
+
+    <div class="contact-box">
+      <div class="contact-icon">🍪</div>
+      <div>
+        <h4>Domande sui Cookie</h4>
+        <p>Per qualsiasi domanda relativa all'utilizzo dei cookie, contattaci a <a href="mailto:info@competeo.it">info@competeo.it</a>.</p>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<footer class="page-footer">
+  &copy; 2025 Mario Rossi — COMPETEO &mdash; Via Italia 1 &mdash; <a href="mailto:info@competeo.it">info@competeo.it</a>
+</footer>
+
+<script>
+function setActive(el) {
+  document.querySelectorAll('.nav-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// Scroll spy
+const sections = ['privacy','legal','cookies'];
+const observer = new IntersectionObserver(function(entries) {
+  entries.forEach(function(entry) {
+    if (entry.isIntersecting) {
+      var id = entry.target.id;
+      document.querySelectorAll('.nav-pill').forEach(function(p) {
+        p.classList.toggle('active', p.getAttribute('href') === '#' + id);
+      });
+    }
+  });
+}, { rootMargin: '-30% 0px -60% 0px' });
+
+sections.forEach(function(id) {
+  var el = document.getElementById(id);
+  if (el) observer.observe(el);
+});
+</script>
+</body>
+</html>
