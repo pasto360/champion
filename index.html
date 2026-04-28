@@ -804,7 +804,7 @@ select:focus{border-color:var(--text);}
       </label>
     </div>
     <!-- TimeTrial options (visibili solo se selezionato) -->
-    <div id="nc-tt-options" style="display:none;background:#f5f3ef;border-radius:10px;padding:12px;margin-bottom:12px;">
+    <div id="nc-tt-options" style="display:none;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px;">
       <div class="field" style="margin-bottom:8px;"><label>Unità di misura</label>
         <select id="nc-tt-unit" class="prize-field" style="border:none;font-size:14px;background:transparent;">
           <option value="time">Tempo (mm:ss.mmm)</option>
@@ -909,13 +909,7 @@ select:focus{border-color:var(--text);}
       <h2>Gestisci</h2>
       <button style="background:none;border:none;font-size:22px;cursor:pointer;color:#888;" onclick="closeManagePanel()">×</button>
     </div>
-    <div class="manage-tabs" id="manage-tabs-row">
-      <button class="manage-tab active" onclick="switchManageTab('players')">👤 Utenti</button>
-      <button class="manage-tab" id="mtab-races-or-matches" onclick="switchManageTab('races')">🏁 Circuiti</button>
-      <button class="manage-tab" onclick="switchManageTab('prizes')">🏆 Premi</button>
-      <button class="manage-tab" onclick="switchManageTab('live')">📡 Live</button>
-      <button class="manage-tab" onclick="switchManageTab('settings')">⚙ Impost.</button>
-    </div>
+    <div class="manage-tabs" id="manage-tabs-row"></div>
     <div class="manage-body" id="manage-body"></div>
   </div>
 </div>
@@ -2149,28 +2143,62 @@ function saveResult(){
 }
 
 // ── MANAGE PANEL ──────────────────────────────────
+function getManageTabs() {
+  var fmt = champData.format || 'standard';
+  // Base tabs per formato
+  // standard:    Utenti | Gare | Premi | Live | Impost.
+  // roundrobin:  Utenti | Sfide | Premi | Live | Impost.
+  // elimination: Utenti | Premi | Live | Impost.
+  // timetrial:   Utenti | Premi | Live | Impost.
+  var hasRaces = fmt === 'standard' || fmt === 'roundrobin';
+  var racesLabel = fmt === 'roundrobin' ? '🏁 Sfide' : '🏁 Gare';
+  var tabs = [{ id:'players', label:'👤 Utenti' }];
+  if (hasRaces) tabs.push({ id:'races', label: racesLabel });
+  tabs.push({ id:'prizes', label:'🏆 Premi' });
+  tabs.push({ id:'live',   label:'📡 Live' });
+  tabs.push({ id:'settings', label:'⚙ Impost.' });
+  return tabs;
+}
+
 function openManagePanel(){
-  currentManageTab='players';
-  // Relabel races tab based on format
-  var racesTab = document.getElementById('mtab-races-or-matches');
-  if (racesTab) {
-    var fmt = champData.format || 'standard';
-    racesTab.textContent = fmt === 'roundrobin' ? '⚽ Scontri' : fmt === 'timetrial' ? '⏱ Prove' : '🏁 Circuiti';
-  }
-  updateManageTabs();renderManageBody();
+  currentManageTab = 'players';
+  buildManageTabs();
+  updateManageTabs();
+  renderManageBody();
   document.getElementById('manage-panel').classList.add('open');
 }
 function closeManagePanel(){document.getElementById('manage-panel').classList.remove('open');}
-function switchManageTab(tab){currentManageTab=tab;updateManageTabs();renderManageBody();}
+
+function buildManageTabs() {
+  var row = document.getElementById('manage-tabs-row');
+  if (!row) return;
+  var tabs = getManageTabs();
+  row.innerHTML = tabs.map(function(t) {
+    return '<button class="manage-tab" onclick="switchManageTab(\'' + t.id + '\')">' + t.label + '</button>';
+  }).join('');
+}
+
+function switchManageTab(tab){
+  // If tab not available for this format, ignore
+  var available = getManageTabs().map(function(t){ return t.id; });
+  if (!available.includes(tab)) tab = 'players';
+  currentManageTab = tab;
+  updateManageTabs();
+  renderManageBody();
+}
+
 function updateManageTabs(){
-  const tabs=['players','races','prizes','live','settings'];
-  const btns = document.querySelectorAll('.manage-tab');
-  btns.forEach((btn,i)=>btn.classList.toggle('active',tabs[i]===currentManageTab));
-  // Pending badge on first tab (players)
+  var tabs = getManageTabs();
+  var btns = document.querySelectorAll('.manage-tab');
+  btns.forEach(function(btn, i) {
+    btn.classList.toggle('active', tabs[i] && tabs[i].id === currentManageTab);
+  });
+  // Pending badge on players tab
   if (isOwner && btns[0]) {
-    btns[0].querySelector('.manage-tab-badge')?.remove();
-    const n = champMembers.filter(m=>m.role==='pending').length;
-    if (n) btns[0].insertAdjacentHTML('beforeend',`<span class="manage-tab-badge">${n}</span>`);
+    var existing = btns[0].querySelector('.manage-tab-badge');
+    if (existing) existing.remove();
+    var n = champMembers.filter(function(m){ return m.role==='pending'; }).length;
+    if (n) btns[0].insertAdjacentHTML('beforeend','<span class="manage-tab-badge">' + n + '</span>');
   }
 }
 function renderManageBody(){
