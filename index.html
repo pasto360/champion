@@ -507,6 +507,49 @@ select:focus{border-color:var(--text);}
   .footer-links{gap:5px 12px;}
   .footer-bottom{flex-direction:column;align-items:flex-start;}
 }
+
+/* ── NOTIFICHE ─────────────────────────────── */
+.notif-btn{position:relative;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:8px;padding:5px 10px;font-size:16px;cursor:pointer;display:flex;align-items:center;}
+.notif-btn:hover{background:rgba(255,255,255,.3);}
+.notif-count{position:absolute;top:-5px;right:-5px;background:#f43f5e;color:#fff;border-radius:50%;min-width:18px;height:18px;font-size:10px;font-weight:700;display:none;align-items:center;justify-content:center;padding:0 3px;}
+.notif-count.show{display:flex;}
+.notif-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:400;display:none;align-items:flex-start;justify-content:flex-end;padding:60px 16px 0;}
+.notif-overlay.open{display:flex;}
+.notif-panel{background:var(--card);border:1px solid var(--border);border-radius:16px;width:340px;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,.4);}
+.notif-panel-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border);}
+.notif-panel-header h3{font-size:15px;font-weight:700;}
+.notif-mark-all{font-size:12px;color:var(--accent);background:none;border:none;cursor:pointer;}
+.notif-list{overflow-y:auto;flex:1;}
+.notif-item{padding:12px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s;}
+.notif-item:last-child{border-bottom:none;}
+.notif-item:hover{background:var(--faint);}
+.notif-item.unread{background:rgba(124,58,237,.08);border-left:3px solid var(--violet);}
+.notif-icon{font-size:20px;flex-shrink:0;}
+.notif-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px;}
+.notif-body{font-size:12px;color:var(--muted);}
+.notif-time{font-size:11px;color:var(--faint);margin-top:3px;}
+.notif-empty{padding:32px 16px;text-align:center;color:var(--muted);font-size:13px;}
+
+/* ── DASHBOARD NUOVA ───────────────────────── */
+.dash-container{padding:20px;max-width:960px;margin:0 auto;}
+.dash-stats-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:24px;}
+.dash-stat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;}
+.dash-stat-num{font-size:28px;font-weight:900;color:var(--accent);}
+.dash-stat-lbl{font-size:11px;color:var(--muted);margin-top:3px;text-transform:uppercase;letter-spacing:.4px;}
+.dash-champ-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:10px;}
+.dash-champ-name{font-size:15px;font-weight:700;margin-bottom:8px;}
+.dash-champ-meta{display:flex;flex-wrap:wrap;gap:8px;font-size:12px;color:var(--muted);}
+.dash-champ-meta span{background:var(--faint);border-radius:6px;padding:3px 8px;}
+.dash-champ-meta span.highlight{background:rgba(124,58,237,.2);color:var(--accent);}
+.dash-next-match{margin-top:8px;padding:8px 10px;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.2);border-radius:8px;font-size:12px;color:var(--green);}
+
+/* ── RESET CAMPIONATO ──────────────────────── */
+.danger-zone{margin-top:20px;padding:14px;border:1px solid rgba(244,63,94,.3);border-radius:12px;background:rgba(244,63,94,.05);}
+.danger-zone-title{font-size:11px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;}
+.danger-btn{padding:8px 14px;border-radius:8px;border:none;font-size:13px;font-weight:600;cursor:pointer;margin-right:8px;margin-bottom:6px;}
+.danger-btn.soft{background:rgba(245,158,11,.15);color:#f59e0b;}
+.danger-btn.hard{background:rgba(244,63,94,.15);color:var(--red);}
+.danger-btn:hover{opacity:.8;}
 </style>
 </head>
 <body>
@@ -566,6 +609,9 @@ select:focus{border-color:var(--text);}
     <h1 style="font-size:20px;font-weight:900;letter-spacing:1px;">COMPETEO</h1>
     <div class="right">
       <span id="home-username" style="font-size:13px;color:rgba(255,255,255,.7);"></span>
+      <button class="notif-btn" id="notif-btn" onclick="openNotifPanel()" title="Notifiche">
+        🔔<span class="notif-count" id="notif-count">0</span>
+      </button>
       <button class="friends-btn" onclick="openFriendsPanel()" title="Amici">
         👥<span id="friends-badge" class="notif-badge">0</span>
       </button>
@@ -606,28 +652,33 @@ select:focus{border-color:var(--text);}
 ══════════════════════════════════════════════════ -->
 <div class="page" id="page-dashboard">
   <header class="app-header">
-    <h1>Dashboard</h1>
+    <h1 style="font-size:18px;font-weight:900;letter-spacing:1px;">Dashboard</h1>
     <div class="right">
+      <span id="dash-username" style="font-size:13px;color:rgba(255,255,255,.7);"></span>
       <button class="hbtn" onclick="goHome()">← Home</button>
       <button class="hbtn red" onclick="doLogout()">Esci</button>
     </div>
   </header>
   <div class="dash-container">
-    <div class="sec-title" style="margin-bottom:16px;">I miei campionati</div>
-    <div class="dash-grid" id="dash-grid"></div>
-    <div class="sec-title" style="margin:28px 0 16px;">Account</div>
-    <div style="background:#fff;border-radius:14px;border:1px solid var(--border);padding:20px;max-width:420px;">
+    <!-- Statistiche rapide -->
+    <div class="dash-stats-row" id="dash-stats-row"></div>
+    <!-- Campionati con classifica -->
+    <div class="sec-title" style="margin-bottom:12px;">I miei campionati</div>
+    <div id="dash-champs-list"></div>
+    <!-- Account -->
+    <div class="sec-title" style="margin:28px 0 12px;">Impostazioni account</div>
+    <div style="background:var(--card);border-radius:14px;border:1px solid var(--border);padding:20px;max-width:420px;">
       <div class="field">
         <label>Nuova email</label>
-        <input type="email" id="acc-email" placeholder="nuova@email.com" style="width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:10px;font-size:15px;outline:none;background:#fff;"/>
+        <input type="email" id="acc-email" placeholder="nuova@email.com" style="width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:10px;font-size:15px;outline:none;background:var(--bg);color:var(--text);"/>
       </div>
       <div class="field">
         <label>Nuova password</label>
-        <input type="password" id="acc-pass" placeholder="min. 6 caratteri" style="width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:10px;font-size:15px;outline:none;background:#fff;"/>
+        <input type="password" id="acc-pass" placeholder="min. 6 caratteri" style="width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:10px;font-size:15px;outline:none;background:var(--bg);color:var(--text);"/>
       </div>
       <div class="field">
         <label>Conferma password</label>
-        <input type="password" id="acc-pass2" placeholder="ripeti la password" style="width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:10px;font-size:15px;outline:none;background:#fff;"/>
+        <input type="password" id="acc-pass2" placeholder="ripeti la password" style="width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:10px;font-size:15px;outline:none;background:var(--bg);color:var(--text);"/>
       </div>
       <button class="btn-primary" onclick="saveAccountSettings()" style="margin-top:4px;">Salva modifiche account</button>
       <div class="auth-err" id="acc-msg" style="margin-top:10px;"></div>
@@ -728,6 +779,19 @@ select:focus{border-color:var(--text);}
   </div>
 </div>
 
+
+<!-- ── PANNELLO NOTIFICHE ──────────────────── -->
+<div class="notif-overlay" id="notif-overlay" onclick="if(event.target===this)closeNotifPanel()">
+  <div class="notif-panel">
+    <div class="notif-panel-header">
+      <h3>🔔 Notifiche</h3>
+      <button class="notif-mark-all" onclick="markAllNotifsRead()">Segna tutte come lette</button>
+    </div>
+    <div class="notif-list" id="notif-list">
+      <div class="notif-empty">Nessuna notifica</div>
+    </div>
+  </div>
+</div>
 <!-- Friends panel overlay -->
 <div class="friends-overlay" id="friends-overlay" onclick="if(event.target===this)closeFriendsPanel()">
   <div class="friends-panel">
@@ -1104,6 +1168,7 @@ function setAuthLoading(on) {
 // ── HOME ──────────────────────────────────────────
 async function showHome() {
   await loadSiteTheme();
+  startNotifPolling();
   const {data:profile} = await sb.auth.getUser();
   const username = profile?.user?.user_metadata?.username || currentUser?.email?.split('@')[0] || 'Utente';
   document.getElementById('home-username').textContent = username;
@@ -1541,9 +1606,12 @@ async function requestJoin() {
 }
 
 async function acceptMember(memberId) {
+  var pending = champMembers.find(function(m){ return m.id === memberId; });
   const { error } = await sb.from('champ_members')
     .update({ role: 'player' }).eq('id', memberId);
   if (error) { showToast('Errore: ' + (error.message||error.code||'sconosciuto')); return; }
+  if (pending) await createNotif(pending.user_id, 'join_accepted', 'Iscrizione accettata',
+    'Sei stato accettato in "' + (champData.championship||'Campionato') + '"', currentChamp.id);
   await loadChampMembers();
   await scheduleSaveImmediate();
   renderChamp();
@@ -1554,9 +1622,12 @@ async function acceptMember(memberId) {
 }
 
 async function rejectMember(memberId) {
+  var pending2 = champMembers.find(function(m){ return m.id === memberId; });
   const { error } = await sb.from('champ_members')
     .update({ role: 'rejected' }).eq('id', memberId);
   if (error) { showToast('Errore: ' + (error.message||error.code||'sconosciuto')); return; }
+  if (pending2) await createNotif(pending2.user_id, 'join_rejected', 'Iscrizione non accettata',
+    'La tua richiesta per "' + (champData.championship||'Campionato') + '" non è stata accettata', currentChamp.id);
   await loadChampMembers();
   renderChamp();
   if (document.getElementById('manage-panel') && document.getElementById('manage-panel').classList.contains('open')) {
@@ -2405,6 +2476,14 @@ function renderManageSettings(){
   html += '</div>';
   html += '<button class="btn-primary" style="margin-top:8px;" onclick="saveChampSettings()">Salva impostazioni</button>';
   if ((champData.format||'standard') === 'timetrial') html += renderTTSettings();
+  // Danger zone
+  html += '<div class="danger-zone">';
+  html += '<div class="danger-zone-title">⚠ Zona pericolosa</div>';
+  html += '<button class="danger-btn soft" onclick="resetChampResults()">🔄 Azzera risultati</button>';
+  html += '<button class="danger-btn hard" onclick="resetChampFull()">💥 Reset totale</button>';
+  html += '<div style="font-size:11px;color:var(--muted);margin-top:6px;"><strong>Azzera risultati</strong>: mantiene iscritti e gare, cancella solo i punteggi. <strong>Reset totale</strong>: cancella tutto tranne il nome.</div>';
+  html += '</div>';
+  // TT settings injected below
   html += '<div class="invite-section">';
   html += '<h4>Invita al campionato</h4>';
   html += '<p style="font-size:12px;color:#aaa;margin-bottom:10px;">Cerca un utente per username o email e invitalo direttamente — non serve che sia tuo amico.</p>';
@@ -3417,6 +3496,9 @@ async function searchAndAddFriend() {
 async function sendFriendRequest(targetId) {
   const { error } = await sb.from('friendships').insert({ sender_id: currentUser.id, receiver_id: targetId, status: 'pending' });
   if (error) { showToast('Errore: ' + error.message); return; }
+  // Notifica all'utente invitato
+  var myUsername = document.getElementById('home-username')?.textContent || 'Qualcuno';
+  await createNotif(targetId, 'friend_request', 'Richiesta di amicizia', myUsername + ' vuole diventare tuo amico', null);
   await loadFriendships();
   // Fetch profile if not cached
   if (!allFriendProfiles[targetId]) {
@@ -3429,7 +3511,13 @@ async function sendFriendRequest(targetId) {
 }
 
 async function acceptFriend(friendshipId) {
+  // Find the friendship to get sender_id for notification
+  var friendship = myFriendships.find(function(f){ return f.id === friendshipId; });
   await sb.from('friendships').update({ status: 'accepted' }).eq('id', friendshipId);
+  if (friendship) {
+    var myUsername = document.getElementById('home-username')?.textContent || 'Qualcuno';
+    await createNotif(friendship.sender_id, 'friend_accepted', 'Amicizia accettata', myUsername + ' ha accettato la tua richiesta di amicizia', null);
+  }
   await loadFriendships();
   // Cache missing profiles
   await cacheFriendProfiles();
@@ -3781,6 +3869,345 @@ function showFooterPage(page) {
     contact: 'Contatti', legal: 'Note Legali', cookies: 'Cookie Policy'
   };
   showToast((labels[page] || page) + ' - pagina in costruzione');
+}
+
+// ══════════════════════════════════════════════════
+// ── NOTIFICHE ─────────────────────────────────────
+// ══════════════════════════════════════════════════
+let notifications = [];
+let notifPollTimer = null;
+
+const NOTIF_ICONS = {
+  friend_request: '👥', friend_accepted: '✅',
+  champ_invite: '📨', champ_result: '🏆',
+  join_request: '🙋', join_accepted: '🎉', join_rejected: '❌'
+};
+
+async function loadNotifications() {
+  if (!currentUser) return;
+  const { data } = await sb.from('notifications')
+    .select('*')
+    .eq('user_id', currentUser.id)
+    .order('created_at', { ascending: false })
+    .limit(50);
+  notifications = data || [];
+  updateNotifBadge();
+}
+
+function updateNotifBadge() {
+  var unread = notifications.filter(function(n){ return !n.read; }).length;
+  var badge = document.getElementById('notif-count');
+  if (!badge) return;
+  badge.textContent = unread > 9 ? '9+' : unread;
+  badge.classList.toggle('show', unread > 0);
+}
+
+function openNotifPanel() {
+  renderNotifList();
+  document.getElementById('notif-overlay').classList.add('open');
+}
+function closeNotifPanel() {
+  document.getElementById('notif-overlay').classList.remove('open');
+}
+
+function renderNotifList() {
+  var el = document.getElementById('notif-list');
+  if (!el) return;
+  if (!notifications.length) {
+    el.innerHTML = '<div class="notif-empty">🔔 Nessuna notifica</div>';
+    return;
+  }
+    var container = document.createElement('div');
+  notifications.forEach(function(n) {
+    var icon = NOTIF_ICONS[n.type] || '🔔';
+    var ago = timeAgo(n.created_at);
+    var item = document.createElement('div');
+    item.className = 'notif-item' + (n.read ? '' : ' unread');
+    item.setAttribute('data-id', n.id);
+    item.innerHTML = '<div style="display:flex;gap:10px;align-items:flex-start;">'
+      + '<span class="notif-icon">' + icon + '</span>'
+      + '<div style="flex:1;min-width:0;">'
+      + '<div class="notif-title">' + esc(n.title) + '</div>'
+      + (n.body ? '<div class="notif-body">' + esc(n.body) + '</div>' : '')
+      + '<div class="notif-time">' + ago + '</div>'
+      + '</div></div>';
+    if (n.champ_id) {
+      item.style.cursor = 'pointer';
+      item.addEventListener('click', function() { closeNotifPanel(); openChampionship(n.champ_id); });
+    }
+    item.addEventListener('mouseenter', function() { markNotifRead(n.id); });
+    container.appendChild(item);
+  });
+  el.innerHTML = '';
+  el.appendChild(container);
+}
+
+async function markNotifRead(id) {
+  var n = notifications.find(function(x){ return x.id === id; });
+  if (!n || n.read) return;
+  n.read = true;
+  await sb.from('notifications').update({ read: true }).eq('id', id);
+  updateNotifBadge();
+}
+
+async function markAllNotifsRead() {
+  var unreadIds = notifications.filter(function(n){ return !n.read; }).map(function(n){ return n.id; });
+  if (!unreadIds.length) return;
+  notifications.forEach(function(n){ n.read = true; });
+  renderNotifList();
+  updateNotifBadge();
+  await sb.from('notifications').update({ read: true }).eq('user_id', currentUser.id).eq('read', false);
+}
+
+// Crea notifica su DB (chiamata da chi genera l'evento)
+async function createNotif(userId, type, title, body, champId) {
+  if (!userId || userId === currentUser.id) return; // non notificare se stesso
+  await sb.from('notifications').insert({
+    user_id: userId, type: type, title: title, body: body || null,
+    champ_id: champId || null, actor_id: currentUser.id
+  });
+}
+
+// Polling ogni 5 minuti
+function startNotifPolling() {
+  if (notifPollTimer) clearInterval(notifPollTimer);
+  loadNotifications();
+  notifPollTimer = setInterval(loadNotifications, 5 * 60 * 1000);
+}
+function stopNotifPolling() {
+  if (notifPollTimer) { clearInterval(notifPollTimer); notifPollTimer = null; }
+}
+
+function timeAgo(isoStr) {
+  var diff = Math.floor((Date.now() - new Date(isoStr)) / 1000);
+  if (diff < 60)  return 'Ora';
+  if (diff < 3600) return Math.floor(diff/60) + ' min fa';
+  if (diff < 86400) return Math.floor(diff/3600) + ' ore fa';
+  return Math.floor(diff/86400) + ' giorni fa';
+}
+
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ══════════════════════════════════════════════════
+// ── DASHBOARD AVANZATA ────────────────────────────
+// ══════════════════════════════════════════════════
+async function loadDashboard() {
+  var profile = await sb.auth.getUser();
+  var username = profile.data?.user?.user_metadata?.username || currentUser?.email?.split('@')[0] || 'Utente';
+  var el = document.getElementById('dash-username');
+  if (el) el.textContent = username;
+
+  // Carica memberships dell'utente
+  var { data: memberships } = await sb.from('champ_members')
+    .select('champ_id, role')
+    .eq('user_id', currentUser.id)
+    .in('role', ['owner','player']);
+
+  var champIds = (memberships||[]).map(function(m){ return m.champ_id; });
+  if (!champIds.length) {
+    document.getElementById('dash-stats-row').innerHTML = '';
+    document.getElementById('dash-champs-list').innerHTML =
+      '<div style="color:var(--muted);font-size:13px;padding:20px 0;">Non sei ancora iscritto a nessun campionato.</div>';
+    return;
+  }
+
+  // Carica campionati
+  var { data: champs } = await sb.from('championships')
+    .select('id,name,season,access,closed,owner_id,created_at,data')
+    .in('id', champIds);
+  champs = champs || [];
+
+  // Stats rapide
+  var ownedCount = champs.filter(function(c){ return c.owner_id === currentUser.id; }).length;
+  var playingCount = champs.filter(function(c){ return c.owner_id !== currentUser.id; }).length;
+  var totalResults = champs.reduce(function(acc, c) {
+    var d = c.data || {};
+    var fmt = d.format || 'standard';
+    if (fmt === 'standard') {
+      return acc + (d.races||[]).filter(function(r){ return r.result; }).length;
+    }
+    if (fmt === 'roundrobin') {
+      return acc + (d.rrMatches||[]).filter(function(m){ return m.winner; }).length;
+    }
+    return acc;
+  }, 0);
+  document.getElementById('dash-stats-row').innerHTML =
+    dashStat(champs.length, 'Campionati') +
+    dashStat(ownedCount, 'Da me creati') +
+    dashStat(playingCount, 'Come giocatore') +
+    dashStat(totalResults, 'Risultati totali');
+
+  // Render campionati con classifica
+  var html = '';
+  for (var i = 0; i < champs.length; i++) {
+    html += renderDashChampCard(champs[i], memberships);
+  }
+  document.getElementById('dash-champs-list').innerHTML = html || '<div style="color:var(--muted);font-size:13px;">Nessun campionato trovato.</div>';
+}
+
+function dashStat(num, lbl) {
+  return '<div class="dash-stat-card"><div class="dash-stat-num">' + num + '</div><div class="dash-stat-lbl">' + lbl + '</div></div>';
+}
+
+function renderDashChampCard(champ, memberships) {
+  var data = champ.data || {};
+  var fmt = data.format || 'standard';
+  var players = data.players || [];
+  var username = document.getElementById('dash-username')?.textContent || '';
+  var myRole = (memberships.find(function(m){ return m.champ_id === champ.id; })||{}).role || '';
+  var isOwner = champ.owner_id === currentUser.id;
+
+  // Posizione classifica
+  var position = getMyPosition(data, fmt, username);
+  // Prossima sfida
+  var nextMatch = getNextMatch(data, fmt, username);
+
+  var html = '<div class="dash-champ-card">';
+  html += '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">';
+  html += '<div class="dash-champ-name">' + esc(champ.name) + (champ.season ? ' <span style="font-size:11px;color:var(--muted);">'+esc(champ.season)+'</span>' : '') + '</div>';
+  html += '<button data-champid="' + champ.id + '" onclick="openChampionship(this.getAttribute(\'data-champid\'))" style="padding:5px 12px;background:var(--violet);color:#fff;border:none;border-radius:7px;font-size:12px;cursor:pointer;font-weight:600;flex-shrink:0;">Apri</button>';
+  html += '</div>';
+  html += '<div class="dash-champ-meta">';
+  html += '<span>' + fmtLabel(fmt) + '</span>';
+  html += '<span>' + players.length + ' giocatori</span>';
+  if (isOwner) html += '<span class="highlight">👑 Owner</span>';
+  if (position !== null) {
+    var medal = position === 1 ? '🥇' : position === 2 ? '🥈' : position === 3 ? '🥉' : '🏅';
+    html += '<span class="highlight">' + medal + ' ' + position + '° posto</span>';
+  }
+  html += '</div>';
+  if (nextMatch) {
+    html += '<div class="dash-next-match">⚔️ Prossima sfida: <strong>' + esc(nextMatch) + '</strong></div>';
+  }
+  html += '</div>';
+  return html;
+}
+
+function fmtLabel(fmt) {
+  return {standard:'Standard', roundrobin:'Round Robin', elimination:'Eliminazione', timetrial:'Time Trial'}[fmt] || fmt;
+}
+
+function getMyPosition(data, fmt, username) {
+  try {
+    if (fmt === 'standard') {
+      var races = data.races || [];
+      var pts = {};
+      (data.players||[]).forEach(function(p){ pts[p] = 0; });
+      races.forEach(function(r){
+        if (r.result) {
+          if (r.result.first) pts[r.result.first] = (pts[r.result.first]||0) + 3;
+          if (r.result.second) pts[r.result.second] = (pts[r.result.second]||0) + 1;
+        }
+      });
+      var sorted = Object.keys(pts).sort(function(a,b){ return pts[b]-pts[a]; });
+      var idx = sorted.indexOf(username);
+      return idx >= 0 ? idx + 1 : null;
+    }
+    if (fmt === 'roundrobin') {
+      var matches = data.rrMatches || [];
+      var pts2 = {};
+      (data.players||[]).forEach(function(p){ pts2[p] = 0; });
+      matches.forEach(function(m){
+        if (m.winner) { pts2[m.winner] = (pts2[m.winner]||0) + 3; }
+        else if (m.result === 'draw') {
+          pts2[m.p1] = (pts2[m.p1]||0) + 1;
+          pts2[m.p2] = (pts2[m.p2]||0) + 1;
+        }
+      });
+      var sorted2 = Object.keys(pts2).sort(function(a,b){ return pts2[b]-pts2[a]; });
+      var idx2 = sorted2.indexOf(username);
+      return idx2 >= 0 ? idx2 + 1 : null;
+    }
+    if (fmt === 'timetrial') {
+      var runs = data.ttRuns || {};
+      var order = data.ttOrder || 'asc';
+      var allPlayers = data.players || [];
+      var bests = allPlayers.map(function(p) {
+        var pr = (runs[p]||[]);
+        return { name: p, best: pr.length ? (order==='asc' ? Math.min.apply(null,pr) : Math.max.apply(null,pr)) : null };
+      }).filter(function(x){ return x.best !== null; });
+      bests.sort(function(a,b){ return order==='asc' ? a.best-b.best : b.best-a.best; });
+      var idx3 = bests.findIndex(function(x){ return x.name === username; });
+      return idx3 >= 0 ? idx3+1 : null;
+    }
+  } catch(e) {}
+  return null;
+}
+
+function getNextMatch(data, fmt, username) {
+  try {
+    if (fmt === 'roundrobin') {
+      var matches = data.rrMatches || [];
+      var next = matches.find(function(m){
+        return m.result === null && (m.p1 === username || m.p2 === username);
+      });
+      if (next) return 'vs ' + (next.p1 === username ? next.p2 : next.p1);
+    }
+    if (fmt === 'elimination') {
+      var bracket = data.elimBracket || [];
+      for (var ri = 0; ri < bracket.length; ri++) {
+        for (var mi = 0; mi < bracket[ri].length; mi++) {
+          var m = bracket[ri][mi];
+          if (!m.winner && (m.p1 === username || m.p2 === username) && m.p1 && m.p2) {
+            return 'vs ' + (m.p1 === username ? m.p2 : m.p1);
+          }
+        }
+      }
+    }
+  } catch(e) {}
+  return null;
+}
+
+// ══════════════════════════════════════════════════
+// ── RESET CAMPIONATO ──────────────────────────────
+// ══════════════════════════════════════════════════
+async function resetChampResults() {
+  if (!confirm('Azzerare tutti i risultati? Gli iscritti e le gare rimarranno, ma tutti i punteggi verranno cancellati.')) return;
+  var fmt = champData.format || 'standard';
+  // Azzera risultati per ogni formato
+  if (fmt === 'standard') {
+    (champData.races||[]).forEach(function(r){ r.result = null; });
+  } else if (fmt === 'roundrobin') {
+    (champData.rrMatches||[]).forEach(function(m){
+      m.result = null; m.winner = null; m.score1 = null; m.score2 = null;
+    });
+  } else if (fmt === 'elimination') {
+    (champData.elimBracket||[]).forEach(function(round){
+      round.forEach(function(m){ m.winner = null; m.score1 = null; m.score2 = null; });
+    });
+  } else if (fmt === 'timetrial') {
+    champData.ttRuns = {};
+  }
+  await scheduleSaveImmediate();
+  renderChamp();
+  renderManageSettings();
+  showToast('Risultati azzerati');
+  // Notifica ai partecipanti
+  var members = champMembers.filter(function(m){ return m.role === 'player' && m.user_id !== currentUser.id; });
+  for (var i = 0; i < members.length; i++) {
+    await createNotif(members[i].user_id, 'champ_result',
+      'Risultati azzerati', 'I risultati di "' + (champData.championship||'') + '" sono stati azzerati.',
+      currentChamp.id);
+  }
+}
+
+async function resetChampFull() {
+  if (!confirm('RESET TOTALE: cancella tutti i dati del campionato (gare, risultati, iscrizioni). Rimarrà solo il nome. Questa azione è irreversibile.')) return;
+  var fmt = champData.format || 'standard';
+  champData.races = [];
+  champData.rrMatches = [];
+  champData.elimBracket = null;
+  champData.ttRuns = {};
+  champData.players = [document.getElementById('home-username')?.textContent || ''];
+  // Rimuovi tutti i membri tranne l'owner
+  await sb.from('champ_members').delete().eq('champ_id', currentChamp.id).neq('role', 'owner');
+  await loadChampMembers();
+  await scheduleSaveImmediate();
+  renderChamp();
+  renderManageSettings();
+  showToast('Reset completato');
 }
 
 </script>
