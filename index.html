@@ -843,6 +843,7 @@ select:focus{border-color:var(--text);}
     <div class="drag-bar"></div>
     <button class="sheet-close" onclick="closeOverlay('new-champ-overlay')">×</button>
     <h2>Nuovo Campionato</h2>
+    <div id="nc-limit-info" style="font-size:12px;color:var(--muted);margin-bottom:10px;text-align:center;"></div>
     <p style="margin-bottom:14px;">Scegli la tipologia</p>
     <!-- Tipologia -->
     <div style="display:grid;gap:8px;margin-bottom:18px;" id="nc-type-grid">
@@ -1291,6 +1292,20 @@ async function loadChampionshipsHome() {
   myGrid.style.display = mine.length?'':'none';
   myGrid.innerHTML = mine.map(c=>champCard(c)).join('');
 
+  // Aggiorna il pulsante "Nuovo campionato" con contatore
+  var btnNew = document.querySelector('.btn-new');
+  if (btnNew) {
+    if (mine.length >= MAX_OWNED_CHAMPS) {
+      btnNew.textContent = 'Limite raggiunto (' + mine.length + '/' + MAX_OWNED_CHAMPS + ')';
+      btnNew.style.opacity = '0.5';
+      btnNew.title = 'Hai raggiunto il limite massimo di ' + MAX_OWNED_CHAMPS + ' campionati';
+    } else {
+      btnNew.textContent = '+ Nuovo campionato (' + mine.length + '/' + MAX_OWNED_CHAMPS + ')';
+      btnNew.style.opacity = '1';
+      btnNew.title = '';
+    }
+  }
+
   // Partecipazione: campionati dove sono player (non owner)
   await renderJoinedChamps();
 
@@ -1408,13 +1423,27 @@ async function deleteChampionship(id) {
 }
 
 // ── NEW CHAMPIONSHIP ──────────────────────────────
-function openNewChampModal() {
+const MAX_OWNED_CHAMPS = 10;
+
+async function openNewChampModal() {
+  // Conta campionati già creati dall'utente dal DB
+  const { count } = await sb.from('championships')
+    .select('*', { count: 'exact', head: true })
+    .eq('owner_id', currentUser.id);
+  if (count >= MAX_OWNED_CHAMPS) {
+    showToast('Hai raggiunto il limite di ' + MAX_OWNED_CHAMPS + ' campionati. Eliminane uno per crearne un altro.');
+    return;
+  }
   document.getElementById('nc-name').value='';
   document.getElementById('nc-season').value=new Date().getFullYear();
   document.getElementById('nc-pass').value='';
   document.getElementById('nc-err').textContent='';
   document.getElementById('nc-access').value='password';
   document.getElementById('nc-pass-field').style.display='block';
+  // Mostra contatore rimanente
+  var remaining = MAX_OWNED_CHAMPS - count;
+  document.getElementById('nc-limit-info').textContent =
+    'Campionati creati: ' + count + ' / ' + MAX_OWNED_CHAMPS + ' (' + remaining + ' rimanenti)';
   openOverlay('new-champ-overlay');
 }
 
@@ -1433,6 +1462,14 @@ async function createChampionship() {
   const access = document.getElementById('nc-access').value;
   const pass   = document.getElementById('nc-pass').value.trim();
   if (!name) { document.getElementById('nc-err').textContent='Inserisci il nome'; return; }
+  // Server-side double check del limite
+  const { count: ownedCount } = await sb.from('championships')
+    .select('*', { count: 'exact', head: true })
+    .eq('owner_id', currentUser.id);
+  if (ownedCount >= MAX_OWNED_CHAMPS) {
+    document.getElementById('nc-err').textContent = 'Limite di ' + MAX_OWNED_CHAMPS + ' campionati raggiunto. Eliminane uno prima.';
+    return;
+  }
   if (access==='password' && !pass) { document.getElementById('nc-err').textContent='Inserisci una password'; return; }
 
   const username = currentUser.user_metadata?.username || currentUser.email?.split('@')[0] || 'Owner';
