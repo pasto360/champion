@@ -550,6 +550,26 @@ select:focus{border-color:var(--text);}
 .danger-btn.soft{background:rgba(245,158,11,.15);color:#f59e0b;}
 .danger-btn.hard{background:rgba(244,63,94,.15);color:var(--red);}
 .danger-btn:hover{opacity:.8;}
+
+/* ── SHARE BAR ────────────────────────────────── */
+.share-bar{
+  display:flex;align-items:center;gap:10px;
+  margin:12px 0 4px;
+}
+.share-bar-label{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;flex-shrink:0;}
+.share-btns{display:flex;gap:8px;align-items:center;}
+.share-btn{
+  width:38px;height:38px;border-radius:10px;border:none;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:18px;transition:transform .15s,opacity .15s;
+  flex-shrink:0;text-decoration:none;
+}
+.share-btn:hover{transform:scale(1.12);opacity:.9;}
+.share-btn.whatsapp{background:#25d366;}
+.share-btn.telegram{background:#229ed9;}
+.share-btn.instagram{background:linear-gradient(135deg,#f58529,#dd2a7b,#8134af,#515bd4);}
+.share-btn.copy-link{background:var(--card);border:1px solid var(--border);color:var(--text);}
+.share-btn.copy-link.copied{background:rgba(16,185,129,.2);border-color:var(--green);color:var(--green);}
 </style>
 </head>
 <body>
@@ -735,8 +755,26 @@ select:focus{border-color:var(--text);}
       <div id="live-widget-desktop" style="margin-top:14px;margin-bottom:14px;border-radius:12px;overflow:hidden;background:#000;aspect-ratio:16/9;display:none;">
         <iframe id="live-iframe-desktop" src="" allowfullscreen allow="autoplay;encrypted-media" style="width:100%;height:100%;border:none;display:block;"></iframe>
       </div>
+      <!-- share bar -->
+      <div class="share-bar" id="champ-share-bar">
+        <span class="share-bar-label">Condividi</span>
+        <div class="share-btns">
+          <a id="share-wa"  class="share-btn whatsapp"  href="#" target="_blank" title="WhatsApp">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.532 5.855L.057 23.243a.5.5 0 0 0 .634.634l5.388-1.475A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.959 0-3.799-.524-5.385-1.44l-.385-.229-3.997 1.093 1.093-3.997-.229-.385A9.946 9.946 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+          </a>
+          <a id="share-tg"  class="share-btn telegram"  href="#" target="_blank" title="Telegram">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="#fff"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.17 13.949l-2.96-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.978.61z"/></svg>
+          </a>
+          <a id="share-ig"  class="share-btn instagram" href="#" target="_blank" title="Instagram">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="#fff"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/></svg>
+          </a>
+          <button id="share-copy" class="share-btn copy-link" onclick="copyChampLink()" title="Copia link">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          </button>
+        </div>
+      </div>
       <!-- classifica -->
-      <div class="sec-hdr" style="margin-top:14px;"><span class="sec-lbl">Classifica</span><span id="races-progress" style="font-size:11px;color:#bbb;"></span></div>
+      <div class="sec-hdr" style="margin-top:8px;"><span class="sec-lbl">Classifica</span><span id="races-progress" style="font-size:11px;color:#bbb;"></span></div>
       <div class="standings-card" id="standings-container"></div>
       <div class="prog-bar"><div class="prog-fill" id="progress-fill" style="width:0%"></div></div>
       <div class="prog-lbl" id="progress-label"></div>
@@ -1936,6 +1974,7 @@ function scheduleSave() {
 
 // ── RENDER ────────────────────────────────────────
 function renderChamp() {
+  updateShareBar();
   var champTitle = (champData.championship||'Campionato') + (champData.season?' · '+champData.season:'');
   var createdDate = currentChamp.created_at ? new Date(currentChamp.created_at).toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'}) : '';
   var champId = currentChamp.id || '';
@@ -2522,16 +2561,6 @@ function renderManageSettings(){
   html += '<div style="font-size:11px;color:var(--muted);margin-top:6px;"><strong>Azzera risultati</strong>: mantiene iscritti e gare, cancella solo i punteggi. <strong>Reset totale</strong>: cancella tutto tranne il nome.</div>';
   html += '</div>';
   // TT settings injected below
-  // ── Link di condivisione ──
-  var shareUrl = window.location.origin + window.location.pathname + '?champ=' + (currentChamp&&currentChamp.id||'');
-  html += '<div class="invite-section">';
-  html += '<h4>🔗 Link di condivisione</h4>';
-  html += '<p style="font-size:12px;color:var(--muted);margin-bottom:10px;">Condividi questo link — chi lo apre accede direttamente al campionato.</p>';
-  html += '<div style="display:flex;gap:8px;margin-bottom:14px;">';
-  html += '<input type="text" id="share-link-input" value="' + shareUrl + '" readonly style="flex:1;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--muted);font-family:monospace;outline:none;"/>';
-  html += '<button onclick="copyShareLink()" id="copy-share-btn" style="padding:8px 14px;background:var(--violet);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0;">📋 Copia</button>';
-  html += '</div>';
-  html += '</div>';
   // ── Invita per username ──
   html += '<div class="invite-section">';
   html += '<h4>Invita per username</h4>';
@@ -3911,6 +3940,39 @@ async function inviteCheckedFriends() {
   if (errors.length) showToast('Errore per: ' + errors.join(', '));
   else showToast('✓ ' + checked.length + ' amico/i aggiunto/i!');
 }
+
+function updateShareBar() {
+  if (!currentChamp) return;
+  var url = window.location.origin + window.location.pathname + '?champ=' + currentChamp.id;
+  var text = 'Partecipa al campionato "' + (champData.championship||'Competeo') + '" su Competeo! ' + url;
+  var waBtn = document.getElementById('share-wa');
+  var tgBtn = document.getElementById('share-tg');
+  var igBtn = document.getElementById('share-ig');
+  if (waBtn) waBtn.href = 'https://wa.me/?text=' + encodeURIComponent(text);
+  if (tgBtn) tgBtn.href = 'https://t.me/share/url?url=' + encodeURIComponent(url) + '&text=' + encodeURIComponent('Partecipa al campionato "' + (champData.championship||'Competeo') + '"!');
+  // Instagram non ha share link diretto — copia link e apre app
+  if (igBtn) igBtn.addEventListener('click', function(e) {
+    e.preventDefault();
+    navigator.clipboard.writeText(url).catch(function(){});
+    showToast('Link copiato! Incollalo nella tua storia Instagram');
+  });
+}
+
+function copyChampLink() {
+  if (!currentChamp) return;
+  var url = window.location.origin + window.location.pathname + '?champ=' + currentChamp.id;
+  var btn = document.getElementById('share-copy');
+  navigator.clipboard.writeText(url).then(function() {
+    showToast('Link copiato!');
+    if (btn) {
+      btn.classList.add('copied');
+      setTimeout(function(){ btn.classList.remove('copied'); }, 2000);
+    }
+  }).catch(function() {
+    showToast('Copia manuale: ' + url);
+  });
+}
+
 
 function copyShareLink() {
   var input = document.getElementById('share-link-input');
