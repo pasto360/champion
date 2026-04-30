@@ -4022,14 +4022,21 @@ async function loadDashboard() {
   // Stats rapide
   var ownedCount = champs.filter(function(c){ return c.owner_id === currentUser.id; }).length;
   var playingCount = champs.filter(function(c){ return c.owner_id !== currentUser.id; }).length;
-  var totalResults = champs.reduce(function(acc, c) {
+  // Vittorie personali in tutti i campionati
+  var myWins = champs.reduce(function(acc, c) {
     var d = c.data || {};
     var fmt = d.format || 'standard';
     if (fmt === 'standard') {
-      return acc + (d.races||[]).filter(function(r){ return r.result; }).length;
+      return acc + (d.races||[]).filter(function(r){ return r.result && r.result.first === username; }).length;
     }
     if (fmt === 'roundrobin') {
-      return acc + (d.rrMatches||[]).filter(function(m){ return m.winner; }).length;
+      return acc + (d.rrMatches||[]).filter(function(m){ return m.winner === username; }).length;
+    }
+    if (fmt === 'elimination') {
+      var bracket = d.elimBracket || [];
+      var wins = 0;
+      bracket.forEach(function(round){ round.forEach(function(m){ if (m.winner === username) wins++; }); });
+      return acc + wins;
     }
     return acc;
   }, 0);
@@ -4037,7 +4044,7 @@ async function loadDashboard() {
     dashStat(champs.length, 'Campionati') +
     dashStat(ownedCount, 'Da me creati') +
     dashStat(playingCount, 'Come giocatore') +
-    dashStat(totalResults, 'Risultati totali');
+    dashStat(myWins, '🏆 Vittorie');
 
   // Render campionati con classifica
   var html = '';
@@ -4067,7 +4074,12 @@ function renderDashChampCard(champ, memberships) {
   var html = '<div class="dash-champ-card">';
   html += '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">';
   html += '<div class="dash-champ-name">' + esc(champ.name) + (champ.season ? ' <span style="font-size:11px;color:var(--muted);">'+esc(champ.season)+'</span>' : '') + '</div>';
-  html += '<button data-champid="' + champ.id + '" onclick="openChampionship(this.getAttribute(\'data-champid\'))" style="padding:5px 12px;background:var(--violet);color:#fff;border:none;border-radius:7px;font-size:12px;cursor:pointer;font-weight:600;flex-shrink:0;">Apri</button>';
+  html += '<div style="display:flex;gap:6px;flex-shrink:0;">';
+  html += '<button data-champid="' + champ.id + '" onclick="openChampionship(this.getAttribute(\'data-champid\'))" style="padding:5px 12px;background:var(--violet);color:#fff;border:none;border-radius:7px;font-size:12px;cursor:pointer;font-weight:600;">Apri</button>';
+  if (isOwner) {
+    html += '<button data-champid="' + champ.id + '" data-champname="' + esc(champ.name).replace(/"/g,'&quot;') + '" onclick="deleteDashChamp(this)" style="padding:5px 10px;background:rgba(244,63,94,0.15);color:var(--red);border:1px solid rgba(244,63,94,0.3);border-radius:7px;font-size:12px;cursor:pointer;font-weight:600;" title="Elimina campionato">🗑</button>';
+  }
+  html += '</div>';
   html += '</div>';
   html += '<div class="dash-champ-meta">';
   html += '<span>' + fmtLabel(fmt) + '</span>';
@@ -4083,6 +4095,16 @@ function renderDashChampCard(champ, memberships) {
   }
   html += '</div>';
   return html;
+}
+
+async function deleteDashChamp(btn) {
+  var champId = btn.getAttribute('data-champid');
+  var champName = btn.getAttribute('data-champname');
+  if (!confirm('Eliminare definitivamente il campionato "' + champName + '"? Questa azione è irreversibile.')) return;
+  var { error } = await sb.from('championships').delete().eq('id', champId);
+  if (error) { showToast('Errore: ' + error.message); return; }
+  showToast('Campionato eliminato');
+  loadDashboard();
 }
 
 function fmtLabel(fmt) {
