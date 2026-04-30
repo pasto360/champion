@@ -1170,6 +1170,7 @@ function setAuthLoading(on) {
 async function showHome() {
   await loadSiteTheme();
   startNotifPolling();
+  checkUrlChampParam();
   const {data:profile} = await sb.auth.getUser();
   const username = profile?.user?.user_metadata?.username || currentUser?.email?.split('@')[0] || 'Utente';
   document.getElementById('home-username').textContent = username;
@@ -2521,8 +2522,19 @@ function renderManageSettings(){
   html += '<div style="font-size:11px;color:var(--muted);margin-top:6px;"><strong>Azzera risultati</strong>: mantiene iscritti e gare, cancella solo i punteggi. <strong>Reset totale</strong>: cancella tutto tranne il nome.</div>';
   html += '</div>';
   // TT settings injected below
+  // ── Link di condivisione ──
+  var shareUrl = window.location.origin + window.location.pathname + '?champ=' + (currentChamp&&currentChamp.id||'');
   html += '<div class="invite-section">';
-  html += '<h4>Invita al campionato</h4>';
+  html += '<h4>🔗 Link di condivisione</h4>';
+  html += '<p style="font-size:12px;color:var(--muted);margin-bottom:10px;">Condividi questo link — chi lo apre accede direttamente al campionato.</p>';
+  html += '<div style="display:flex;gap:8px;margin-bottom:14px;">';
+  html += '<input type="text" id="share-link-input" value="' + shareUrl + '" readonly style="flex:1;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--muted);font-family:monospace;outline:none;"/>';
+  html += '<button onclick="copyShareLink()" id="copy-share-btn" style="padding:8px 14px;background:var(--violet);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0;">📋 Copia</button>';
+  html += '</div>';
+  html += '</div>';
+  // ── Invita per username ──
+  html += '<div class="invite-section">';
+  html += '<h4>Invita per username</h4>';
   html += '<p style="font-size:12px;color:#aaa;margin-bottom:10px;">Cerca un utente per username o email e invitalo direttamente — non serve che sia tuo amico.</p>';
   html += '<div class="search-friend-row" style="margin-bottom:6px;">';
   html += '<input type="text" id="invite-input" placeholder="Username o email..."/>';
@@ -3899,6 +3911,30 @@ async function inviteCheckedFriends() {
   if (errors.length) showToast('Errore per: ' + errors.join(', '));
   else showToast('✓ ' + checked.length + ' amico/i aggiunto/i!');
 }
+
+function copyShareLink() {
+  var input = document.getElementById('share-link-input');
+  if (!input) return;
+  navigator.clipboard.writeText(input.value).then(function() {
+    var btn = document.getElementById('copy-share-btn');
+    if (btn) { btn.textContent = '✓ Copiato!'; setTimeout(function(){ btn.textContent = '📋 Copia'; }, 2000); }
+  }).catch(function() {
+    // Fallback for browsers without clipboard API
+    input.select(); document.execCommand('copy');
+    showToast('Link copiato!');
+  });
+}
+
+// Check URL for ?champ= param and open directly
+async function checkUrlChampParam() {
+  var params = new URLSearchParams(window.location.search);
+  var champId = params.get('champ');
+  if (!champId || !currentUser) return;
+  // Clean URL without reloading
+  window.history.replaceState({}, '', window.location.pathname);
+  await openChampionship(champId);
+}
+
 
 function showFooterPage(page) {
   var labels = {
