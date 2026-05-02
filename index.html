@@ -3384,19 +3384,34 @@ function openElimResult(id) {
   body += '<div style="font-size:13px;font-weight:700;color:' + c2 + ';margin-bottom:6px;">' + match.p2 + '</div>';
   body += '<input type="number" min="0" max="99" id="elim-s2" value="' + s2 + '" style="width:60px;font-size:24px;font-weight:800;text-align:center;border:2px solid #e0ddd6;border-radius:10px;padding:6px;outline:none;"/>';
   body += '</div></div>';
-  // Winner buttons
+  // Winner buttons — use data attributes to avoid quote issues
   body += '<div style="display:flex;gap:10px;margin-bottom:8px;">';
-  body += '<button onclick="saveElimResultWith(' + JSON.stringify(match.p1) + ')" style="flex:1;padding:12px;border:2px solid ' + c1 + ';border-radius:12px;background:#fff;font-size:14px;font-weight:700;color:' + c1 + ';cursor:pointer;">&#10003; ' + match.p1 + '</button>';
-  body += '<button onclick="saveElimResultWith(' + JSON.stringify(match.p2) + ')" style="flex:1;padding:12px;border:2px solid ' + c2 + ';border-radius:12px;background:#fff;font-size:14px;font-weight:700;color:' + c2 + ';cursor:pointer;">&#10003; ' + match.p2 + '</button>';
+  body += '<button data-winner="p1" style="flex:1;padding:12px;border:2px solid ' + c1 + ';border-radius:12px;background:var(--card);font-size:14px;font-weight:700;color:' + c1 + ';cursor:pointer;">&#10003; ' + match.p1 + '</button>';
+  body += '<button data-winner="p2" style="flex:1;padding:12px;border:2px solid ' + c2 + ';border-radius:12px;background:var(--card);font-size:14px;font-weight:700;color:' + c2 + ';cursor:pointer;">&#10003; ' + match.p2 + '</button>';
   body += '</div>' + clearBtn;
   document.getElementById('elim-result-body').innerHTML = body;
+  // Clone buttons to remove any stale listeners, then attach fresh ones
+  var b1 = document.querySelector('[data-winner="p1"]');
+  var b2 = document.querySelector('[data-winner="p2"]');
+  if (b1) {
+    var nb1 = b1.cloneNode(true);
+    b1.parentNode.replaceChild(nb1, b1);
+    nb1.addEventListener('click', function(){ saveElimResultWith(match.p1); });
+  }
+  if (b2) {
+    var nb2 = b2.cloneNode(true);
+    b2.parentNode.replaceChild(nb2, b2);
+    nb2.addEventListener('click', function(){ saveElimResultWith(match.p2); });
+  }
   openOverlay('elim-result-overlay');
 }
 function saveElimResult() {} // stub — actual save is via saveElimResultWith
 function saveElimResultWith(winner) {
   var match = null;
-  (champData.elimBracket||[]).forEach(function(r){ r.forEach(function(m){ if(m.id===elimResultMatchId) match=m; }); });
-  if (!match) return;
+  var currentId = elimResultMatchId; // capture before any async ops
+  if (!currentId) { showToast('Errore: nessun match selezionato'); return; }
+  (champData.elimBracket||[]).forEach(function(r){ r.forEach(function(m){ if(m.id===currentId) match=m; }); });
+  if (!match) { showToast('Errore: match non trovato'); return; }
   // Save scores if provided
   var s1el = document.getElementById('elim-s1');
   var s2el = document.getElementById('elim-s2');
