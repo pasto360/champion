@@ -6,6 +6,7 @@
 <title>COMPETEO</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -772,6 +773,16 @@ select:focus{border-color:var(--text);}
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
           </button>
         </div>
+      </div>
+      <!-- export classifica -->
+      <div style="display:flex;justify-content:flex-end;margin-bottom:6px;">
+        <button onclick="exportStandings()" id="export-standings-btn"
+          style="display:flex;align-items:center;gap:6px;padding:6px 14px;background:var(--card);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;color:var(--text);cursor:pointer;transition:background .15s;"
+          onmouseover="this.style.background='var(--faint)'" onmouseout="this.style.background='var(--card)'"
+          title="Scarica classifica come immagine">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Esporta classifica
+        </button>
       </div>
       <!-- classifica -->
       <div class="sec-hdr" style="margin-top:8px;"><span class="sec-lbl">Classifica</span><span id="races-progress" style="font-size:11px;color:#bbb;"></span></div>
@@ -3950,11 +3961,15 @@ function updateShareBar() {
   var igBtn = document.getElementById('share-ig');
   if (waBtn) waBtn.href = 'https://wa.me/?text=' + encodeURIComponent(text);
   if (tgBtn) tgBtn.href = 'https://t.me/share/url?url=' + encodeURIComponent(url) + '&text=' + encodeURIComponent('Partecipa al campionato "' + (champData.championship||'Competeo') + '"!');
-  // Instagram non ha share link diretto — copia link e apre app
+  // Instagram: copia link e apre instagram.com (su mobile apre l'app)
   if (igBtn) igBtn.addEventListener('click', function(e) {
     e.preventDefault();
-    navigator.clipboard.writeText(url).catch(function(){});
-    showToast('Link copiato! Incollalo nella tua storia Instagram');
+    navigator.clipboard.writeText(url).then(function() {
+      showToast('Link copiato! Aprendo Instagram — incollalo in un messaggio diretto');
+      setTimeout(function() { window.open('https://www.instagram.com/direct/inbox/', '_blank'); }, 800);
+    }).catch(function() {
+      window.open('https://www.instagram.com/direct/inbox/', '_blank');
+    });
   });
 }
 
@@ -4365,6 +4380,138 @@ async function resetChampFull() {
   renderChamp();
   renderManageSettings();
   showToast('Reset completato');
+}
+
+// ── EXPORT CLASSIFICA ─────────────────────────────
+async function exportStandings() {
+  var btn = document.getElementById('export-standings-btn');
+  if (btn) { btn.textContent = 'Generando...'; btn.disabled = true; }
+
+  try {
+    var champName = champData.championship || 'Competeo';
+    var season = champData.season || '';
+
+    // Crea un div temporaneo con la classifica stilizzata per l'export
+    var wrap = document.createElement('div');
+    wrap.style.cssText = 'position:fixed;left:-9999px;top:0;width:420px;background:#0f1628;border-radius:16px;padding:24px;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;';
+
+    // Header
+    var header = document.createElement('div');
+    header.style.cssText = 'background:linear-gradient(90deg,#4c1d95,#7c3aed,#1e3a8a);border-radius:10px;padding:16px 20px;margin-bottom:16px;';
+    header.innerHTML = '<div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.6);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">COMPETEO</div>'
+      + '<div style="font-size:20px;font-weight:900;color:#fff;">' + champName + (season ? ' · ' + season : '') + '</div>'
+      + '<div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:4px;">Classifica — ' + new Date().toLocaleDateString("it-IT", {day:"2-digit",month:"long",year:"numeric"}) + '</div>';
+    wrap.appendChild(header);
+
+    // Righe classifica
+    var standings = getStandingsData();
+    var colors = PLAYER_COLORS || ['#7c3aed','#3b82f6','#10b981','#f59e0b','#f43f5e'];
+    var medals = ['🥇','🥈','🥉'];
+
+    standings.forEach(function(row, i) {
+      var rowEl = document.createElement('div');
+      var isTop = i < 3;
+      rowEl.style.cssText = 'display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;margin-bottom:6px;background:' + (isTop ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.03)') + ';';
+
+      var pos = document.createElement('div');
+      pos.style.cssText = 'font-size:18px;width:28px;text-align:center;flex-shrink:0;';
+      pos.textContent = medals[i] || (i + 1) + '';
+
+      var dot = document.createElement('div');
+      dot.style.cssText = 'width:10px;height:10px;border-radius:50%;background:' + (colors[i % colors.length]) + ';flex-shrink:0;';
+
+      var name = document.createElement('div');
+      name.style.cssText = 'flex:1;font-size:14px;font-weight:700;color:#f0f2ff;';
+      name.textContent = row.name;
+
+      var pts = document.createElement('div');
+      pts.style.cssText = 'font-size:15px;font-weight:800;color:' + (colors[i % colors.length]) + ';';
+      pts.textContent = row.score;
+
+      rowEl.appendChild(pos); rowEl.appendChild(dot);
+      rowEl.appendChild(name); rowEl.appendChild(pts);
+      wrap.appendChild(rowEl);
+    });
+
+    // Footer
+    var footer = document.createElement('div');
+    footer.style.cssText = 'text-align:center;margin-top:14px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:.5px;';
+    footer.textContent = 'competeo.it';
+    wrap.appendChild(footer);
+
+    document.body.appendChild(wrap);
+
+    var canvas = await html2canvas(wrap, {
+      backgroundColor: '#0f1628',
+      scale: 2,
+      useCORS: true,
+      logging: false
+    });
+
+    document.body.removeChild(wrap);
+
+    // Download PNG
+    var link = document.createElement('a');
+    link.download = 'classifica-' + champName.replace(/[^a-zA-Z0-9]/g,'-').toLowerCase() + '.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+
+    showToast('Classifica esportata!');
+  } catch(e) {
+    console.error(e);
+    showToast('Errore export: ' + e.message);
+  } finally {
+    if (btn) { btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Esporta classifica'; btn.disabled = false; }
+  }
+}
+
+// Helper: restituisce i dati della classifica nel formato {name, score}
+function getStandingsData() {
+  var fmt = champData.format || 'standard';
+  var players = champData.players || [];
+
+  if (fmt === 'roundrobin') {
+    return players.map(function(p) {
+      var wins = (champData.rrMatches||[]).filter(function(m){ return m.winner === p; }).length;
+      var draws = (champData.rrMatches||[]).filter(function(m){ return m.result === 'draw' && (m.p1===p||m.p2===p); }).length;
+      return { name: p, score: (wins*3+draws) + ' pt' };
+    }).sort(function(a,b){ return parseInt(b.score)-parseInt(a.score); });
+  }
+  if (fmt === 'timetrial') {
+    var runs = champData.ttRuns || {};
+    var order = champData.ttOrder || 'asc';
+    var unit = champData.ttUnit || 'time';
+    return players.map(function(p) {
+      var pr = (runs[p]||[]);
+      var best = pr.length ? (order==='asc'?Math.min.apply(null,pr):Math.max.apply(null,pr)) : null;
+      return { name: p, score: best !== null ? formatTTValue(best, unit) : '—' };
+    }).sort(function(a,b){
+      if (a.score==='—') return 1; if (b.score==='—') return -1; return 0;
+    });
+  }
+  if (fmt === 'elimination') {
+    // Classifica bracket: quanti round superati
+    var bracket = champData.elimBracket || [];
+    var pts = {};
+    players.forEach(function(p){ pts[p] = 0; });
+    bracket.forEach(function(round) {
+      round.forEach(function(m){ if (m.winner && pts[m.winner]!==undefined) pts[m.winner]++; });
+    });
+    return players.map(function(p){ return { name:p, score: pts[p] + ' vinte' }; })
+      .sort(function(a,b){ return parseInt(b.score)-parseInt(a.score); });
+  }
+  // Standard
+  var races = champData.races || [];
+  var points = {};
+  players.forEach(function(p){ points[p] = 0; });
+  races.forEach(function(r){
+    if (r.result) {
+      if (r.result.first && points[r.result.first]!==undefined) points[r.result.first] += 3;
+      if (r.result.second && points[r.result.second]!==undefined) points[r.result.second] += 1;
+    }
+  });
+  return players.map(function(p){ return { name:p, score: points[p] + ' pt' }; })
+    .sort(function(a,b){ return b.score.localeCompare(a.score, undefined, {numeric:true}); });
 }
 
 </script>
