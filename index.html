@@ -161,7 +161,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .standings-card{background:var(--card);border-radius:14px;overflow:hidden;border:1px solid var(--border);margin-bottom:10px;}
 .s-row{display:grid;grid-template-columns:38px 1fr 56px;align-items:center;padding:11px 15px;border-bottom:1px solid var(--border);}
 .s-row:last-child{border-bottom:none;}
-.s-row.leader{background:#fffbe6;}
+.s-row.leader{/* sfondo primo posto rimosso */}
 .s-pos{font-size:18px;font-weight:700;color:var(--faint);}
 .s-pos.p1{color:var(--gold);}
 .s-pos.p2{color:#999;}
@@ -321,10 +321,10 @@ select:focus{border-color:var(--text);}
 .bracket{display:flex;gap:0;align-items:stretch;}
 .bracket-round{display:flex;flex-direction:column;justify-content:space-around;min-width:130px;padding:0 8px;}
 .bracket-round-title{font-size:10px;font-weight:700;color:var(--muted);text-align:center;margin-bottom:8px;letter-spacing:.5px;text-transform:uppercase;}
-.bracket-match{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .15s;margin:6px 0;}
+.bracket-match{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .15s;margin:6px 0;color:var(--text);}
 .bracket-match:hover:not(.bye){border-color:var(--violet);}
 .bracket-match.done{border-color:#b8ddb8;}
-.bracket-slot{padding:7px 10px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px;}
+.bracket-slot{padding:7px 10px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px;color:var(--text);}
 .bracket-slot:first-child{border-bottom:1px solid var(--border);}
 .bracket-slot.winner{background:rgba(45,198,83,0.15);color:#1a7a1a;}
 .bracket-slot.tbd{color:var(--faint);font-style:italic;}
@@ -970,7 +970,7 @@ select:focus{border-color:var(--text);}
     <button class="sheet-close" onclick="closeOverlay('elim-result-overlay')">×</button>
     <h2 id="elim-result-title">Risultato sfida</h2>
     <div id="elim-result-body"></div>
-    <button class="btn-primary" onclick="saveElimResult()">Salva</button>
+
   </div>
 </div>
 
@@ -2067,7 +2067,7 @@ function renderStandings() {
     const wins=(champData.races||[]).filter(r=>r.result&&r.result.first===p.name).length;
     const tie=stand.length>1&&stand[0].pts===stand[1].pts;
     const color=PLAYER_COLORS[(champData.players||[]).indexOf(p.name)%PLAYER_COLORS.length];
-    return `<div class="s-row ${i===0&&!tie?'leader':''}">
+    return `<div class="s-row">
       <div class="s-pos ${posCls[i]||''}">${i===0?'🏆':i+1}</div>
       <div><div class="s-name" style="color:${color}">${p.name}</div>
         <div class="s-sub">${wins} vittori${wins!==1?'e':'a'}</div></div>
@@ -3268,7 +3268,7 @@ function renderElimSetup(el) {
   html += '<p style="font-size:13px;color:#888;margin-bottom:14px;">Quanti giocatori nel tabellone?</p>';
   html += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">';
   sizes.forEach(s=>{
-    html+=`<button onclick="setupElimSize(${s})" style="padding:10px 18px;border-radius:10px;border:2px solid #e0ddd6;background:#fff;font-size:15px;font-weight:700;cursor:pointer;">${s}</button>`;
+    html+=`<button onclick="setupElimSize(${s})" style="padding:10px 18px;border-radius:10px;border:2px solid var(--border);background:var(--card);font-size:15px;font-weight:700;cursor:pointer;color:var(--text);">${s}</button>`;
   });
   html += '</div>';
   el.innerHTML = html;
