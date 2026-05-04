@@ -4435,16 +4435,27 @@ async function exportStandings() {
       var dot = document.createElement('div');
       dot.style.cssText = 'width:10px;height:10px;border-radius:50%;background:' + (colors[i % colors.length]) + ';flex-shrink:0;';
 
+      var nameWrap = document.createElement('div');
+      nameWrap.style.cssText = 'flex:1;min-width:0;';
+
       var name = document.createElement('div');
-      name.style.cssText = 'flex:1;font-size:14px;font-weight:700;color:#f0f2ff;';
+      name.style.cssText = 'font-size:14px;font-weight:700;color:#f0f2ff;';
       name.textContent = row.name;
+      nameWrap.appendChild(name);
+
+      if (row.sub) {
+        var sub = document.createElement('div');
+        sub.style.cssText = 'font-size:11px;color:rgba(255,255,255,.35);margin-top:1px;';
+        sub.textContent = row.sub;
+        nameWrap.appendChild(sub);
+      }
 
       var pts = document.createElement('div');
-      pts.style.cssText = 'font-size:15px;font-weight:800;color:' + (colors[i % colors.length]) + ';';
+      pts.style.cssText = 'font-size:16px;font-weight:800;color:' + (colors[i % colors.length]) + ';flex-shrink:0;';
       pts.textContent = row.score;
 
       rowEl.appendChild(pos); rowEl.appendChild(dot);
-      rowEl.appendChild(name); rowEl.appendChild(pts);
+      rowEl.appendChild(nameWrap); rowEl.appendChild(pts);
       wrap.appendChild(rowEl);
     });
 
@@ -4480,53 +4491,46 @@ async function exportStandings() {
   }
 }
 
-// Helper: restituisce i dati della classifica nel formato {name, score}
-// Usa le stesse funzioni di calcolo usate per la visualizzazione — dati sempre coerenti
+// Helper: restituisce i dati della classifica — identica a quella visualizzata
 function getStandingsData() {
   var fmt = champData.format || 'standard';
-  var players = champData.players || [];
 
   if (fmt === 'roundrobin') {
-    // Usa calcRRStandings() — stessa logica della classifica visualizzata
-    var rr = calcRRStandings();
-    return rr.map(function(p) {
-      return { name: p.name, score: p.pts + ' pt (' + p.v + 'V ' + p.p + 'P ' + p.s + 'S)' };
+    // calcRRStandings: {name, pts, v, p, s, gf, gs}
+    return calcRRStandings().map(function(p) {
+      return { name: p.name, score: p.pts + ' pt', sub: p.v + 'V ' + p.p + 'P ' + p.s + 'S' };
     });
   }
 
   if (fmt === 'timetrial') {
-    // Usa calcTTStandings() — stessa logica della classifica TT
-    var tt = calcTTStandings();
+    // calcTTStandings: {name, best, runs}
     var unit = champData.ttUnit || 'time';
-    return tt.map(function(p) {
-      return { name: p.name, score: p.best !== null ? formatTTValue(p.best, unit) : '—' };
+    return calcTTStandings().map(function(p) {
+      return { name: p.name, score: p.best !== null ? formatTTValue(p.best, unit) : '—', sub: p.runs + ' prove' };
     });
   }
 
   if (fmt === 'elimination') {
+    // Conta match vinti nel bracket
     var bracket = champData.elimBracket || [];
-    var pts = {};
-    players.forEach(function(p){ pts[p] = 0; });
+    var players = champData.players || [];
+    var wins = {};
+    players.forEach(function(p){ wins[p] = 0; });
     bracket.forEach(function(round) {
-      round.forEach(function(m){ if (m.winner && pts[m.winner] !== undefined) pts[m.winner]++; });
+      round.forEach(function(m){ if (m.winner && wins[m.winner] !== undefined) wins[m.winner]++; });
     });
-    return players.map(function(p){ return { name: p, score: pts[p] + ' vinte' }; })
+    // Campione = vincitore dell'ultima giornata
+    var champ = bracket.length ? (bracket[bracket.length-1][0] || {}).winner : null;
+    return players
+      .map(function(p){ return { name: p, score: wins[p] + ' vinte', sub: champ === p ? 'Campione 🏆' : '' }; })
       .sort(function(a,b){ return parseInt(b.score) - parseInt(a.score); });
   }
 
-  // Standard — usa stessa logica di renderStandings
-  var races = champData.races || [];
-  var points = {};
-  players.forEach(function(p){ points[p] = 0; });
-  races.forEach(function(r){
-    if (r.result) {
-      if (r.result.first  && points[r.result.first]  !== undefined) points[r.result.first]  += 3;
-      if (r.result.second && points[r.result.second] !== undefined) points[r.result.second] += 1;
-    }
+  // Standard — calcStandings: {name, pts} (pts = numero vittorie)
+  return calcStandings().map(function(p) {
+    var wins = (champData.races||[]).filter(function(r){ return r.result && r.result.first === p.name; }).length;
+    return { name: p.name, score: p.pts + ' pt', sub: wins + (wins === 1 ? ' vittoria' : ' vittorie') };
   });
-  return players
-    .map(function(p){ return { name: p, score: points[p] + ' pt' }; })
-    .sort(function(a,b){ return (points[b.name]||0) - (points[a.name]||0); });
 }
 
 </script>
