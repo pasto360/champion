@@ -4408,6 +4408,7 @@ async function resetChampFull() {
 // ── EXPORT CLASSIFICA ─────────────────────────────
 // Genera il canvas della classifica (riutilizzato da download e share)
 async function buildStandingsCanvas() {
+  try {
     var champName = champData.championship || 'Competeo';
     var season = champData.season || '';
 
