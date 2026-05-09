@@ -214,16 +214,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .chart-wrap{position:relative;height:220px;}
 
 /* manage panel */
-.manage-panel{background:var(--card);display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:300;align-items:flex-end;justify-content:center;}
+.manage-panel{background:var(--card);display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:300;align-items:flex-end;justify-content:center;touch-action:none;}
 .manage-panel.open{display:flex;}
-.manage-inner{background:var(--card);border-radius:20px 20px 0 0;width:100%;max-width:560px;max-height:92vh;display:flex;flex-direction:column;}
+.manage-inner{background:var(--card);border-radius:20px 20px 0 0;width:100%;max-width:560px;max-height:92dvh;max-height:92vh;display:flex;flex-direction:column;overflow:hidden;}
 .manage-drag{width:36px;height:4px;background:#ddd;border-radius:2px;margin:12px auto 0;flex-shrink:0;}
 .manage-hdr{padding:13px 18px 0;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
 .manage-hdr h2{font-size:17px;font-weight:700;}
 .manage-tabs{display:flex;padding:12px 18px 0;border-bottom:1px solid var(--border);flex-shrink:0;overflow-x:auto;}
 .manage-tab{flex-shrink:0;padding:8px 10px;font-size:12px;font-weight:600;color:var(--muted);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;}
 .manage-tab.active{color:var(--text);border-bottom-color:var(--text);}
-.manage-body{overflow-y:auto;flex:1;padding:14px 16px 28px;color:var(--text);scrollbar-width:none;-ms-overflow-style:none;}
+.manage-body{overflow-y:scroll;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;flex:1;padding:14px 16px 28px;color:var(--text);scrollbar-width:none;-ms-overflow-style:none;touch-action:pan-y;}
 .manage-body::-webkit-scrollbar{display:none;}
 .manage-hint{font-size:11px;color:var(--faint);margin-bottom:10px;text-align:center;}
 
@@ -2322,9 +2322,18 @@ function openManagePanel(){
   buildManageTabs();
   updateManageTabs();
   renderManageBody();
-  document.getElementById('manage-panel').classList.add('open');
+  var panel = document.getElementById('manage-panel');
+  panel.classList.add('open');
+  // Prevent body scroll while panel is open
+  document.body.style.overflow = 'hidden';
+  document.body.style.touchAction = 'none';
 }
-function closeManagePanel(){document.getElementById('manage-panel').classList.remove('open');}
+function closeManagePanel(){
+  document.getElementById('manage-panel').classList.remove('open');
+  // Restore body scroll
+  document.body.style.overflow = '';
+  document.body.style.touchAction = '';
+}
 
 function buildManageTabs() {
   var row = document.getElementById('manage-tabs-row');
