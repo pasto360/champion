@@ -1,473 +1,168 @@
-<!DOCTYPE html>
-<html lang="it">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>COMPETEO</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<link rel="stylesheet" href="style.css">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-</head>
-<body>
-<!-- ── LOADING ── -->
-<div class="loading-overlay open" id="global-loading">
-  <div class="spinner"></div>
-  <span style="font-size:14px;color:#888;">Caricamento...</span>
-</div>
-<div class="toast" id="toast"></div>
 
-<!-- ══════════════════════════════════════════════════
-     PAGE: AUTH
-══════════════════════════════════════════════════ -->
-<div class="page" id="page-auth">
-  <!-- Fullscreen background -->
-  <div class="auth-bg" style="background-image:url('sfondo.jpg');"></div>
-  <!-- Top-right auth buttons -->
-  <div class="auth-cta-wrap">
-    <div class="auth-cta-btns">
-      <button class="auth-cta-btn auth-cta-login" onclick="openAuthModal('login')">Accedi</button>
-      <button class="auth-cta-btn auth-cta-register" onclick="openAuthModal('register')">Registrati</button>
-    </div>
-  </div>
-</div>
+// ── RATE LIMITING ─────────────────────────────────
+async function getIpHash() {
+  try {
+    var r = await fetch('https://api.ipify.org?format=json');
+    var d = await r.json();
+    var ip = d.ip || 'unknown';
+    var buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(ip));
+    return Array.from(new Uint8Array(buf)).map(x=>x.toString(16).padStart(2,'0')).join('');
+  } catch(e) { return 'unknown-' + Date.now(); }
+}
 
-<!-- Login modal -->
-<div class="auth-modal-overlay" id="auth-modal-overlay" onclick="if(event.target===this)closeAuthModal()">
-  <div class="auth-modal-box" id="auth-modal-box">
-    <button onclick="closeAuthModal()" style="position:absolute;top:12px;right:16px;background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;line-height:1;">×</button>
-    <div class="auth-logo" style="font-size:22px;font-weight:900;letter-spacing:1px;color:#fff;text-align:center;margin-bottom:4px;">COMPETEO</div>
-    <div class="auth-tabs">
-      <button class="auth-tab active" id="tab-login-btn" onclick="switchAuthTab('login')">Accedi</button>
-      <button class="auth-tab" id="tab-reg-btn" onclick="switchAuthTab('register')">Registrati</button>
-    </div>
-    <div id="form-login">
-      <div class="field"><label>Email</label><input type="email" id="login-email" placeholder="tua@email.com" onkeydown="if(event.key==='Enter')doLogin()"/></div>
-      <div class="field"><label>Password</label><input type="password" id="login-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"/></div>
-      <button class="btn-primary" id="login-btn" onclick="doLogin()">Accedi</button>
-    </div>
-    <div id="form-register" style="display:none;">
-      <div class="field"><label>Username</label><input type="text" id="reg-username" placeholder="pilota99"/></div>
-      <div class="field"><label>Email</label><input type="email" id="reg-email" placeholder="tua@email.com"/></div>
-      <div class="field"><label>Password</label><input type="password" id="reg-pass" placeholder="min. 6 caratteri" onkeydown="if(event.key==='Enter')doRegister()"/></div>
-      <button class="btn-primary" id="reg-btn" onclick="doRegister()">Crea account</button>
-    </div>
-    <div class="auth-err" id="auth-err"></div>
-  </div>
-</div>
+// ── MULTILINGUA ────────────────────────────────────
+var currentLang = (navigator.language||'it').startsWith('en') ? 'en' : 'it';
 
-<!-- ══════════════════════════════════════════════════
-     PAGE: HOME — lista campionati
-══════════════════════════════════════════════════ -->
-<div class="page" id="page-home">
-  <header class="app-header">
-    <h1 style="font-size:20px;font-weight:900;letter-spacing:1px;">COMPETEO</h1>
-    <div class="right">
-      <span id="home-username" style="font-size:13px;color:rgba(255,255,255,.7);"></span>
-      <button class="notif-btn" id="notif-btn" onclick="openNotifPanel()" title="Notifiche">
-        🔔<span class="notif-count" id="notif-count">0</span>
-      </button>
-      <button class="friends-btn" onclick="openFriendsPanel()" title="Amici">
-        👥<span id="friends-badge" class="notif-badge">0</span>
-      </button>
-      <button id="lang-btn" onclick="toggleLang()" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:.5px;">🇬🇧 EN</button>
-      <button class="hbtn" onclick="showPage('page-dashboard')">Dashboard</button>
-      <button class="hbtn red" onclick="doLogout()" data-i18n="nav_logout">Esci</button>
-    </div>
-  </header>
-  <div class="home-container">
-    <div class="welcome-bar">
-      <div>
-        <h2>Campionati disponibili</h2>
-        <p>Clicca su un campionato per accedere</p>
-      </div>
-      <button class="btn-new" onclick="openNewChampModal()">+ Nuovo campionato</button>
-    </div>
-    <div class="sec-title" id="my-champs-title" data-i18n="sec_mine">Da me creati</div>
-    <div class="champ-grid list-grid" id="my-champs-grid"></div>
+var STRINGS = {
+  it: {
+    // Auth
+    err_username_required: 'Inserisci un nome utente',
+    err_password_short:    'Password minimo 6 caratteri',
+    err_rate_limit:        'Registrazione non consentita: un solo account per dispositivo.',
+    err_banned:            "Account sospeso. Contatta l'amministratore.",
+    err_email_banned:      'Questa email non può essere utilizzata.',
+    err_username_blocked:  'Username non consentito.',
+    // Nav
+    nav_home:         'Home',
+    nav_dashboard:    'Dashboard',
+    nav_logout:       'Esci',
+    nav_new_champ:    '+ Nuovo campionato',
+    // Home sections
+    sec_mine:         'Da me creati',
+    sec_joined:       'Partecipazione',
+    sec_favs:         '⭐ Preferiti',
+    sec_all:          'Tutti i campionati',
+    sec_search:       'Cerca campionati...',
+    // Champ types
+    type_standard:    'Standard',
+    type_rr:          'Round Robin',
+    type_elim:        'Eliminazione Diretta',
+    type_tt:          'Time Trial',
+    // Access types
+    access_public:    '🌐 Pubblico',
+    access_closed:    '🔐 Chiuso',
+    access_private:   '🔒 Privato',
+    // Actions
+    btn_join:         'Richiedi iscrizione',
+    btn_open:         'Apri',
+    btn_save:         'Salva',
+    btn_cancel:       'Annulla',
+    btn_delete:       'Elimina',
+    btn_invite:       'Invita',
+    btn_search:       'Cerca',
+    btn_share:        'Condividi campionato',
+    btn_download:     'Scarica classifica',
+    // Manage tabs
+    tab_players:      '👤 Utenti',
+    tab_races:        '🏁 Gare',
+    tab_matches:      '🏁 Sfide',
+    tab_prizes:       '🏆 Premi',
+    tab_live:         '📡 Live',
+    tab_settings:     '⚙ Impost.',
+    // Standings
+    lbl_standings:    'Classifica',
+    lbl_races:        'Gare',
+    // Toast/messages
+    msg_saved:        'Salvato!',
+    msg_deleted:      'Eliminato',
+    msg_copied:       'Link copiato!',
+    msg_invited:      'Invitato con successo!',
+    msg_limit:        'Hai raggiunto il limite di 10 campionati',
+  },
+  en: {
+    // Auth
+    err_username_required: 'Please enter a username',
+    err_password_short:    'Password must be at least 6 characters',
+    err_rate_limit:        'Registration not allowed: one account per device.',
+    err_banned:            'Account suspended. Contact the administrator.',
+    err_email_banned:      'This email cannot be used.',
+    err_username_blocked:  'Username not allowed.',
+    // Nav
+    nav_home:         'Home',
+    nav_dashboard:    'Dashboard',
+    nav_logout:       'Logout',
+    nav_new_champ:    '+ New championship',
+    // Home sections
+    sec_mine:         'Created by me',
+    sec_joined:       'Participating',
+    sec_favs:         '⭐ Favourites',
+    sec_all:          'All championships',
+    sec_search:       'Search championships...',
+    // Champ types
+    type_standard:    'Standard',
+    type_rr:          'Round Robin',
+    type_elim:        'Elimination',
+    type_tt:          'Time Trial',
+    // Access types
+    access_public:    '🌐 Public',
+    access_closed:    '🔐 Closed',
+    access_private:   '🔒 Private',
+    // Actions
+    btn_join:         'Request to join',
+    btn_open:         'Open',
+    btn_save:         'Save',
+    btn_cancel:       'Cancel',
+    btn_delete:       'Delete',
+    btn_invite:       'Invite',
+    btn_search:       'Search',
+    btn_share:        'Share championship',
+    btn_download:     'Download standings',
+    // Manage tabs
+    tab_players:      '👤 Players',
+    tab_races:        '🏁 Races',
+    tab_matches:      '🏁 Matches',
+    tab_prizes:       '🏆 Prizes',
+    tab_live:         '📡 Live',
+    tab_settings:     '⚙ Settings',
+    // Standings
+    lbl_standings:    'Standings',
+    lbl_races:        'Races',
+    // Toast/messages
+    msg_saved:        'Saved!',
+    msg_deleted:      'Deleted',
+    msg_copied:       'Link copied!',
+    msg_invited:      'Invited successfully!',
+    msg_limit:        'You have reached the limit of 10 championships',
+  }
+};
 
-    <div class="sec-title" id="my-favs-title" data-i18n="sec_favs" style="display:none;">⭐ Preferiti</div>
-    <div class="champ-grid list-grid" id="my-favs-grid"></div>
+function t(key) {
+  return (STRINGS[currentLang] && STRINGS[currentLang][key]) || (STRINGS['it'][key]) || key;
+}
 
-    <div class="sec-title" id="my-joined-title" data-i18n="sec_joined" style="display:none;">🎮 Partecipazione</div>
-    <div class="champ-grid list-grid" id="my-joined-grid"></div>
+function applyLang() {
+  // Update all elements with data-i18n attribute
+  document.querySelectorAll('[data-i18n]').forEach(function(el) {
+    var key = el.getAttribute('data-i18n');
+    el.textContent = t(key);
+  });
+  // Update placeholders
+  document.querySelectorAll('[data-i18n-ph]').forEach(function(el) {
+    el.placeholder = t(el.getAttribute('data-i18n-ph'));
+  });
+  // Update lang button
+  var btn = document.getElementById('lang-btn');
+  if (btn) btn.textContent = currentLang === 'it' ? '🇬🇧 EN' : '🇮🇹 IT';
+  // Update dynamic labels
+  var btnNew = document.querySelector('.btn-new');
+  if (btnNew && btnNew.textContent.includes('+')) {
+    var mine = (allChamps||[]).filter(function(c){ return c.owner_id===currentUser?.id; });
+    btnNew.textContent = t('nav_new_champ') + ' (' + mine.length + '/10)';
+  }
+}
 
-    <!-- SEARCH -->
-    <div class="search-bar">
-      <input class="search-input" type="text" id="champ-search" placeholder="🔍  Cerca campionato per nome..." oninput="onSearchInput()"/>
-    </div>
+function toggleLang() {
+  currentLang = currentLang === 'it' ? 'en' : 'it';
+  localStorage.setItem('competeo_lang', currentLang);
+  applyLang();
+}
 
-    <div class="sec-title">Tutti i campionati</div>
-    <div class="champ-grid list-grid" id="all-champs-grid"></div>
-    <div class="pagination" id="pagination"></div>
-  </div>
-</div>
+// Load saved language preference
+(function() {
+  var saved = localStorage.getItem('competeo_lang');
+  if (saved) currentLang = saved;
+})();
 
-<!-- ══════════════════════════════════════════════════
-     PAGE: DASHBOARD personale
-══════════════════════════════════════════════════ -->
-<div class="page" id="page-dashboard">
-  <header class="app-header">
-    <h1 style="font-size:18px;font-weight:900;letter-spacing:1px;">Dashboard</h1>
-    <div class="right">
-      <span id="dash-username" style="font-size:13px;color:rgba(255,255,255,.7);"></span>
-      <button class="hbtn" onclick="goHome()">← Home</button>
-      <button class="hbtn red" onclick="doLogout()">Esci</button>
-    </div>
-  </header>
-  <div class="dash-container">
-    <!-- Statistiche rapide -->
-    <div class="dash-stats-row" id="dash-stats-row"></div>
-    <!-- Campionati con classifica -->
-    <div class="sec-title" style="margin-bottom:12px;">I miei campionati</div>
-    <div id="dash-champs-list"></div>
-    <!-- Account -->
-    <div class="sec-title" style="margin:28px 0 12px;">Impostazioni account</div>
-    <div style="background:var(--card);border-radius:14px;border:1px solid var(--border);padding:20px;max-width:420px;">
-      <div class="field">
-        <label>Nuova email</label>
-        <input type="email" id="acc-email" placeholder="nuova@email.com" style="width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:10px;font-size:15px;outline:none;background:var(--bg);color:var(--text);"/>
-      </div>
-      <div class="field">
-        <label>Nuova password</label>
-        <input type="password" id="acc-pass" placeholder="min. 6 caratteri" style="width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:10px;font-size:15px;outline:none;background:var(--bg);color:var(--text);"/>
-      </div>
-      <div class="field">
-        <label>Conferma password</label>
-        <input type="password" id="acc-pass2" placeholder="ripeti la password" style="width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:10px;font-size:15px;outline:none;background:var(--bg);color:var(--text);"/>
-      </div>
-      <button class="btn-primary" onclick="saveAccountSettings()" style="margin-top:4px;">Salva modifiche account</button>
-      <div class="auth-err" id="acc-msg" style="margin-top:10px;"></div>
-    </div>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════════════════
-     PAGE: CHAMPIONSHIP VIEW
-══════════════════════════════════════════════════ -->
-<div class="page" id="page-champ">
-  <!-- header -->
-  <div class="champ-page-header">
-    <h1 id="champ-hdr-title">Campionato</h1>
-    <div class="right">
-      <div class="sync-badge sync-loading" id="sync-badge">
-        <span class="sync-dot pulsing"></span>
-        <span id="sync-label">...</span>
-      </div>
-      <button class="hbtn" id="btn-manage-champ" onclick="openManagePanel()" style="display:none;">⚙</button>
-      <button class="hbtn" id="btn-fav-champ" onclick="toggleFav()" title="Aggiungi ai preferiti">☆</button>
-      <button class="hbtn" onclick="goHome()">← Home</button>
-    </div>
-  </div>
-
-  <!-- mobile tab bar -->
-  <nav class="tab-bar">
-    <div class="tab-bar-inner">
-      <button class="tab-btn active" id="tab-races-btn" onclick="switchTab('races')">
-        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Gare
-      </button>
-      <button class="tab-btn" id="tab-live-btn" onclick="switchTab('live')" style="position:relative;">
-        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none"/></svg>Live
-      </button>
-      <!-- tab-rr-btn removed: RR matches shown in races tab -->
-      <button class="tab-btn" id="tab-elim-btn" onclick="switchTab('elim')" style="display:none;">
-        <svg viewBox="0 0 24 24"><path d="M4 6h16M8 12h8M11 18h2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Bracket
-      </button>
-      <button class="tab-btn" id="tab-standings-btn" onclick="switchTab('standings')">
-        <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Classifica
-      </button>
-    </div>
-  </nav>
-
-  <div class="champ-layout">
-    <!-- GARE -->
-    <div class="col-races c-page active" id="c-page-races">
-      <div class="sec-hdr"><span class="sec-lbl">Gare</span><span id="races-count" style="font-size:11px;color:#bbb;"></span></div>
-      <div class="races-grid" id="races-grid"></div>
-    </div>
-    <!-- RIGHT COL -->
-    <div class="col-right c-page" id="c-page-standings">
-      <!-- live desktop widget -->
-      <div id="live-widget-desktop" style="margin-top:14px;margin-bottom:14px;border-radius:12px;overflow:hidden;background:#000;aspect-ratio:16/9;display:none;">
-        <iframe id="live-iframe-desktop" src="" allowfullscreen allow="autoplay;encrypted-media" style="width:100%;height:100%;border:none;display:block;"></iframe>
-      </div>
-      <!-- share bar -->
-      <div class="share-bar" id="champ-share-bar">
-        <span class="share-bar-label">Condividi</span>
-        <div class="share-btns">
-          <a id="share-wa"  class="share-btn whatsapp"  href="#" target="_blank" title="WhatsApp">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.532 5.855L.057 23.243a.5.5 0 0 0 .634.634l5.388-1.475A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.959 0-3.799-.524-5.385-1.44l-.385-.229-3.997 1.093 1.093-3.997-.229-.385A9.946 9.946 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
-          </a>
-          <a id="share-tg"  class="share-btn telegram"  href="#" target="_blank" title="Telegram">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="#fff"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.17 13.949l-2.96-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.978.61z"/></svg>
-          </a>
-          <a id="share-ig"  class="share-btn instagram" href="#" target="_blank" title="Instagram">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="#fff"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/></svg>
-          </a>
-          <button id="share-copy" class="share-btn copy-link" onclick="copyChampLink()" title="Copia link">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-          </button>
-        </div>
-      </div>
-      <!-- classifica -->
-      <div class="sec-hdr" style="margin-top:8px;"><span class="sec-lbl">Classifica</span><span id="races-progress" style="font-size:11px;color:#bbb;"></span></div>
-      <div class="standings-card" id="standings-container"></div>
-      <!-- download classifica -->
-      <div id="share-image-bar" style="display:flex;justify-content:flex-end;margin-top:10px;">
-        <button onclick="shareStandingsImage('download')" class="share-btn copy-link" title="Scarica classifica come immagine"
-          style="display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;width:auto;">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Scarica classifica
-        </button>
-      </div>
-      <div class="prog-bar"><div class="prog-fill" id="progress-fill" style="width:0%"></div></div>
-      <div class="prog-lbl" id="progress-label"></div>
-      <!-- premi -->
-      <div class="sec-hdr" style="margin-top:16px;"><span class="sec-lbl">Premi</span></div>
-      <div class="prizes-card" id="prizes-container"></div>
-      <div id="join-banner"></div>
-    </div>
-    <!-- CHART -->
-    <div class="col-chart" id="chart-section">
-      <div class="sec-hdr"><span class="sec-lbl">Andamento Punti</span></div>
-      <div class="chart-card">
-        <div class="chart-legend" id="chart-legend"></div>
-        <div class="chart-wrap"><canvas id="chart-canvas"></canvas></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- mobile live page -->
-  <div class="c-page" id="c-page-live" style="padding:16px;display:none;">
-    <div class="sec-hdr"><span class="sec-lbl">Live</span></div>
-    <div class="live-card" id="live-card-mobile"></div>
-  </div>
-  <!-- Round Robin page (hidden — matches shown in c-page-races) -->
-  <div class="c-page" id="c-page-rr" style="display:none!important;">
-    <div id="rr-content"></div>
-  </div>
-  <!-- Elimination page -->
-  <div class="c-page" id="c-page-elim" style="padding:16px;">
-    <div id="elim-content"></div>
-  </div>
-</div>
-
-
-<!-- Replay lightbox (desktop) -->
-<div class="overlay" id="replay-overlay" onclick="if(event.target===this)closeReplay()">
-  <div style="position:relative;width:90%;max-width:860px;aspect-ratio:16/9;background:#000;border-radius:14px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5);">
-    <button onclick="closeReplay()" style="position:absolute;top:10px;right:14px;z-index:10;background:rgba(0,0,0,.6);border:none;color:#fff;font-size:22px;cursor:pointer;border-radius:50%;width:34px;height:34px;display:flex;align-items:center;justify-content:center;line-height:1;">×</button>
-    <iframe id="replay-iframe" src="" allowfullscreen allow="autoplay;encrypted-media" style="width:100%;height:100%;border:none;"></iframe>
-  </div>
-</div>
-
-
-<!-- ── PANNELLO NOTIFICHE ──────────────────── -->
-<div class="notif-overlay" id="notif-overlay" onclick="if(event.target===this)closeNotifPanel()">
-  <div class="notif-panel">
-    <div class="notif-panel-header">
-      <h3>🔔 Notifiche</h3>
-      <button class="notif-mark-all" onclick="markAllNotifsRead()">Segna tutte come lette</button>
-    </div>
-    <div class="notif-list" id="notif-list">
-      <div class="notif-empty">Nessuna notifica</div>
-    </div>
-  </div>
-</div>
-<!-- Friends panel overlay -->
-<div class="friends-overlay" id="friends-overlay" onclick="if(event.target===this)closeFriendsPanel()">
-  <div class="friends-panel">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-      <h3 style="margin:0;">👥 Amici</h3>
-      <button onclick="closeFriendsPanel()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#bbb;">×</button>
-    </div>
-    <!-- Cerca e aggiungi -->
-    <div class="search-friend-row">
-      <input type="text" id="friend-search-input" placeholder="Username..." onkeydown="if(event.key==='Enter')searchAndAddFriend()"/>
-      <button onclick="searchAndAddFriend()">Cerca</button>
-    </div>
-    <div id="friend-search-result" style="font-size:12px;margin-bottom:10px;min-height:16px;"></div>
-    <!-- Richieste in arrivo -->
-    <div id="friends-pending-section" style="display:none;">
-      <div style="font-size:11px;font-weight:700;color:#e06000;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">Richieste in arrivo</div>
-      <div id="friends-pending-list"></div>
-    </div>
-    <!-- Amici accettati -->
-    <div style="font-size:11px;font-weight:700;color:#aaa;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;margin-top:12px;">I miei amici</div>
-    <div id="friends-accepted-list"><div style="color:#bbb;font-size:13px;">Nessun amico ancora</div></div>
-    <!-- Richieste inviate -->
-    <div id="friends-sent-section" style="display:none;margin-top:12px;">
-      <div style="font-size:11px;font-weight:700;color:#aaa;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">Richieste inviate</div>
-      <div id="friends-sent-list"></div>
-    </div>
-  </div>
-</div>
-
-<!-- ══ MODALS / PANELS ══ -->
-
-<!-- Access modal (password per campionato privato) -->
-<div class="overlay" id="access-overlay">
-  <div class="sheet">
-    <div class="drag-bar"></div>
-    <button class="sheet-close" onclick="closeOverlay('access-overlay')">×</button>
-    <h2 id="access-title">Accedi al campionato</h2>
-    <p id="access-sub">Inserisci la password per visualizzare</p>
-    <div class="field"><label>Password campionato</label><input type="password" id="access-pass" placeholder="••••••"/></div>
-
-    <button class="btn-primary" onclick="submitAccess()">Entra</button>
-    <div class="auth-err" id="access-err"></div>
-  </div>
-</div>
-
-<!-- New championship modal -->
-<div class="overlay" id="new-champ-overlay">
-  <div class="sheet">
-    <div class="drag-bar"></div>
-    <button class="sheet-close" onclick="closeOverlay('new-champ-overlay')">×</button>
-    <h2>Nuovo Campionato</h2>
-    <div id="nc-limit-info" style="font-size:12px;color:var(--muted);margin-bottom:10px;text-align:center;"></div>
-    <p style="margin-bottom:14px;">Scegli la tipologia</p>
-    <!-- Tipologia -->
-    <div style="display:grid;gap:8px;margin-bottom:18px;" id="nc-type-grid">
-      <label class="type-card active" onclick="selectChampType('standard',this)">
-        <input type="radio" name="nc-type" value="standard" checked style="display:none"/>
-        <div class="type-card-ico">🏎️</div>
-        <div><div class="type-card-name">Standard</div><div class="type-card-desc">Gare libere, classifica per vittorie</div></div>
-      </label>
-      <label class="type-card" onclick="selectChampType('roundrobin',this)">
-        <input type="radio" name="nc-type" value="roundrobin" style="display:none"/>
-        <div class="type-card-ico">⚽</div>
-        <div><div class="type-card-name">Round Robin</div><div class="type-card-desc">Tutti contro tutti 1v1, classifica generale</div></div>
-      </label>
-      <label class="type-card" onclick="selectChampType('elimination',this)">
-        <input type="radio" name="nc-type" value="elimination" style="display:none"/>
-        <div class="type-card-ico">🏆</div>
-        <div><div class="type-card-name">Eliminazione Diretta</div><div class="type-card-desc">Tabellone a bracket, avanzano i vincitori</div></div>
-      </label>
-      <label class="type-card" onclick="selectChampType('timetrial',this)">
-        <input type="radio" name="nc-type" value="timetrial" style="display:none"/>
-        <div class="type-card-ico">⏱️</div>
-        <div><div class="type-card-name">Time Trial</div><div class="type-card-desc">Classifica sul miglior tempo o distanza</div></div>
-      </label>
-    </div>
-    <!-- TimeTrial options (visibili solo se selezionato) -->
-    <div id="nc-tt-options" style="display:none;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px;">
-      <div class="field" style="margin-bottom:8px;"><label>Unità di misura</label>
-        <select id="nc-tt-unit" class="prize-field" style="border:none;font-size:14px;background:transparent;">
-          <option value="time">Tempo (mm:ss.mmm)</option>
-          <option value="distance">Distanza (metri)</option>
-        </select>
-      </div>
-      <div class="field" style="margin-bottom:0;"><label>Classifica</label>
-        <select id="nc-tt-order" class="prize-field" style="border:none;font-size:14px;background:transparent;">
-          <option value="asc">Valore più basso = 1° (es. tempo)</option>
-          <option value="desc">Valore più alto = 1° (es. distanza)</option>
-        </select>
-      </div>
-    </div>
-    <div class="field"><label>Nome</label><input type="text" id="nc-name" placeholder="Es. Formula Amici 2026"/></div>
-    <div class="field"><label>Anno / Stagione</label><input type="text" id="nc-season" placeholder="2026"/></div>
-    <div class="field">
-      <label>Accesso</label>
-      <select id="nc-access" onchange="updateNcPassField(this.value)" style="color:#fff;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:14px;width:100%;outline:none;">
-        <option value="public">🌐 Pubblico — visibile a tutti, chiunque può richiedere iscrizione</option>
-        <option value="closed">🔐 Chiuso — visibile solo ai partecipanti, solo su invito</option>
-        <option value="password">🔒 Privato — visibile a tutti, accesso con password</option>
-      </select>
-    </div>
-    <div class="field" id="nc-pass-field">
-      <label>Password d'accesso</label>
-      <input type="text" id="nc-pass" placeholder="Scegli una password semplice"/>
-    </div>
-    <button class="btn-primary" onclick="createChampionship()">Crea Campionato</button>
-    <div class="auth-err" id="nc-err"></div>
-  </div>
-</div>
-
-<!-- RR result modal -->
-<div class="overlay" id="rr-result-overlay">
-  <div class="sheet">
-    <div class="drag-bar"></div>
-    <button class="sheet-close" onclick="closeOverlay('rr-result-overlay')">×</button>
-    <h2 id="rr-result-title">Risultato match</h2>
-    <p class="modal-sub" style="font-size:12px;color:#aaa;margin-bottom:16px;" id="rr-result-sub"></p>
-    <div id="rr-result-body"></div>
-    <button class="btn-primary" onclick="saveRRResult()">Salva</button>
-  </div>
-</div>
-
-<!-- Elimination match result modal -->
-<div class="overlay" id="elim-result-overlay">
-  <div class="sheet">
-    <div class="drag-bar"></div>
-    <button class="sheet-close" onclick="closeOverlay('elim-result-overlay')">×</button>
-    <h2 id="elim-result-title">Risultato sfida</h2>
-    <div id="elim-result-body"></div>
-
-  </div>
-</div>
-
-<!-- Result modal -->
-<div class="overlay result-modal" id="result-overlay">
-  <div class="sheet">
-    <div class="drag-bar"></div>
-    <button class="sheet-close" onclick="closeOverlay('result-overlay')">×</button>
-    <h2 id="result-title">Risultato</h2>
-    <p class="modal-sub" id="result-sub" style="font-size:12px;color:#aaa;margin-bottom:18px;"></p>
-    <div id="result-selects"></div>
-    <button class="btn-primary" onclick="saveResult()">Salva Risultato</button>
-  </div>
-</div>
-
-<!-- Add race modal -->
-<div class="overlay" id="add-race-overlay">
-  <div class="sheet">
-    <div class="drag-bar"></div>
-    <button class="sheet-close" onclick="closeOverlay('add-race-overlay')">×</button>
-    <h2>Nuovo Circuito</h2>
-    <p style="margin-bottom:16px;font-size:13px;color:#aaa;">Aggiungi un circuito al campionato</p>
-    <div class="field"><label>Nome circuito</label><input type="text" id="ar-name" placeholder="Es. Barcellona"/></div>
-    <div class="field"><label>Data gara (opzionale)</label><input type="date" id="ar-date" style="width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:10px;font-size:15px;outline:none;background:#fff;"/></div>
-    <button class="btn-primary" onclick="saveNewRace()">Aggiungi circuito</button>
-    <div class="auth-err" id="ar-err" style="margin-top:10px;"></div>
-  </div>
-</div>
-
-<!-- Edit race modal -->
-<div class="overlay" id="edit-race-overlay">
-  <div class="sheet">
-    <div class="drag-bar"></div>
-    <button class="sheet-close" onclick="closeOverlay('edit-race-overlay')">×</button>
-    <h2>Modifica Circuito</h2>
-    <p style="margin-bottom:16px;font-size:13px;color:#aaa;">Modifica nome e data della gara</p>
-    <input type="hidden" id="er-id"/>
-    <div class="field"><label>Nome circuito</label><input type="text" id="er-name" placeholder="Es. Barcellona"/></div>
-    <div class="field"><label>Data gara</label><input type="date" id="er-date" style="width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:10px;font-size:15px;outline:none;background:#fff;"/></div>
-    <button class="btn-primary" onclick="saveEditRace()">Salva modifiche</button>
-    <div class="auth-err" id="er-err" style="margin-top:10px;"></div>
-  </div>
-</div>
-
-<!-- Manage panel -->
-<div class="manage-panel" id="manage-panel">
-  <div class="manage-inner">
-    <div class="manage-drag"></div>
-    <div class="manage-hdr">
-      <h2>Gestisci</h2>
-      <button style="background:none;border:none;font-size:22px;cursor:pointer;color:#888;" onclick="closeManagePanel()">×</button>
-    </div>
-    <div class="manage-tabs" id="manage-tabs-row"></div>
-    <div class="manage-body" id="manage-body"></div>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════════════════
-     SCRIPTS
-══════════════════════════════════════════════════ -->
-<script>
 // ── SUPABASE ──────────────────────────────────────
 const SUPA_URL = 'https://jhoruzazoqpqlytcbjev.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impob3J1emF6b3FwcWx5dGNiamV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyNjg2MjcsImV4cCI6MjA5MTg0NDYyN30.wcQgwe3KJwSugqPW57JR2Qn5q5RZXLxGMSL9xNsKYSk';
@@ -615,9 +310,19 @@ async function doRegister() {
   const username = document.getElementById('reg-username').value.trim();
   const email    = document.getElementById('reg-email').value.trim();
   const pass     = document.getElementById('reg-pass').value;
-  if (!username) { document.getElementById('auth-err').textContent='Inserisci un nome utente'; return; }
-  if (pass.length < 6) { document.getElementById('auth-err').textContent='Password minimo 6 caratteri'; return; }
+  if (!username) { document.getElementById('auth-err').textContent = t('err_username_required'); return; }
+  if (pass.length < 6) { document.getElementById('auth-err').textContent = t('err_password_short'); return; }
   setAuthLoading(true);
+  // Rate limit: 1 registrazione per IP ogni 2400 ore
+  try {
+    var ipHash = await getIpHash();
+    var rl = await sb.rpc('check_signup_rate', { p_ip_hash: ipHash });
+    if (!rl.error && rl.data === false) {
+      setAuthLoading(false);
+      document.getElementById('auth-err').textContent = t('err_rate_limit');
+      return;
+    }
+  } catch(e) { console.warn('Rate limit check failed:', e); }
   // Check if email is banned in profiles
   const {data:bannedCheck} = await sb.from('profiles').select('banned').eq('email', email).maybeSingle();
   if (bannedCheck && bannedCheck.banned) {
@@ -654,6 +359,7 @@ function setAuthLoading(on) {
 // ── HOME ──────────────────────────────────────────
 async function showHome() {
   await loadSiteTheme();
+  applyLang();
   startNotifPolling();
   checkUrlChampParam();
   const {data:profile} = await sb.auth.getUser();
@@ -4028,42 +3734,3 @@ function getStandingsData() {
     return { name: p.name, score: p.pts + ' pt', sub: wins + (wins === 1 ? ' vittoria' : ' vittorie') };
   });
 }
-
-</script>
-
-
-<!-- ── SITE FOOTER ──────────────────────────── -->
-<footer class="site-footer" id="site-footer" style="display:none;">
-
-  <!-- Banner pubblicitario -->
-  <div class="footer-ad-bar">
-    <!--
-      SOSTITUIRE IL DIV QUI SOTTO CON IL CODICE DEL BANNER PUBBLICITARIO
-      Dimensione consigliata: 728×90 (Leaderboard) oppure 320×50 (Mobile)
-    -->
-    <div class="footer-ad-slot" id="footer-ad-slot">
-      Spazio pubblicitario &mdash; 728&times;90
-    </div>
-  </div>
-
-  <!-- Footer informativo -->
-  <div class="footer-main">
-    <div class="footer-inner">
-      <div class="footer-links">
-        <a href="legal.html#privacy" target="_blank">Privacy Policy</a>
-        <a href="legal.html#legal" target="_blank">Termini di Servizio</a>
-        <a href="mailto:info@competeo.it">Contatti</a>
-        <a href="legal.html#legal" target="_blank">Note Legali</a>
-        <a href="legal.html#cookies" target="_blank">Cookie Policy</a>
-      </div>
-      <div class="footer-bottom">
-        <span class="footer-logo-txt">COMPETEO</span>
-        <span class="footer-copy">&copy; 2025 Competeo &mdash; Tutti i diritti riservati.</span>
-      </div>
-    </div>
-  </div>
-
-</footer>
-</body>
-<script src="app.js"></script>
-</html>
