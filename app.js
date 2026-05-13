@@ -326,11 +326,9 @@ async function loadChampionshipsHome() {
   closedMemberships = new Set((myMemberships||[]).map(m => m.champ_id));
   if (error) { showToast('Errore caricamento campionati'); return; }
 
-  allChamps = allChampsRaw || champs || [];
   const allChampsRaw = (champs||[]).filter(function(c){ return !archivedSet.has(c.id); });
+  allChamps = allChampsRaw;
   const mine = allChampsRaw.filter(c=>c.owner_id===currentUser.id);
-  // Replace champs with filtered version for the rest of the function
-  // (allChamps is set later)
 
   const myGrid = document.getElementById('my-champs-grid');
   document.getElementById('my-champs-title').style.display = mine.length?'block':'none';
