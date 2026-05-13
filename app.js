@@ -3226,6 +3226,42 @@ async function loadDashboard() {
   await renderDashArchive(archivedIds, memberships);
 }
 
+function renderDashChampCard(champ, memberships) {
+  var data = champ.data || {};
+  var fmt = data.format || 'standard';
+  var players = data.players || [];
+  var username = document.getElementById('dash-username')?.textContent || '';
+  var myRole = (memberships.find(function(m){ return m.champ_id === champ.id; })||{}).role || '';
+  var isOwner = champ.owner_id === currentUser.id;
+  var position = getMyPosition(data, fmt, username);
+  var nextMatch = getNextMatch(data, fmt, username);
+
+  var html = '<div class="dash-champ-card">';
+  html += '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">';
+  html += '<div class="dash-champ-name">' + esc(champ.name) + (champ.season ? ' <span style="font-size:11px;color:var(--muted);">' + esc(champ.season) + '</span>' : '') + '</div>';
+  html += '<div style="display:flex;gap:6px;flex-shrink:0;">';
+  html += '<button data-champid="' + champ.id + '" onclick="openChampionship(this.getAttribute(\'data-champid\'))" style="padding:5px 12px;background:var(--violet);color:#fff;border:none;border-radius:7px;font-size:12px;cursor:pointer;font-weight:600;">Apri</button>';
+  html += '<button onclick="archiveChamp(\'' + champ.id + '\')" style="padding:5px 10px;background:rgba(255,255,255,.06);color:var(--muted);border:1px solid var(--border);border-radius:7px;font-size:12px;cursor:pointer;" title="Archivia">&#128230;</button>';
+  if (isOwner) {
+    html += '<button data-champid="' + champ.id + '" data-champname="' + esc(champ.name).replace(/"/g,'&quot;') + '" onclick="deleteDashChamp(this)" style="padding:5px 10px;background:rgba(244,63,94,0.15);color:var(--red);border:1px solid rgba(244,63,94,0.3);border-radius:7px;font-size:12px;cursor:pointer;font-weight:600;" title="Elimina">&#128465;</button>';
+  }
+  html += '</div></div>';
+  html += '<div class="dash-champ-meta">';
+  html += '<span>' + fmtLabel(fmt) + '</span>';
+  html += '<span>' + players.length + ' giocatori</span>';
+  if (isOwner) html += '<span class="highlight">&#128081; Owner</span>';
+  if (position !== null) {
+    var medal = position === 1 ? '&#129351;' : position === 2 ? '&#129352;' : position === 3 ? '&#129353;' : '&#127885;';
+    html += '<span class="highlight">' + medal + ' ' + position + '&deg; posto</span>';
+  }
+  html += '</div>';
+  if (nextMatch) {
+    html += '<div class="dash-next-match">&#9876;&#65039; Prossima sfida: <strong>' + esc(nextMatch) + '</strong></div>';
+  }
+  html += '</div>';
+  return html;
+}
+
 async function renderDashArchive(archivedIds, memberships) {
   var archSection = document.getElementById('dash-archive-section');
   var archList    = document.getElementById('dash-archive-list');
