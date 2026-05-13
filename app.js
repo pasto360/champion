@@ -413,8 +413,9 @@ const CATEGORY_ICONS = {
 function selectSettingsCategory(cat, btn) {
   document.querySelectorAll('#settings-category-picker .cat-btn').forEach(function(b){ b.classList.remove('selected'); });
   if (btn) btn.classList.add('selected');
-  var el = document.getElementById('settings-category'); if(el) el.value = cat;
-  champData.category = cat;
+  // Aggiorna solo il campo hidden — NON toccare champData finché l'utente non preme Salva
+  var el = document.getElementById('settings-category');
+  if (el) el.value = cat;
 }
 function selectCategory(cat, btn) {
   document.querySelectorAll('#nc-category-picker .cat-btn').forEach(function(b){ b.classList.remove('selected'); });
