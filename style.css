@@ -560,3 +560,13 @@ select:focus{border-color:var(--text);}
 .share-btn.instagram{background:linear-gradient(135deg,#f58529,#dd2a7b,#8134af,#515bd4);}
 .share-btn.copy-link{background:var(--card);border:1px solid var(--border);color:var(--text);}
 .share-btn.copy-link.copied{background:rgba(16,185,129,.2);border-color:var(--green);color:var(--green);}
+/* ── CATEGORY BUTTONS ──────────────────────────── */
+.cat-btn{
+  width:40px;height:40px;border-radius:10px;font-size:18px;
+  border:2px solid var(--border);background:var(--card);
+  cursor:pointer;transition:border-color .15s,background .15s;
+  display:flex;align-items:center;justify-content:center;
+}
+.cat-btn:hover{border-color:var(--violet);background:var(--faint);}
+.cat-btn.selected{border-color:var(--violet);background:rgba(124,58,237,.2);}
+.cat-btn[data-cat=""]{font-size:13px;color:var(--muted);}

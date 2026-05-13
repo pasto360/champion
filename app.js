@@ -402,6 +402,30 @@ function isMemberOf(champId) {
   return closedMemberships.has(champId);
 }
 
+
+const CATEGORY_ICONS = {
+  soccer:  '⚽',
+  racing:  '🏎️',
+  dice:    '🎲',
+  shooter: '🔫',
+};
+
+function selectSettingsCategory(cat, btn) {
+  document.querySelectorAll('#settings-category-picker .cat-btn').forEach(function(b){ b.classList.remove('selected'); });
+  if (btn) btn.classList.add('selected');
+  var el = document.getElementById('settings-category'); if(el) el.value = cat;
+  champData.category = cat;
+}
+function selectCategory(cat, btn) {
+  document.querySelectorAll('#nc-category-picker .cat-btn').forEach(function(b){ b.classList.remove('selected'); });
+  if (btn) btn.classList.add('selected');
+  document.getElementById('nc-category').value = cat;
+}
+function champCategoryIcon(c) {
+  var cat = c.category || (c.data && c.data.category) || '';
+  if (!cat || !CATEGORY_ICONS[cat]) return '';
+  return '<span style="margin-right:4px;font-size:13px;">' + CATEGORY_ICONS[cat] + '</span>';
+}
 function champCard(c, inFavSection=false) {
   const mine = c.owner_id === currentUser.id;
   const fav  = isFav(c.id);
@@ -420,7 +444,7 @@ function champCard(c, inFavSection=false) {
   if (isClosed && !isMember) {
     return '<div class="champ-card champ-card-locked" title="Campionato chiuso — solo su invito">'
       + '<div class="champ-card-name" style="opacity:.4;">' + c.name + ' <span style="font-size:11px;">🔐</span></div>'
-      + '<div class="champ-card-meta" style="opacity:.3;">' + (c.season||'') + '</div>'
+      + '<div class="champ-card-meta" style="opacity:.3;">' + champCategoryIcon(c) + (c.season||'') + '</div>'
       + badge
       + '</div>';
   }
@@ -434,7 +458,7 @@ function champCard(c, inFavSection=false) {
 
   return '<div class="champ-card ' + (mine?'champ-card-mine':'') + '" data-champid="' + c.id + '" onclick="openChampionship(this.getAttribute(\'data-champid\'))">'
     + '<div class="champ-card-name">' + c.name + (favStarFav||favStar) + '</div>'
-    + '<div class="champ-card-meta">' + (c.season||'') + (mine?' · <strong>Mio</strong>':'') + '</div>'
+    + '<div class="champ-card-meta">' + champCategoryIcon(c) + (c.season||'') + (mine?' · <strong>Mio</strong>':'') + '</div>'
     + badge
     + '</div>';
 }
@@ -454,6 +478,9 @@ async function openNewChampModal() {
   }
   document.getElementById('nc-name').value='';
   document.getElementById('nc-season').value=new Date().getFullYear();
+  document.getElementById('nc-category').value='';
+  document.querySelectorAll('#nc-category-picker .cat-btn').forEach(function(b){ b.classList.remove('selected'); });
+  var nocat = document.querySelector('#nc-category-picker .cat-btn[data-cat=""]'); if(nocat) nocat.classList.add('selected');
   document.getElementById('nc-pass').value='';
   document.getElementById('nc-err').textContent='';
   document.getElementById('nc-access').value='password';
@@ -493,8 +520,9 @@ async function createChampionship() {
   const username = currentUser.user_metadata?.username || currentUser.email?.split('@')[0] || 'Owner';
   var ttUnit  = document.getElementById('nc-tt-unit')  ? document.getElementById('nc-tt-unit').value  : 'time';
   var ttOrder = document.getElementById('nc-tt-order') ? document.getElementById('nc-tt-order').value : 'asc';
+  const category = (document.getElementById('nc-category') || {}).value || '';
   const defaultData = {
-    championship: name, season, format: selectedChampType,
+    championship: name, season, format: selectedChampType, category,
     players: [username],
     prizes: ['','',''], races: [], liveUrl: 'https://www.youtube.com/@pixel-race/live',
     rrMatches: [], elimBracket: null,
@@ -1543,6 +1571,14 @@ function renderManageSettings(){
   html += '<span class="prize-input-icon">🔒</span>';
   html += '<input class="prize-field" type="text" id="set-champ-pass" placeholder="Password di accesso..." value="' + ((currentChamp&&currentChamp.password_hash)||'').replace(/"/g,'&quot;') + '"/>';
   html += '</div>';
+  // Category picker in settings
+  var curCat = champData.category || '';
+  html += '<div style="margin:14px 0 10px;"><div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">Categoria</div>';
+  html += '<div style="display:flex;gap:8px;" id="settings-category-picker">';
+  [{v:'',l:'—'},{v:'soccer',l:'⚽'},{v:'racing',l:'🏎️'},{v:'dice',l:'🎲'},{v:'shooter',l:'🔫'}].forEach(function(o){
+    html += '<button type="button" class="cat-btn' + (curCat===o.v?' selected':'') + '" data-cat="'+o.v+'" onclick="selectSettingsCategory(\'' + o.v + '\',this)">' + o.l + '</button>';
+  });
+  html += '</div><input type="hidden" id="settings-category" value="' + curCat + '"/></div>';
   html += '<button class="btn-primary" style="margin-top:8px;" onclick="saveChampSettings()">Salva impostazioni</button>';
   if ((champData.format||'standard') === 'timetrial') html += renderTTSettings();
   // Danger zone
@@ -1579,6 +1615,8 @@ function saveChampName(val){
   scheduleSave();renderChamp();
 }
 async function saveChampSettings(){
+  var catEl = document.getElementById('settings-category');
+  if (catEl) champData.category = catEl.value;
   const pass   = (document.getElementById('set-champ-pass')||{}).value?.trim() || '';
   const access = document.getElementById('set-champ-access').value;
   const newName = [champData.championship, champData.season].filter(Boolean).join(' ') || currentChamp.name;

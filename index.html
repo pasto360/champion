@@ -375,6 +375,16 @@
     </div>
     <div class="field"><label>Nome</label><input type="text" id="nc-name" placeholder="Es. Formula Amici 2026"/></div>
     <div class="field"><label>Anno / Stagione</label><input type="text" id="nc-season" placeholder="2026"/></div>
+    <div class="field"><label>Categoria (opzionale)</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;" id="nc-category-picker">
+        <button type="button" class="cat-btn" data-cat="" onclick="selectCategory('',this)" title="Nessuna">—</button>
+        <button type="button" class="cat-btn" data-cat="soccer" onclick="selectCategory('soccer',this)" title="Calcio / Sfide">⚽</button>
+        <button type="button" class="cat-btn" data-cat="racing" onclick="selectCategory('racing',this)" title="Racing / F1">🏎️</button>
+        <button type="button" class="cat-btn" data-cat="dice" onclick="selectCategory('dice',this)" title="Giochi di ruolo">🎲</button>
+        <button type="button" class="cat-btn" data-cat="shooter" onclick="selectCategory('shooter',this)" title="Sparatutto">🔫</button>
+      </div>
+      <input type="hidden" id="nc-category" value=""/>
+    </div>
     <div class="field">
       <label>Accesso</label>
       <select id="nc-access" onchange="updateNcPassField(this.value)" style="color:#fff;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:14px;width:100%;outline:none;">
