@@ -3190,29 +3190,9 @@ async function loadDashboard() {
   // Stats rapide
   var ownedCount = champs.filter(function(c){ return c.owner_id === currentUser.id; }).length;
   var playingCount = champs.filter(function(c){ return c.owner_id !== currentUser.id; }).length;
-  // Vittorie personali in tutti i campionati
-  var myWins = champs.reduce(function(acc, c) {
-    var d = c.data || {};
-    var fmt = d.format || 'standard';
-    if (fmt === 'standard') {
-      return acc + (d.races||[]).filter(function(r){ return r.result && r.result.first === username; }).length;
-    }
-    if (fmt === 'roundrobin') {
-      return acc + (d.rrMatches||[]).filter(function(m){ return m.winner === username; }).length;
-    }
-    if (fmt === 'elimination') {
-      var bracket = d.elimBracket || [];
-      var wins = 0;
-      bracket.forEach(function(round){ round.forEach(function(m){ if (m.winner === username) wins++; }); });
-      return acc + wins;
-    }
-    return acc;
-  }, 0);
   document.getElementById('dash-stats-row').innerHTML =
-    dashStat(champs.length, 'Campionati') +
     dashStat(ownedCount, 'Da me creati') +
-    dashStat(playingCount, 'Come giocatore') +
-    dashStat(myWins, '🏆 Vittorie');
+    dashStat(playingCount, 'Partecipazione');
 
   // Render campionati attivi
   var html = '';
