@@ -10,158 +10,6 @@ async function getIpHash() {
   } catch(e) { return 'unknown-' + Date.now(); }
 }
 
-// ── MULTILINGUA ────────────────────────────────────
-var currentLang = (navigator.language||'it').startsWith('en') ? 'en' : 'it';
-
-var STRINGS = {
-  it: {
-    // Auth
-    err_username_required: 'Inserisci un nome utente',
-    err_password_short:    'Password minimo 6 caratteri',
-    err_rate_limit:        'Registrazione non consentita: un solo account per dispositivo.',
-    err_banned:            "Account sospeso. Contatta l'amministratore.",
-    err_email_banned:      'Questa email non può essere utilizzata.',
-    err_username_blocked:  'Username non consentito.',
-    // Nav
-    nav_home:         'Home',
-    nav_dashboard:    'Dashboard',
-    nav_logout:       'Esci',
-    nav_new_champ:    '+ Nuovo campionato',
-    // Home sections
-    sec_mine:         'Da me creati',
-    sec_joined:       'Partecipazione',
-    sec_favs:         '⭐ Preferiti',
-    sec_all:          'Tutti i campionati',
-    sec_search:       'Cerca campionati...',
-    // Champ types
-    type_standard:    'Standard',
-    type_rr:          'Round Robin',
-    type_elim:        'Eliminazione Diretta',
-    type_tt:          'Time Trial',
-    // Access types
-    access_public:    '🌐 Pubblico',
-    access_closed:    '🔐 Chiuso',
-    access_private:   '🔒 Privato',
-    // Actions
-    btn_join:         'Richiedi iscrizione',
-    btn_open:         'Apri',
-    btn_save:         'Salva',
-    btn_cancel:       'Annulla',
-    btn_delete:       'Elimina',
-    btn_invite:       'Invita',
-    btn_search:       'Cerca',
-    btn_share:        'Condividi campionato',
-    btn_download:     'Scarica classifica',
-    // Manage tabs
-    tab_players:      '👤 Utenti',
-    tab_races:        '🏁 Gare',
-    tab_matches:      '🏁 Sfide',
-    tab_prizes:       '🏆 Premi',
-    tab_live:         '📡 Live',
-    tab_settings:     '⚙ Impost.',
-    // Standings
-    lbl_standings:    'Classifica',
-    lbl_races:        'Gare',
-    // Toast/messages
-    msg_saved:        'Salvato!',
-    msg_deleted:      'Eliminato',
-    msg_copied:       'Link copiato!',
-    msg_invited:      'Invitato con successo!',
-    msg_limit:        'Hai raggiunto il limite di 10 campionati',
-  },
-  en: {
-    // Auth
-    err_username_required: 'Please enter a username',
-    err_password_short:    'Password must be at least 6 characters',
-    err_rate_limit:        'Registration not allowed: one account per device.',
-    err_banned:            'Account suspended. Contact the administrator.',
-    err_email_banned:      'This email cannot be used.',
-    err_username_blocked:  'Username not allowed.',
-    // Nav
-    nav_home:         'Home',
-    nav_dashboard:    'Dashboard',
-    nav_logout:       'Logout',
-    nav_new_champ:    '+ New championship',
-    // Home sections
-    sec_mine:         'Created by me',
-    sec_joined:       'Participating',
-    sec_favs:         '⭐ Favourites',
-    sec_all:          'All championships',
-    sec_search:       'Search championships...',
-    // Champ types
-    type_standard:    'Standard',
-    type_rr:          'Round Robin',
-    type_elim:        'Elimination',
-    type_tt:          'Time Trial',
-    // Access types
-    access_public:    '🌐 Public',
-    access_closed:    '🔐 Closed',
-    access_private:   '🔒 Private',
-    // Actions
-    btn_join:         'Request to join',
-    btn_open:         'Open',
-    btn_save:         'Save',
-    btn_cancel:       'Cancel',
-    btn_delete:       'Delete',
-    btn_invite:       'Invite',
-    btn_search:       'Search',
-    btn_share:        'Share championship',
-    btn_download:     'Download standings',
-    // Manage tabs
-    tab_players:      '👤 Players',
-    tab_races:        '🏁 Races',
-    tab_matches:      '🏁 Matches',
-    tab_prizes:       '🏆 Prizes',
-    tab_live:         '📡 Live',
-    tab_settings:     '⚙ Settings',
-    // Standings
-    lbl_standings:    'Standings',
-    lbl_races:        'Races',
-    // Toast/messages
-    msg_saved:        'Saved!',
-    msg_deleted:      'Deleted',
-    msg_copied:       'Link copied!',
-    msg_invited:      'Invited successfully!',
-    msg_limit:        'You have reached the limit of 10 championships',
-  }
-};
-
-function t(key) {
-  return (STRINGS[currentLang] && STRINGS[currentLang][key]) || (STRINGS['it'][key]) || key;
-}
-
-function applyLang() {
-  // Update all elements with data-i18n attribute
-  document.querySelectorAll('[data-i18n]').forEach(function(el) {
-    var key = el.getAttribute('data-i18n');
-    el.textContent = t(key);
-  });
-  // Update placeholders
-  document.querySelectorAll('[data-i18n-ph]').forEach(function(el) {
-    el.placeholder = t(el.getAttribute('data-i18n-ph'));
-  });
-  // Update lang button
-  var btn = document.getElementById('lang-btn');
-  if (btn) btn.textContent = currentLang === 'it' ? '🇬🇧 EN' : '🇮🇹 IT';
-  // Update dynamic labels
-  var btnNew = document.querySelector('.btn-new');
-  if (btnNew && btnNew.textContent.includes('+')) {
-    var mine = (allChamps||[]).filter(function(c){ return c.owner_id===currentUser?.id; });
-    btnNew.textContent = t('nav_new_champ') + ' (' + mine.length + '/10)';
-  }
-}
-
-function toggleLang() {
-  currentLang = currentLang === 'it' ? 'en' : 'it';
-  localStorage.setItem('competeo_lang', currentLang);
-  applyLang();
-}
-
-// Load saved language preference
-(function() {
-  var saved = localStorage.getItem('competeo_lang');
-  if (saved) currentLang = saved;
-})();
 
 // ── SUPABASE ──────────────────────────────────────
 const SUPA_URL = 'https://jhoruzazoqpqlytcbjev.supabase.co';
@@ -310,8 +158,8 @@ async function doRegister() {
   const username = document.getElementById('reg-username').value.trim();
   const email    = document.getElementById('reg-email').value.trim();
   const pass     = document.getElementById('reg-pass').value;
-  if (!username) { document.getElementById('auth-err').textContent = t('err_username_required'); return; }
-  if (pass.length < 6) { document.getElementById('auth-err').textContent = t('err_password_short'); return; }
+  if (!username) { document.getElementById('auth-err').textContent = 'Inserisci un nome utente'; return; }
+  if (pass.length < 6) { document.getElementById('auth-err').textContent = 'Password minimo 6 caratteri'; return; }
   setAuthLoading(true);
   // Rate limit: 1 registrazione per IP ogni 2400 ore
   try {
@@ -319,7 +167,7 @@ async function doRegister() {
     var rl = await sb.rpc('check_signup_rate', { p_ip_hash: ipHash });
     if (!rl.error && rl.data === false) {
       setAuthLoading(false);
-      document.getElementById('auth-err').textContent = t('err_rate_limit');
+      document.getElementById('auth-err').textContent = 'Registrazione non consentita: un solo account per dispositivo.';
       return;
     }
   } catch(e) { console.warn('Rate limit check failed:', e); }
@@ -359,7 +207,6 @@ function setAuthLoading(on) {
 // ── HOME ──────────────────────────────────────────
 async function showHome() {
   await loadSiteTheme();
-  applyLang();
   startNotifPolling();
   checkUrlChampParam();
   const {data:profile} = await sb.auth.getUser();
@@ -466,18 +313,24 @@ async function renderJoinedChamps() {
 }
 
 async function loadChampionshipsHome() {
-  const [{data:champs, error}, {data:myMemberships}] = await Promise.all([
+  const [{data:champs, error}, {data:myMemberships}, {data:myArchives}] = await Promise.all([
     sb.from('championships').select('id,name,season,access,closed,owner_id,created_at').order('created_at',{ascending:false}),
     sb.from('champ_members').select('champ_id').eq('user_id', currentUser.id).in('role', ['owner','player']),
+    sb.from('user_archives').select('champ_id').eq('user_id', currentUser.id),
     loadFavs(),
     loadFriendships()
   ]);
+  // Build set of archived champ IDs — exclude from home
+  var archivedSet = new Set((myArchives||[]).map(function(r){ return r.champ_id; }));
   // Build set of champ IDs where user is member (for closed champ access check)
   closedMemberships = new Set((myMemberships||[]).map(m => m.champ_id));
   if (error) { showToast('Errore caricamento campionati'); return; }
 
-  allChamps = champs;
-  const mine = champs.filter(c=>c.owner_id===currentUser.id);
+  allChamps = allChampsRaw || champs || [];
+  const allChampsRaw = (champs||[]).filter(function(c){ return !archivedSet.has(c.id); });
+  const mine = allChampsRaw.filter(c=>c.owner_id===currentUser.id);
+  // Replace champs with filtered version for the rest of the function
+  // (allChamps is set later)
 
   const myGrid = document.getElementById('my-champs-grid');
   document.getElementById('my-champs-title').style.display = mine.length?'block':'none';
@@ -829,6 +682,10 @@ async function requestJoin() {
     role: 'pending'
   });
   if (error) { showToast('Errore: ' + error.message); return; }
+  // Notifica all'owner
+  var champName2 = champData.championship || currentChamp.name || 'il campionato';
+  await createNotif(currentChamp.owner_id, 'join_request', 'Nuova richiesta di iscrizione',
+    username + ' vuole iscriversi a "' + champName2 + '"', currentChamp.id);
   await loadChampMembers();
   renderChamp();
   showToast("Richiesta inviata! Attendi l'approvazione dell'admin");
@@ -2850,6 +2707,10 @@ async function inviteUser(inputEl, resEl) {
   // Insert directly as 'player'
   const { error } = await sb.from('champ_members').insert({ champ_id: currentChamp.id, user_id: target.id, username: target.username||target.email, role: 'player' });
   if (error) { res.textContent = 'Errore: ' + error.message; return; }
+  // Notifica all'utente invitato
+  var champName = champData.championship || currentChamp.name || 'un campionato';
+  await createNotif(target.id, 'champ_invite', 'Sei stato invitato!',
+    'Sei stato aggiunto al campionato "' + champName + '"', currentChamp.id);
   await loadChampMembers();
   await scheduleSaveImmediate();
   res.innerHTML = '<span style="color:#2dc653;font-weight:600;">✓ ' + (target.username||target.email) + ' aggiunto al campionato!</span>';
@@ -3107,8 +2968,12 @@ async function inviteCheckedFriends() {
     var username = el.getAttribute('data-username') || uid;
     var { data: existing } = await sb.from('champ_members').select('id').eq('champ_id', currentChamp.id).eq('user_id', uid).maybeSingle();
     if (existing) continue;
-    var { error } = await sb.from('champ_members').insert({ champ_id: currentChamp.id, user_id: uid, username: username, role: 'player' });
-    if (error) errors.push(username);
+    var { error: insErr } = await sb.from('champ_members').insert({ champ_id: currentChamp.id, user_id: uid, username: username, role: 'player' });
+    if (insErr) { errors.push(username); continue; }
+    // Notifica all'amico invitato
+    var cn = champData.championship || currentChamp.name || 'un campionato';
+    await createNotif(uid, 'champ_invite', 'Sei stato invitato!',
+      'Sei stato aggiunto al campionato "' + cn + '"', currentChamp.id);
   }
   await loadChampMembers();
   await scheduleSaveImmediate();
@@ -3329,11 +3194,21 @@ async function loadDashboard() {
     return;
   }
 
-  // Carica campionati
-  var { data: champs } = await sb.from('championships')
-    .select('id,name,season,access,closed,owner_id,created_at,data')
-    .in('id', champIds);
-  champs = champs || [];
+  // Carica campionati archiviati dall'utente
+  var { data: archivedRows } = await sb.from('user_archives')
+    .select('champ_id')
+    .eq('user_id', currentUser.id);
+  var archivedIds = (archivedRows||[]).map(function(r){ return r.champ_id; });
+
+  // Carica campionati attivi (escludi archiviati)
+  var activeIds = champIds.filter(function(id){ return !archivedIds.includes(id); });
+  var champs = [];
+  if (activeIds.length) {
+    var { data: champsData } = await sb.from('championships')
+      .select('id,name,season,access,closed,owner_id,created_at,data')
+      .in('id', activeIds);
+    champs = champsData || [];
+  }
 
   // Stats rapide
   var ownedCount = champs.filter(function(c){ return c.owner_id === currentUser.id; }).length;
@@ -3362,55 +3237,60 @@ async function loadDashboard() {
     dashStat(playingCount, 'Come giocatore') +
     dashStat(myWins, '🏆 Vittorie');
 
-  // Render campionati con classifica
+  // Render campionati attivi
   var html = '';
   for (var i = 0; i < champs.length; i++) {
     html += renderDashChampCard(champs[i], memberships);
   }
-  document.getElementById('dash-champs-list').innerHTML = html || '<div style="color:var(--muted);font-size:13px;">Nessun campionato trovato.</div>';
+  document.getElementById('dash-champs-list').innerHTML = html ||
+    '<div style="color:var(--muted);font-size:13px;padding:16px 0;">Non sei iscritto a nessun campionato attivo.</div>';
+
+  // Render archivio
+  await renderDashArchive(archivedIds, memberships);
 }
 
-function dashStat(num, lbl) {
-  return '<div class="dash-stat-card"><div class="dash-stat-num">' + num + '</div><div class="dash-stat-lbl">' + lbl + '</div></div>';
+async function renderDashArchive(archivedIds, memberships) {
+  var archSection = document.getElementById('dash-archive-section');
+  var archList    = document.getElementById('dash-archive-list');
+  if (!archSection || !archList) return;
+
+  if (!archivedIds.length) { archSection.style.display = 'none'; return; }
+  archSection.style.display = '';
+
+  var { data: archChamps } = await sb.from('championships')
+    .select('id,name,season,owner_id,data')
+    .in('id', archivedIds);
+  archChamps = archChamps || [];
+
+  archList.innerHTML = '';
+  archChamps.forEach(function(c) {
+    var fmt = (c.data||{}).format || 'standard';
+    var card = document.createElement('div');
+    card.className = 'dash-champ-card';
+    card.style.opacity = '0.65';
+    card.innerHTML = '<div style="display:flex;align-items:center;gap:8px;justify-content:space-between;">'
+      + '<div class="dash-champ-name">' + esc(c.name) + (c.season?' <span style="font-size:11px;color:var(--muted);">'+esc(c.season)+'</span>':'') + '</div>'
+      + '<div style="display:flex;gap:6px;">'
+      + '<button style="padding:5px 10px;background:var(--faint);color:var(--muted);border:none;border-radius:7px;font-size:12px;cursor:pointer;">Apri</button>'
+      + '<button style="padding:5px 10px;background:rgba(16,185,129,.15);color:var(--green);border:1px solid rgba(16,185,129,.3);border-radius:7px;font-size:12px;cursor:pointer;font-weight:600;">&#8629; Ripristina</button>'
+      + '</div></div>'
+      + '<div class="dash-champ-meta"><span>' + fmtLabel(fmt) + '</span><span style="color:var(--faint);">&#128230; Archiviato</span></div>';
+    // Attach events
+    var btns = card.querySelectorAll('button');
+    btns[0].addEventListener('click', function(){ openChampionship(c.id); });
+    btns[1].addEventListener('click', function(){ unarchiveChamp(c.id); });
+    archList.appendChild(card);
+  });
 }
 
-function renderDashChampCard(champ, memberships) {
-  var data = champ.data || {};
-  var fmt = data.format || 'standard';
-  var players = data.players || [];
-  var username = document.getElementById('dash-username')?.textContent || '';
-  var myRole = (memberships.find(function(m){ return m.champ_id === champ.id; })||{}).role || '';
-  var isOwner = champ.owner_id === currentUser.id;
 
-  // Posizione classifica
-  var position = getMyPosition(data, fmt, username);
-  // Prossima sfida
-  var nextMatch = getNextMatch(data, fmt, username);
-
-  var html = '<div class="dash-champ-card">';
-  html += '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">';
-  html += '<div class="dash-champ-name">' + esc(champ.name) + (champ.season ? ' <span style="font-size:11px;color:var(--muted);">'+esc(champ.season)+'</span>' : '') + '</div>';
-  html += '<div style="display:flex;gap:6px;flex-shrink:0;">';
-  html += '<button data-champid="' + champ.id + '" onclick="openChampionship(this.getAttribute(\'data-champid\'))" style="padding:5px 12px;background:var(--violet);color:#fff;border:none;border-radius:7px;font-size:12px;cursor:pointer;font-weight:600;">Apri</button>';
-  if (isOwner) {
-    html += '<button data-champid="' + champ.id + '" data-champname="' + esc(champ.name).replace(/"/g,'&quot;') + '" onclick="deleteDashChamp(this)" style="padding:5px 10px;background:rgba(244,63,94,0.15);color:var(--red);border:1px solid rgba(244,63,94,0.3);border-radius:7px;font-size:12px;cursor:pointer;font-weight:600;" title="Elimina campionato">🗑</button>';
-  }
-  html += '</div>';
-  html += '</div>';
-  html += '<div class="dash-champ-meta">';
-  html += '<span>' + fmtLabel(fmt) + '</span>';
-  html += '<span>' + players.length + ' giocatori</span>';
-  if (isOwner) html += '<span class="highlight">👑 Owner</span>';
-  if (position !== null) {
-    var medal = position === 1 ? '🥇' : position === 2 ? '🥈' : position === 3 ? '🥉' : '🏅';
-    html += '<span class="highlight">' + medal + ' ' + position + '° posto</span>';
-  }
-  html += '</div>';
-  if (nextMatch) {
-    html += '<div class="dash-next-match">⚔️ Prossima sfida: <strong>' + esc(nextMatch) + '</strong></div>';
-  }
-  html += '</div>';
-  return html;
+async function unarchiveChamp(champId) {
+  var { error } = await sb.from('user_archives')
+    .delete().eq('user_id', currentUser.id).eq('champ_id', champId);
+  if (error) { showToast('Errore: ' + error.message); return; }
+  showToast('Campionato ripristinato ✓');
+  loadDashboard();
+  await loadChampionshipsHome();
 }
 
 async function deleteDashChamp(btn) {

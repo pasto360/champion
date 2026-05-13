@@ -70,9 +70,8 @@
       <button class="friends-btn" onclick="openFriendsPanel()" title="Amici">
         👥<span id="friends-badge" class="notif-badge">0</span>
       </button>
-      <button id="lang-btn" onclick="toggleLang()" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:.5px;">🇬🇧 EN</button>
-      <button class="hbtn" onclick="showPage('page-dashboard')">Dashboard</button>
-      <button class="hbtn red" onclick="doLogout()" data-i18n="nav_logout">Esci</button>
+<button class="hbtn" onclick="showPage('page-dashboard')">Dashboard</button>
+      <button class="hbtn red" onclick="doLogout()">Esci</button>
     </div>
   </header>
   <div class="home-container">
@@ -83,13 +82,13 @@
       </div>
       <button class="btn-new" onclick="openNewChampModal()">+ Nuovo campionato</button>
     </div>
-    <div class="sec-title" id="my-champs-title" data-i18n="sec_mine">Da me creati</div>
+    <div class="sec-title" id="my-champs-title">Da me creati</div>
     <div class="champ-grid list-grid" id="my-champs-grid"></div>
 
-    <div class="sec-title" id="my-favs-title" data-i18n="sec_favs" style="display:none;">⭐ Preferiti</div>
+    <div class="sec-title" id="my-favs-title" style="display:none;">⭐ Preferiti</div>
     <div class="champ-grid list-grid" id="my-favs-grid"></div>
 
-    <div class="sec-title" id="my-joined-title" data-i18n="sec_joined" style="display:none;">🎮 Partecipazione</div>
+    <div class="sec-title" id="my-joined-title" style="display:none;">🎮 Partecipazione</div>
     <div class="champ-grid list-grid" id="my-joined-grid"></div>
 
     <!-- SEARCH -->
@@ -121,6 +120,15 @@
     <!-- Campionati con classifica -->
     <div class="sec-title" style="margin-bottom:12px;">I miei campionati</div>
     <div id="dash-champs-list"></div>
+
+      <!-- Archivio -->
+      <div id="dash-archive-section" style="display:none;margin-top:28px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border);">
+          <span style="font-size:16px;">📦</span>
+          <span style="font-size:14px;font-weight:700;color:var(--muted);">Archivio</span>
+        </div>
+        <div id="dash-archive-list"></div>
+      </div>
     <!-- Account -->
     <div class="sec-title" style="margin:28px 0 12px;">Impostazioni account</div>
     <div style="background:var(--card);border-radius:14px;border:1px solid var(--border);padding:20px;max-width:420px;">
