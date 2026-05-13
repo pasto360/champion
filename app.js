@@ -314,7 +314,7 @@ async function renderJoinedChamps() {
 
 async function loadChampionshipsHome() {
   const [{data:champs, error}, {data:myMemberships}, {data:myArchives}] = await Promise.all([
-    sb.from('championships').select('id,name,season,access,closed,owner_id,created_at').order('created_at',{ascending:false}),
+    sb.from('championships').select('id,name,season,access,closed,owner_id,created_at,data').order('created_at',{ascending:false}),
     sb.from('champ_members').select('champ_id').eq('user_id', currentUser.id).in('role', ['owner','player']),
     sb.from('user_archives').select('champ_id').eq('user_id', currentUser.id),
     loadFavs(),
@@ -1623,19 +1623,23 @@ async function saveChampSettings(){
   const newName = [champData.championship, champData.season].filter(Boolean).join(' ') || currentChamp.name;
   const newSeason = champData.season || '';
   const closed = access === 'closed';
+  // Aggiorna anche champData.category nel campo data
+  champData.category = (document.getElementById('settings-category')||{}).value || champData.category || '';
   const {error} = await sb.from('championships').update({
-    access: closed ? 'public' : access, // store 'public' in access col, use closed flag
+    access: closed ? 'public' : access,
     closed,
     password_hash: pass,
     name: newName,
-    season: newSeason
+    season: newSeason,
+    data: champData
   }).eq('id', currentChamp.id);
-  if(error){showToast('Errore salvataggio');return;}
+  if(error){showToast('Errore salvataggio: ' + error.message);return;}
   currentChamp.access = closed ? 'closed' : access;
   currentChamp.closed = closed;
   currentChamp.password_hash = pass;
   currentChamp.name = newName;
   currentChamp.season = newSeason;
+  currentChamp.category = champData.category;
   const idx = allChamps.findIndex(c=>c.id===currentChamp.id);
   if(idx!==-1){allChamps[idx].name=newName;allChamps[idx].season=newSeason;allChamps[idx].access=currentChamp.access;allChamps[idx].closed=closed;}
   showToast('Impostazioni salvate!');
