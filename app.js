@@ -3277,6 +3277,15 @@ async function renderDashArchive(archivedIds, memberships) {
 }
 
 
+async function archiveChamp(champId) {
+  const { error } = await sb.from('user_archives')
+    .insert({ user_id: currentUser.id, champ_id: champId });
+  if (error) { showToast('Errore: ' + error.message); return; }
+  showToast('Campionato archiviato');
+  loadDashboard();
+  loadChampionshipsHome();
+}
+
 async function unarchiveChamp(champId) {
   var { error } = await sb.from('user_archives')
     .delete().eq('user_id', currentUser.id).eq('champ_id', champId);
