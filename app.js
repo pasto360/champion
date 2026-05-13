@@ -439,31 +439,6 @@ function champCard(c, inFavSection=false) {
     + '</div>';
 }
 // ── DASHBOARD ─────────────────────────────────────
-async function loadDashboard() {
-  const {data:champs} = await sb.from('championships').select('id,name,season,access,created_at').eq('owner_id',currentUser.id).order('created_at',{ascending:false});
-  const grid = document.getElementById('dash-grid');
-  if (!champs || !champs.length) {
-    grid.innerHTML = '<div class="empty-state"><div class="big">🏆</div><p>Non hai ancora creato campionati.</p></div>';
-    return;
-  }
-  grid.innerHTML = champs.map(c=>`
-    <div class="dash-card">
-      <h3>${c.name}</h3>
-      <p>${c.season||''} · ${c.access==='public'?'Pubblico':'Password richiesta'}</p>
-      <div class="actions">
-        <button class="btn-sm dark" onclick="openChampionship('${c.id}')">Apri</button>
-        <button class="btn-sm danger" onclick="deleteChampionship('${c.id}')">Elimina</button>
-      </div>
-    </div>`).join('');
-}
-
-async function deleteChampionship(id) {
-  if (!confirm('Eliminare questo campionato? Tutti i dati andranno persi.')) return;
-  await sb.from('championships').delete().eq('id',id);
-  showToast('Campionato eliminato');
-  await loadChampionshipsHome();
-  await loadDashboard();
-}
 
 // ── NEW CHAMPIONSHIP ──────────────────────────────
 const MAX_OWNED_CHAMPS = 10;
@@ -3172,6 +3147,10 @@ function esc(s) {
 // ══════════════════════════════════════════════════
 // ── DASHBOARD AVANZATA ────────────────────────────
 // ══════════════════════════════════════════════════
+function dashStat(num, lbl) {
+  return '<div class="dash-stat-card"><div class="dash-stat-num">' + num + '</div><div class="dash-stat-lbl">' + lbl + '</div></div>';
+}
+
 async function loadDashboard() {
   var profile = await sb.auth.getUser();
   var username = profile.data?.user?.user_metadata?.username || currentUser?.email?.split('@')[0] || 'Utente';
