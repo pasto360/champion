@@ -3266,7 +3266,9 @@ function renderDashChampCard(champ, memberships) {
   html += '<button data-champid="' + champ.id + '" onclick="openChampionship(this.getAttribute(\'data-champid\'))" style="padding:5px 12px;background:var(--violet);color:#fff;border:none;border-radius:7px;font-size:12px;cursor:pointer;font-weight:600;">Apri</button>';
   html += '<button onclick="archiveChamp(\'' + champ.id + '\')" style="padding:5px 10px;background:rgba(255,255,255,.06);color:var(--muted);border:1px solid var(--border);border-radius:7px;font-size:12px;cursor:pointer;" title="Archivia">&#128230;</button>';
   if (isOwner) {
-    html += '<button data-champid="' + champ.id + '" data-champname="' + esc(champ.name).replace(/"/g,'&quot;') + '" onclick="deleteDashChamp(this)" style="padding:5px 10px;background:rgba(244,63,94,0.15);color:var(--red);border:1px solid rgba(244,63,94,0.3);border-radius:7px;font-size:12px;cursor:pointer;font-weight:600;" title="Elimina">&#128465;</button>';
+    html += '<button data-champid="' + champ.id + '" data-champname="' + esc(champ.name).replace(/"/g,'&quot;') + '" onclick="deleteDashChamp(this)" style="padding:5px 10px;background:rgba(244,63,94,0.15);color:var(--red);border:1px solid rgba(244,63,94,0.3);border-radius:7px;font-size:12px;cursor:pointer;font-weight:600;" title="Elimina campionato">&#128465;</button>';
+  } else {
+    html += '<button onclick="leaveChamp(\'' + champ.id + '\',\'' + esc(champ.name).replace(/'/g,'\\\'') + '\')" style="padding:5px 10px;background:rgba(16,185,129,0.12);color:var(--green);border:1px solid rgba(16,185,129,0.3);border-radius:7px;font-size:12px;cursor:pointer;" title="Lascia campionato">&#x1F6AA;</button>';
   }
   html += '</div></div>';
   html += '<div class="dash-champ-meta">';
@@ -3317,6 +3319,85 @@ async function renderDashArchive(archivedIds, memberships) {
     btns[1].addEventListener('click', function(){ unarchiveChamp(c.id); });
     archList.appendChild(card);
   });
+}
+
+
+async function leaveChamp(champId, champName) {
+  if (!confirm('Vuoi rimuoverti da "' + champName + '"?\nI tuoi risultati verranno rimossi dal campionato.')) return;
+
+  // Load full champ data
+  var { data: champRow } = await sb.from('championships')
+    .select('id,data').eq('id', champId).single();
+  if (!champRow) { showToast('Campionato non trovato'); return; }
+
+  var d = champRow.data || {};
+  var me = document.getElementById('dash-username')?.textContent || '';
+  var fmt = d.format || 'standard';
+
+  // ── Remove from players list ──
+  d.players = (d.players || []).filter(function(p){ return p !== me; });
+
+  // ── Format-specific cleanup ──
+  if (fmt === 'standard') {
+    // Remove from races: clear positions where me appears
+    (d.races || []).forEach(function(r) {
+      if (r.result) {
+        if (r.result.first === me)  r.result.first  = null;
+        if (r.result.second === me) r.result.second = null;
+      }
+    });
+
+  } else if (fmt === 'roundrobin') {
+    // Matches involving me: if played and I won → nullify (don't give to opponent)
+    // If not yet played → leave as-is (will just be unplayable)
+    // If me lost → keep opponent win (opponent keeps points)
+    (d.rrMatches || []).forEach(function(m) {
+      var involvesMe = (m.p1 === me || m.p2 === me);
+      if (!involvesMe) return;
+      if (!m.winner) return; // not played yet — nothing to undo
+      if (m.winner === me) {
+        // I won: nullify the result (don't give to opponent)
+        m.winner = null; m.result = null;
+      }
+      // If opponent won: keep their win (they earned it)
+    });
+
+  } else if (fmt === 'elimination') {
+    // Remove me from bracket slots and nullify matches I'm in
+    (d.elimBracket || []).forEach(function(round) {
+      round.forEach(function(m) {
+        if (m.p1 === me) m.p1 = null;
+        if (m.p2 === me) m.p2 = null;
+        if (m.winner === me) { m.winner = null; }
+      });
+    });
+
+  } else if (fmt === 'timetrial') {
+    // Remove my runs
+    if (d.ttRuns) delete d.ttRuns[me];
+  }
+
+  // ── Save updated data ──
+  var { error: dataErr } = await sb.from('championships')
+    .update({ data: d }).eq('id', champId);
+  if (dataErr) { showToast('Errore aggiornamento dati: ' + dataErr.message); return; }
+
+  // ── Remove from champ_members ──
+  var { error: memErr } = await sb.from('champ_members')
+    .delete().eq('champ_id', champId).eq('user_id', currentUser.id);
+  if (memErr) { showToast('Errore rimozione: ' + memErr.message); return; }
+
+  // ── Remove from favourites ──
+  await sb.from('user_favourites')
+    .delete().eq('champ_id', champId).eq('user_id', currentUser.id);
+
+  // ── Remove from archive if archived ──
+  await sb.from('user_archives')
+    .delete().eq('champ_id', champId).eq('user_id', currentUser.id);
+
+  showToast('Hai lasciato il campionato');
+  loadDashboard();
+  loadChampionshipsHome();
 }
 
 
