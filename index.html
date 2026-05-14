@@ -142,6 +142,9 @@
     <!-- Account -->
     <div class="sec-title" style="margin:28px 0 12px;">Impostazioni account</div>
     <div style="background:var(--card);border-radius:14px;border:1px solid var(--border);padding:20px;max-width:420px;">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:14px;padding:10px 12px;background:var(--bg);border-radius:8px;border:1px solid var(--border);">
+        ℹ️ Il nome utente non è modificabile dopo la registrazione.
+      </div>
       <div class="field">
         <label>Nuova email</label>
         <input type="email" id="acc-email" placeholder="nuova@email.com" style="width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:10px;font-size:15px;outline:none;background:var(--bg);color:var(--text);"/>
@@ -154,8 +157,53 @@
         <label>Conferma password</label>
         <input type="password" id="acc-pass2" placeholder="ripeti la password" style="width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:10px;font-size:15px;outline:none;background:var(--bg);color:var(--text);"/>
       </div>
-      <button class="btn-primary" onclick="saveAccountSettings()" style="margin-top:4px;">Salva modifiche account</button>
+      <button class="btn-primary" onclick="saveAccountSettings()" style="margin-top:4px;">Salva modifiche</button>
       <div class="auth-err" id="acc-msg" style="margin-top:10px;"></div>
+      <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
+        <button onclick="openMyProfile()" style="width:100%;padding:11px;background:var(--faint);color:var(--text);border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;">👤 Visualizza il mio profilo</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     PAGE: USER PROFILE
+══════════════════════════════════════════════════ -->
+<div class="page" id="page-profile">
+  <header class="app-header">
+    <button class="hbtn" id="profile-back-btn" onclick="history.back()" style="font-size:18px;background:none;border:none;color:#fff;cursor:pointer;">←</button>
+    <h1 style="font-size:17px;font-weight:700;">Profilo</h1>
+    <div class="right"></div>
+  </header>
+  <div class="dash-container" style="max-width:560px;">
+    <!-- Avatar + username -->
+    <div style="display:flex;align-items:center;gap:16px;background:var(--card);border-radius:16px;border:1px solid var(--border);padding:20px;margin-bottom:16px;">
+      <div id="profile-avatar" style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--violet2),var(--violet));display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;color:#fff;flex-shrink:0;"></div>
+      <div style="flex:1;min-width:0;">
+        <div id="profile-username" style="font-size:20px;font-weight:800;"></div>
+        <div id="profile-joined" style="font-size:12px;color:var(--muted);margin-top:2px;"></div>
+      </div>
+    </div>
+    <!-- Bio -->
+    <div id="profile-bio-section" style="background:var(--card);border-radius:14px;border:1px solid var(--border);padding:16px 18px;margin-bottom:16px;">
+      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;">Bio</div>
+      <div id="profile-bio-view" style="font-size:14px;color:var(--text);line-height:1.6;"></div>
+      <div id="profile-bio-edit" style="display:none;">
+        <textarea id="profile-bio-input" maxlength="200" rows="3" style="width:100%;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;resize:none;outline:none;font-family:inherit;"></textarea>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <button onclick="saveBio()" style="padding:7px 16px;background:var(--violet);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">Salva</button>
+          <button onclick="cancelBioEdit()" style="padding:7px 16px;background:var(--faint);color:var(--muted);border:none;border-radius:8px;font-size:13px;cursor:pointer;">Annulla</button>
+        </div>
+      </div>
+      <button id="profile-bio-edit-btn" style="display:none;margin-top:8px;padding:5px 12px;background:var(--faint);color:var(--muted);border:none;border-radius:7px;font-size:12px;cursor:pointer;" onclick="editBio()">✏️ Modifica bio</button>
+    </div>
+    <!-- Stats -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px;" id="profile-stats-row"></div>
+    <!-- Campionati -->
+    <div style="background:var(--card);border-radius:14px;border:1px solid var(--border);padding:16px 18px;">
+      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;">Campionati</div>
+      <div id="profile-champs-list"></div>
     </div>
   </div>
 </div>

@@ -614,3 +614,18 @@ select:focus{border-color:var(--text);}
   transition:background .15s;
 }
 .theme-toggle-btn:hover{background:rgba(255,255,255,.25);}
+
+/* ── PROFILE PAGE ────────────────────────────────── */
+.profile-stat-card{
+  background:var(--card);border-radius:12px;border:1px solid var(--border);
+  padding:14px 12px;text-align:center;
+}
+.profile-stat-num{font-size:22px;font-weight:800;color:var(--text);}
+.profile-stat-lbl{font-size:11px;color:var(--muted);margin-top:2px;}
+.profile-champ-row{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 0;border-bottom:1px solid var(--border);
+}
+.profile-champ-row:last-child{border-bottom:none;}
+.profile-champ-name{flex:1;font-size:14px;font-weight:600;}
+.profile-champ-badge{font-size:11px;padding:2px 8px;border-radius:5px;background:rgba(124,58,237,.15);color:var(--accent);}

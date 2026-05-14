@@ -1117,7 +1117,7 @@ function renderStandings() {
     const color=PLAYER_COLORS[(champData.players||[]).indexOf(p.name)%PLAYER_COLORS.length];
     return `<div class="s-row">
       <div class="s-pos ${posCls[i]||''}">${i===0?'🏆':i+1}</div>
-      <div><div class="s-name" style="color:${color}">${p.name}</div>
+      <div><div class="s-name" style="color:${color};cursor:pointer;" onclick="openProfile(\'${p.name}\')">${p.name}</div>
         <div class="s-sub">${wins} vittori${wins!==1?'e':'a'}</div></div>
       <div class="s-pts">${p.pts}<br><span>pt</span></div>
     </div>`;
@@ -1705,6 +1705,111 @@ function sortTouchEnd(e){if(!sortTouchId)return;const t=e.changedTouches[0];if(s
 function goPage(n) { currentPage = n; renderAllChamps(); window.scrollTo(0,0); }
 
 // ── ACCOUNT SETTINGS ──────────────────────────────
+
+// ── USER PROFILE ──────────────────────────────────
+var profileViewingUser = null; // username being viewed
+
+async function openProfile(username) {
+  profileViewingUser = username;
+  showPage('page-profile');
+  document.getElementById('profile-back-btn').onclick = function(){ history.back(); showPage('page-champ'); };
+
+  // Load profile data
+  var { data: prof } = await sb.from('profiles')
+    .select('username,bio,created_at')
+    .eq('username', username)
+    .maybeSingle();
+
+  var isMe = prof && currentUser &&
+    (prof.username === (currentUser.user_metadata?.username || ''));
+
+  // Avatar initials
+  var initials = (username||'?').substring(0,2).toUpperCase();
+  document.getElementById('profile-avatar').textContent = initials;
+  document.getElementById('profile-username').textContent = username;
+
+  var joined = prof && prof.created_at
+    ? 'Membro dal ' + new Date(prof.created_at).toLocaleDateString('it-IT',{month:'long',year:'numeric'})
+    : '';
+  document.getElementById('profile-joined').textContent = joined;
+
+  // Bio
+  var bio = (prof && prof.bio) || '';
+  var bioView = document.getElementById('profile-bio-view');
+  var bioEditBtn = document.getElementById('profile-bio-edit-btn');
+  bioView.textContent = bio || (isMe ? 'Aggiungi una bio...' : 'Nessuna bio.');
+  bioView.style.color = bio ? 'var(--text)' : 'var(--faint)';
+  document.getElementById('profile-bio-edit').style.display = 'none';
+  bioView.style.display = '';
+  bioEditBtn.style.display = isMe ? '' : 'none';
+
+  // Stats: campionati giocati
+  var { data: memberships } = await sb.from('champ_members')
+    .select('champ_id,role,championships(id,name,season,data)')
+    .eq('username', username)
+    .in('role', ['owner','player']);
+  memberships = memberships || [];
+
+  var total = memberships.length;
+  var owned = memberships.filter(function(m){ return m.role === 'owner'; }).length;
+  var playing = total - owned;
+
+  document.getElementById('profile-stats-row').innerHTML =
+    '<div class="profile-stat-card"><div class="profile-stat-num">' + total + '</div><div class="profile-stat-lbl">Campionati</div></div>' +
+    '<div class="profile-stat-card"><div class="profile-stat-num">' + owned + '</div><div class="profile-stat-lbl">Da me creati</div></div>' +
+    '<div class="profile-stat-card"><div class="profile-stat-num">' + playing + '</div><div class="profile-stat-lbl">Partecipazione</div></div>';
+
+  // Champs list
+  var list = document.getElementById('profile-champs-list');
+  if (!memberships.length) {
+    list.innerHTML = '<div style="color:var(--muted);font-size:13px;">Nessun campionato.</div>';
+    return;
+  }
+  list.innerHTML = memberships.map(function(m) {
+    var c = m.championships;
+    if (!c) return '';
+    var fmt = (c.data||{}).format || 'standard';
+    var badge = m.role === 'owner' ? '<span class="profile-champ-badge">👑 Owner</span>' : '';
+    return '<div class="profile-champ-row">'
+      + '<div class="profile-champ-name">' + esc(c.name) + (c.season?' <span style="font-size:11px;color:var(--muted);">'+esc(c.season)+'</span>':'') + '</div>'
+      + badge
+      + '</div>';
+  }).join('');
+}
+
+async function openMyProfile() {
+  var me = currentUser?.user_metadata?.username || currentUser?.email?.split('@')[0] || '';
+  // Save previous page
+  document.getElementById('profile-back-btn').onclick = function(){ showPage('page-dashboard'); };
+  await openProfile(me);
+}
+
+function editBio() {
+  var current = document.getElementById('profile-bio-view').textContent;
+  document.getElementById('profile-bio-input').value =
+    current === 'Aggiungi una bio...' ? '' : current;
+  document.getElementById('profile-bio-view').style.display = 'none';
+  document.getElementById('profile-bio-edit-btn').style.display = 'none';
+  document.getElementById('profile-bio-edit').style.display = '';
+}
+
+function cancelBioEdit() {
+  document.getElementById('profile-bio-edit').style.display = 'none';
+  document.getElementById('profile-bio-view').style.display = '';
+  document.getElementById('profile-bio-edit-btn').style.display = '';
+}
+
+async function saveBio() {
+  var bio = document.getElementById('profile-bio-input').value.trim().substring(0, 200);
+  var me = currentUser?.user_metadata?.username || currentUser?.email?.split('@')[0] || '';
+  var { error } = await sb.from('profiles').update({ bio }).eq('username', me);
+  if (error) { showToast('Errore: ' + error.message); return; }
+  document.getElementById('profile-bio-view').textContent = bio || 'Aggiungi una bio...';
+  document.getElementById('profile-bio-view').style.color = bio ? 'var(--text)' : 'var(--faint)';
+  cancelBioEdit();
+  showToast('Bio salvata!');
+}
+
 async function saveAccountSettings() {
   const email = document.getElementById('acc-email').value.trim();
   const pass  = document.getElementById('acc-pass').value;
@@ -1995,7 +2100,7 @@ function renderRRStandings() {
     return `<div class="rr-stand-row">
       <div class="rr-pos ${posCls[i]||''}">${i===0?'🏆':i+1}</div>
       <div style="flex:1;min-width:0;">
-        <div class="s-name" style="color:${color}">${p.name}</div>
+        <div class="s-name" style="color:${color};cursor:pointer;" onclick="openProfile(\'${p.name}\')">${p.name}</div>
         <div class="rr-stat">${p.v}V ${p.p}P ${p.s}S · GF ${p.gf} GS ${p.gs}</div>
       </div>
       <div class="rr-pts-big">${p.pts}<span style="font-size:11px;font-weight:400;color:#aaa"> pt</span></div>
