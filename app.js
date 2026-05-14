@@ -1716,7 +1716,6 @@ var profileViewingUser = null; // username being viewed
 async function openProfile(username) {
   profileViewingUser = username;
   showPage('page-profile');
-  document.getElementById('profile-back-btn').onclick = function(){ history.back(); showPage('page-champ'); };
 
   // Load profile data
   var { data: prof } = await sb.from('profiles')
