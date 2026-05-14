@@ -3303,20 +3303,30 @@ async function renderDashArchive(archivedIds, memberships) {
   archList.innerHTML = '';
   archChamps.forEach(function(c) {
     var fmt = (c.data||{}).format || 'standard';
+    var isOwnerOfChamp = c.owner_id === currentUser.id;
+    // Se è owner: può ripristinare. Se è membro: non può ripristinare (owner ha archiviato)
+    var canRestore = isOwnerOfChamp;
+
     var card = document.createElement('div');
     card.className = 'dash-champ-card';
     card.style.opacity = '0.65';
+    var restoreBtn = canRestore
+      ? '<button style="padding:5px 10px;background:rgba(16,185,129,.15);color:var(--green);border:1px solid rgba(16,185,129,.3);border-radius:7px;font-size:12px;cursor:pointer;font-weight:600;">&#8629; Ripristina</button>'
+      : '<span style="font-size:11px;color:var(--faint);align-self:center;">Archiviato dall\'admin</span>';
     card.innerHTML = '<div style="display:flex;align-items:center;gap:8px;justify-content:space-between;">'
       + '<div class="dash-champ-name">' + esc(c.name) + (c.season?' <span style="font-size:11px;color:var(--muted);">'+esc(c.season)+'</span>':'') + '</div>'
-      + '<div style="display:flex;gap:6px;">'
+      + '<div style="display:flex;gap:6px;align-items:center;">'
       + '<button style="padding:5px 10px;background:var(--faint);color:var(--muted);border:none;border-radius:7px;font-size:12px;cursor:pointer;">Apri</button>'
-      + '<button style="padding:5px 10px;background:rgba(16,185,129,.15);color:var(--green);border:1px solid rgba(16,185,129,.3);border-radius:7px;font-size:12px;cursor:pointer;font-weight:600;">&#8629; Ripristina</button>'
+      + restoreBtn
       + '</div></div>'
       + '<div class="dash-champ-meta"><span>' + fmtLabel(fmt) + '</span><span style="color:var(--faint);">&#128230; Archiviato</span></div>';
     // Attach events
-    var btns = card.querySelectorAll('button');
-    btns[0].addEventListener('click', function(){ openChampionship(c.id); });
-    btns[1].addEventListener('click', function(){ unarchiveChamp(c.id); });
+    var openBtn = card.querySelector('button');
+    openBtn.addEventListener('click', function(){ openChampionship(c.id); });
+    if (canRestore) {
+      var restBtns = card.querySelectorAll('button');
+      restBtns[1].addEventListener('click', function(){ unarchiveChamp(c.id); });
+    }
     archList.appendChild(card);
   });
 }
@@ -3402,19 +3412,54 @@ async function leaveChamp(champId, champName) {
 
 
 async function archiveChamp(champId) {
-  const { error } = await sb.from('user_archives')
-    .insert({ user_id: currentUser.id, champ_id: champId });
-  if (error) { showToast('Errore: ' + error.message); return; }
-  showToast('Campionato archiviato');
+  // Controlla se l'utente è owner del campionato
+  var { data: champRow } = await sb.from('championships')
+    .select('owner_id').eq('id', champId).single();
+  var isOwnerOfChamp = champRow && champRow.owner_id === currentUser.id;
+
+  if (isOwnerOfChamp) {
+    // Owner: archivia per TUTTI i membri
+    var { data: members } = await sb.from('champ_members')
+      .select('user_id').eq('champ_id', champId);
+    members = members || [];
+    // Aggiungi owner stesso se non è nella lista
+    var allUserIds = members.map(function(m){ return m.user_id; });
+    if (!allUserIds.includes(currentUser.id)) allUserIds.push(currentUser.id);
+    // Inserisci in user_archives per tutti (ignora duplicati)
+    var rows = allUserIds.map(function(uid){ return { user_id: uid, champ_id: champId }; });
+    var { error } = await sb.from('user_archives').upsert(rows, { onConflict: 'user_id,champ_id' });
+    if (error) { showToast('Errore: ' + error.message); return; }
+    showToast('Campionato archiviato per tutti i partecipanti');
+  } else {
+    // Membro normale: archivia solo per se stesso
+    var { error } = await sb.from('user_archives')
+      .insert({ user_id: currentUser.id, champ_id: champId });
+    if (error) { showToast('Errore: ' + error.message); return; }
+    showToast('Campionato archiviato');
+  }
   loadDashboard();
   loadChampionshipsHome();
 }
 
 async function unarchiveChamp(champId) {
-  var { error } = await sb.from('user_archives')
-    .delete().eq('user_id', currentUser.id).eq('champ_id', champId);
-  if (error) { showToast('Errore: ' + error.message); return; }
-  showToast('Campionato ripristinato ✓');
+  // Controlla se owner
+  var { data: champRow } = await sb.from('championships')
+    .select('owner_id').eq('id', champId).single();
+  var isOwnerOfChamp = champRow && champRow.owner_id === currentUser.id;
+
+  if (isOwnerOfChamp) {
+    // Owner: ripristina per tutti (cancella tutti i record di questo champ)
+    var { error } = await sb.from('user_archives')
+      .delete().eq('champ_id', champId);
+    if (error) { showToast('Errore: ' + error.message); return; }
+    showToast('Campionato ripristinato per tutti i partecipanti');
+  } else {
+    // Membro normale (non dovrebbe arrivare qui, ma per sicurezza)
+    var { error } = await sb.from('user_archives')
+      .delete().eq('user_id', currentUser.id).eq('champ_id', champId);
+    if (error) { showToast('Errore: ' + error.message); return; }
+    showToast('Campionato ripristinato');
+  }
   loadDashboard();
   await loadChampionshipsHome();
 }
