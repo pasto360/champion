@@ -19,8 +19,12 @@ function getTheme() {
 
 function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
-  var btn = document.getElementById('theme-toggle-btn');
-  if (btn) btn.textContent = theme === 'dark' ? '🌙' : '☀️';
+  var icon = theme === 'dark' ? '🌙' : '☀️';
+  ['theme-toggle-btn','theme-toggle-btn-dash'].forEach(function(id){
+    var b = document.getElementById(id); if (b) b.textContent = icon;
+  });
+  // also update any .theme-toggle-btn not by id
+  document.querySelectorAll('.theme-toggle-btn').forEach(function(b){ b.textContent = icon; });
 }
 
 function toggleTheme() {
@@ -1727,6 +1731,8 @@ async function openProfile(username) {
   var initials = (username||'?').substring(0,2).toUpperCase();
   document.getElementById('profile-avatar').textContent = initials;
   document.getElementById('profile-username').textContent = username;
+  var navU = document.getElementById('profile-nav-username');
+  if (navU) navU.textContent = currentUser?.user_metadata?.username || '';
 
   var joined = prof && prof.created_at
     ? 'Membro dal ' + new Date(prof.created_at).toLocaleDateString('it-IT',{month:'long',year:'numeric'})
@@ -3385,9 +3391,7 @@ async function loadDashboard() {
   // Stats rapide
   var ownedCount = champs.filter(function(c){ return c.owner_id === currentUser.id; }).length;
   var playingCount = champs.filter(function(c){ return c.owner_id !== currentUser.id; }).length;
-  document.getElementById('dash-stats-row').innerHTML =
-    dashStat(ownedCount, 'Da me creati') +
-    dashStat(playingCount, 'Partecipazione');
+  // Stats row removed
 
   // Render campionati attivi
   var html = '';
