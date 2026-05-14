@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4c1d95"/>
+      <stop offset="100%" stop-color="#7c3aed"/>
+    </linearGradient>
+  </defs>
+  <!-- Background circle -->
+  <rect width="32" height="32" rx="8" fill="url(#bg)"/>
+  <!-- Podium: 2nd place (left) -->
+  <rect x="3" y="18" width="8" height="10" rx="1" fill="#818cf8" opacity="0.85"/>
+  <!-- Podium: 1st place (center) -->
+  <rect x="12" y="13" width="8" height="15" rx="1" fill="#f59e0b"/>
+  <!-- Podium: 3rd place (right) -->
+  <rect x="21" y="21" width="8" height="7" rx="1" fill="#818cf8" opacity="0.65"/>
+  <!-- Stars / trophy top -->
+  <text x="16" y="11" text-anchor="middle" font-size="7" fill="#fbbf24">★</text>
+  <!-- Numbers -->
+  <text x="7"  y="26" text-anchor="middle" font-size="5.5" font-weight="700" fill="#fff" font-family="sans-serif">2</text>
+  <text x="16" y="26" text-anchor="middle" font-size="5.5" font-weight="700" fill="#fff" font-family="sans-serif">1</text>
+  <text x="25" y="27" text-anchor="middle" font-size="5.5" font-weight="700" fill="#fff" font-family="sans-serif">3</text>
+</svg>

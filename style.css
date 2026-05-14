@@ -570,3 +570,47 @@ select:focus{border-color:var(--text);}
 .cat-btn:hover{border-color:var(--violet);background:var(--faint);}
 .cat-btn.selected{border-color:var(--violet);background:rgba(124,58,237,.2);}
 .cat-btn[data-cat=""]{font-size:13px;color:var(--muted);}
+
+/* ── LIGHT MODE ─────────────────────────────────── */
+[data-theme="light"] {
+  --bg:#f4f6fb;--card:#ffffff;--border:#dde2f0;--border2:#c8d0e8;
+  --text:#1a1d2e;--muted:#5a6282;--faint:#a0a8c0;
+  --accent:#6d28d9;--red:#e53e3e;--gold:#d97706;
+  --violet:#6d28d9;--violet2:#4c1d95;--violet-glow:rgba(109,40,217,0.2);
+  --green:#059669;--blue:#2563eb;
+}
+
+/* Light mode specific overrides */
+[data-theme="light"] .auth-box{background:rgba(255,255,255,0.97);}
+[data-theme="light"] .auth-bg{filter:brightness(.92);}
+[data-theme="light"] .manage-panel{background:rgba(0,0,0,.35);}
+[data-theme="light"] .manage-inner{background:#fff;}
+[data-theme="light"] .manage-drag{background:#ccc;}
+[data-theme="light"] .overlay-bg{background:rgba(0,0,0,.4);}
+[data-theme="light"] .sheet{background:#fff;}
+[data-theme="light"] .standings-card{background:#fff;}
+[data-theme="light"] .dash-stat-card{background:#fff;}
+[data-theme="light"] .dash-champ-card{background:#fff;}
+[data-theme="light"] .rr-stand-row:hover{background:#f0eeff;}
+[data-theme="light"] .bracket-match{background:#fff;}
+[data-theme="light"] .notif-panel{background:#fff;}
+[data-theme="light"] .notif-item.unread{background:#f0eeff;}
+[data-theme="light"] .friends-panel{background:#fff;}
+[data-theme="light"] .footer-main{background:#f4f6fb;}
+[data-theme="light"] .footer-ad-bar{background:#eef0f8;}
+[data-theme="light"] .champ-card:hover{box-shadow:0 4px 20px rgba(109,40,217,.15);}
+[data-theme="light"] select option{background:#fff;color:#1a1d2e;}
+[data-theme="light"] .field input{background:#f8f9ff;}
+[data-theme="light"] .field label{color:#444;}
+[data-theme="light"] .sec-title{color:#666;}
+
+/* ── THEME TOGGLE BUTTON ──────────────────────────── */
+.theme-toggle-btn{
+  background:rgba(255,255,255,.15);
+  border:1px solid rgba(255,255,255,.2);
+  color:#fff;border-radius:8px;
+  padding:5px 10px;font-size:16px;
+  cursor:pointer;line-height:1;
+  transition:background .15s;
+}
+.theme-toggle-btn:hover{background:rgba(255,255,255,.25);}

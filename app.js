@@ -11,6 +11,26 @@ async function getIpHash() {
 }
 
 
+
+// ── DARK / LIGHT MODE ─────────────────────────────
+function getTheme() {
+  return localStorage.getItem('competeo_theme') || 'dark';
+}
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  var btn = document.getElementById('theme-toggle-btn');
+  if (btn) btn.textContent = theme === 'dark' ? '🌙' : '☀️';
+}
+
+function toggleTheme() {
+  var next = getTheme() === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('competeo_theme', next);
+  applyTheme(next);
+}
+
+// Apply immediately on load (before DOM paint to avoid flash)
+(function(){ applyTheme(getTheme()); })();
 // ── SUPABASE ──────────────────────────────────────
 const SUPA_URL = 'https://jhoruzazoqpqlytcbjev.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impob3J1emF6b3FwcWx5dGNiamV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyNjg2MjcsImV4cCI6MjA5MTg0NDYyN30.wcQgwe3KJwSugqPW57JR2Qn5q5RZXLxGMSL9xNsKYSk';
@@ -91,14 +111,31 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   const {data:{session}} = await sb.auth.getSession();
   if (session) {
-    currentUser = session.user;
-    await showHome();
+    // Check ban before restoring session
+    const banCheck = await checkIfBanned(session.user.email);
+    if (banCheck) {
+      await sb.auth.signOut();
+      showPage('page-auth');
+      setTimeout(function(){ document.getElementById('auth-err').textContent = "Account sospeso. Contatta l'amministratore."; }, 100);
+    } else {
+      currentUser = session.user;
+      await showHome();
+    }
   } else {
     showPage('page-auth');
   }
   hideGlobalLoading();
 
-  sb.auth.onAuthStateChange((_e, session) => {
+  sb.auth.onAuthStateChange(async function(_e, session) {
+    if (session) {
+      var banned = await checkIfBanned(session.user.email);
+      if (banned) {
+        await sb.auth.signOut();
+        currentUser = null;
+        showPage('page-auth');
+        return;
+      }
+    }
     currentUser = session?.user || null;
   });
 
@@ -134,6 +171,15 @@ function switchAuthTab(tab) {
   document.getElementById('auth-err').textContent = '';
 }
 
+
+async function checkIfBanned(email) {
+  if (!email) return false;
+  try {
+    const { data } = await sb.from('profiles')
+      .select('banned').eq('email', email).maybeSingle();
+    return data && data.banned === true;
+  } catch(e) { return false; }
+}
 async function doLogin() {
   const email = document.getElementById('login-email').value.trim();
   const pass  = document.getElementById('login-pass').value;
@@ -206,6 +252,7 @@ function setAuthLoading(on) {
 
 // ── HOME ──────────────────────────────────────────
 async function showHome() {
+  applyTheme(getTheme());
   await loadSiteTheme();
   startNotifPolling();
   checkUrlChampParam();
