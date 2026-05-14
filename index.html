@@ -119,7 +119,10 @@
   <header class="app-header">
     <h1 style="font-size:18px;font-weight:900;letter-spacing:1px;">COMPETEO</h1>
     <div class="right">
-      <span id="dash-username" style="font-size:13px;color:rgba(255,255,255,.7);cursor:pointer;" onclick="openMyProfile()" title="Il mio profilo"></span>
+      <button onclick="openMyProfile()" title="Il mio profilo" style="display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:8px;padding:5px 12px;cursor:pointer;">
+        <span style="font-size:14px;">👤</span>
+        <span id="dash-username" style="font-size:13px;font-weight:500;"></span>
+      </button>
       <button class="notif-btn" id="notif-btn-dash" onclick="openNotifPanel()" title="Notifiche" style="position:relative;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:8px;padding:5px 10px;font-size:14px;cursor:pointer;">🔔<span class="notif-badge" id="notif-badge-dash" style="display:none;"></span></button>
       <button class="friends-btn" id="friends-btn-dash" onclick="openFriendsPanel()" title="Amici">👥</button>
       <button class="theme-toggle-btn" id="theme-toggle-btn-dash" onclick="toggleTheme()" title="Cambia tema">🌙</button>

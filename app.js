@@ -1724,8 +1724,8 @@ async function openProfile(username) {
     .eq('username', username)
     .maybeSingle();
 
-  var isMe = prof && currentUser &&
-    (prof.username === (currentUser.user_metadata?.username || ''));
+  var myUsername = currentUser?.user_metadata?.username || currentUser?.email?.split('@')[0] || '';
+  var isMe = (username === myUsername);
 
   // Avatar initials
   var initials = (username||'?').substring(0,2).toUpperCase();
@@ -1749,12 +1749,28 @@ async function openProfile(username) {
   bioView.style.display = '';
   bioEditBtn.style.display = isMe ? '' : 'none';
 
-  // Stats: campionati giocati
-  var { data: memberships } = await sb.from('champ_members')
-    .select('champ_id,role,championships(id,name,season,data)')
-    .eq('username', username)
-    .in('role', ['owner','player']);
-  memberships = memberships || [];
+  // Stats: campionati giocati — cerca prima per user_id tramite profiles
+  var { data: profUser } = await sb.from('profiles')
+    .select('id').eq('username', username).maybeSingle();
+  var profileUserId = profUser ? profUser.id : null;
+
+  var memberships = [];
+  if (profileUserId) {
+    // Cerca per user_id (più affidabile)
+    var { data: mByUid } = await sb.from('champ_members')
+      .select('champ_id,role,championships(id,name,season,data)')
+      .eq('user_id', profileUserId)
+      .in('role', ['owner','player']);
+    memberships = mByUid || [];
+  }
+  if (!memberships.length) {
+    // Fallback: cerca per username
+    var { data: mByName } = await sb.from('champ_members')
+      .select('champ_id,role,championships(id,name,season,data)')
+      .eq('username', username)
+      .in('role', ['owner','player']);
+    memberships = mByName || [];
+  }
 
   var total = memberships.length;
   var owned = memberships.filter(function(m){ return m.role === 'owner'; }).length;
@@ -1785,9 +1801,10 @@ async function openProfile(username) {
 
 async function openMyProfile() {
   var me = currentUser?.user_metadata?.username || currentUser?.email?.split('@')[0] || '';
-  // Save previous page
-  document.getElementById('profile-back-btn').onclick = function(){ showPage('page-dashboard'); };
   await openProfile(me);
+  // Update profile nav username
+  var navU = document.getElementById('profile-nav-username');
+  if (navU) navU.textContent = me;
 }
 
 function editBio() {
@@ -3357,6 +3374,8 @@ async function loadDashboard() {
   var username = profile.data?.user?.user_metadata?.username || currentUser?.email?.split('@')[0] || 'Utente';
   var el = document.getElementById('dash-username');
   if (el) el.textContent = username;
+  // Update theme icon on dashboard
+  applyTheme(getTheme());
 
   // Carica memberships dell'utente
   var { data: memberships } = await sb.from('champ_members')
