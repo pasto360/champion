@@ -101,9 +101,25 @@
     <div class="sec-title" id="my-joined-title" style="display:none;">🎮 Partecipazione</div>
     <div class="champ-grid list-grid" id="my-joined-grid"></div>
 
-    <!-- SEARCH -->
+    <!-- SEARCH + FILTRI -->
     <div class="search-bar">
       <input class="search-input" type="text" id="champ-search" placeholder="🔍  Cerca campionato per nome..." oninput="onSearchInput()"/>
+    </div>
+    <!-- Filtri rapidi -->
+    <div id="search-filters" style="display:flex;flex-wrap:wrap;gap:7px;margin:10px 0 4px;">
+      <!-- Categoria -->
+      <button class="filter-pill active" data-filter-cat="" onclick="setFilterCat('',this)">Tutte</button>
+      <button class="filter-pill" data-filter-cat="soccer" onclick="setFilterCat('soccer',this)">⚽</button>
+      <button class="filter-pill" data-filter-cat="racing" onclick="setFilterCat('racing',this)">🏎️</button>
+      <button class="filter-pill" data-filter-cat="dice" onclick="setFilterCat('dice',this)">🎲</button>
+      <button class="filter-pill" data-filter-cat="shooter" onclick="setFilterCat('shooter',this)">🔫</button>
+      <div style="width:1px;background:var(--border);margin:0 4px;"></div>
+      <!-- Tipo -->
+      <button class="filter-pill" data-filter-fmt="" onclick="setFilterFmt('',this)" style="font-size:11px;">Tutti i tipi</button>
+      <button class="filter-pill" data-filter-fmt="standard" onclick="setFilterFmt('standard',this)" style="font-size:11px;">Standard</button>
+      <button class="filter-pill" data-filter-fmt="roundrobin" onclick="setFilterFmt('roundrobin',this)" style="font-size:11px;">Round Robin</button>
+      <button class="filter-pill" data-filter-fmt="elimination" onclick="setFilterFmt('elimination',this)" style="font-size:11px;">Eliminazione</button>
+      <button class="filter-pill" data-filter-fmt="timetrial" onclick="setFilterFmt('timetrial',this)" style="font-size:11px;">Time Trial</button>
     </div>
 
     <div class="sec-title">Tutti i campionati</div>

@@ -629,3 +629,16 @@ select:focus{border-color:var(--text);}
 .profile-champ-row:last-child{border-bottom:none;}
 .profile-champ-name{flex:1;font-size:14px;font-weight:600;}
 .profile-champ-badge{font-size:11px;padding:2px 8px;border-radius:5px;background:rgba(124,58,237,.15);color:var(--accent);}
+
+/* ── FILTER PILLS ─────────────────────────────── */
+.filter-pill{
+  padding:5px 13px;border-radius:50px;font-size:13px;
+  border:1px solid var(--border);background:var(--card);
+  color:var(--muted);cursor:pointer;
+  transition:all .15s;white-space:nowrap;
+}
+.filter-pill:hover{border-color:var(--violet);color:var(--text);}
+.filter-pill.active{
+  background:var(--violet);color:#fff;
+  border-color:var(--violet);
+}

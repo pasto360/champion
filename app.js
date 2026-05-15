@@ -271,7 +271,10 @@ async function showHome() {
 
 // ── HOME ──────────────────────────────────────────
 let allChamps = []; // cache completa per search+pagination
-let currentPage = 1;
+let currentPage   = 1;
+let activeFilterCat = '';   // '' | 'soccer' | 'racing' | 'dice' | 'shooter'
+let activeFilterFmt = '';   // '' | 'standard' | 'roundrobin' | 'elimination' | 'timetrial'
+
 const PAGE_SIZE = 10;
 
 // ── FAVOURITES (Supabase) ─────────────────────────
@@ -408,6 +411,22 @@ async function loadChampionshipsHome() {
   renderAllChamps();
 }
 
+
+function setFilterCat(cat, btn) {
+  activeFilterCat = cat;
+  document.querySelectorAll('[data-filter-cat]').forEach(function(b){ b.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+  currentPage = 1;
+  renderAllChamps();
+}
+
+function setFilterFmt(fmt, btn) {
+  activeFilterFmt = fmt;
+  document.querySelectorAll('[data-filter-fmt]').forEach(function(b){ b.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+  currentPage = 1;
+  renderAllChamps();
+}
 function onSearchInput() {
   currentPage = 1;
   renderAllChamps();
@@ -419,9 +438,19 @@ function renderAllChamps() {
     ? allChamps.filter(c=>c.name.toLowerCase().includes(query))
     : allChamps.filter(c=>c.owner_id!==currentUser.id)
   ).filter(function(c) {
-    // Campionati chiusi: visibili solo ai membri (non appaiono agli altri)
+    // Campionati chiusi: visibili solo ai membri
     var isClosed = c.access === 'closed' || !!c.closed;
     if (isClosed && !closedMemberships.has(c.id)) return false;
+    // Filtro categoria
+    if (activeFilterCat) {
+      var cat = (c.data && c.data.category) || c.category || '';
+      if (cat !== activeFilterCat) return false;
+    }
+    // Filtro formato/tipo
+    if (activeFilterFmt) {
+      var fmt = (c.data && c.data.format) || 'standard';
+      if (fmt !== activeFilterFmt) return false;
+    }
     return true;
   });
 
