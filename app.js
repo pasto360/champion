@@ -3429,16 +3429,17 @@ function updateShareBar() {
   var igBtn = document.getElementById('share-ig');
   if (waBtn) waBtn.href = 'https://wa.me/?text=' + encodeURIComponent(text);
   if (tgBtn) tgBtn.href = 'https://t.me/share/url?url=' + encodeURIComponent(url) + '&text=' + encodeURIComponent('Partecipa al campionato "' + (champData.championship||'Competeo') + '"!');
-  // Instagram: copia link e apre instagram.com (su mobile apre l'app)
-  if (igBtn) igBtn.addEventListener('click', function(e) {
+  // Instagram: copia link e apre instagram.com
+  if (igBtn) igBtn.onclick = function(e) {
     e.preventDefault();
-    navigator.clipboard.writeText(url).then(function() {
-      showToast('Link copiato! Aprendo Instagram — incollalo in un messaggio diretto');
+    var igUrl = url;
+    navigator.clipboard.writeText(igUrl).then(function() {
+      showToast('Link copiato! Aprendo Instagram...');
       setTimeout(function() { window.open('https://www.instagram.com/direct/inbox/', '_blank'); }, 800);
     }).catch(function() {
       window.open('https://www.instagram.com/direct/inbox/', '_blank');
     });
-  });
+  };
 }
 
 function copyChampLink() {
