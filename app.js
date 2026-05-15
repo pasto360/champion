@@ -3668,7 +3668,26 @@ async function loadDashboard() {
     '<div style="color:var(--muted);font-size:13px;padding:16px 0;">Non sei iscritto a nessun campionato attivo.</div>';
 
   // Render archivio
-  await renderDashArchive(archivedIds, memberships);
+  // Find which archived champs were archived by their owner (owner-wide archive)
+  var ownerArchivedSet = new Set();
+  if (archivedIds.length) {
+    // Get owner_ids for each archived champ
+    var { data: champOwners } = await sb.from('championships')
+      .select('id, owner_id').in('id', archivedIds);
+    // For each champ, check if the owner has an archive row
+    if (champOwners && champOwners.length) {
+      var checks = champOwners.map(function(c) {
+        return sb.from('user_archives')
+          .select('champ_id', { count: 'exact', head: true })
+          .eq('champ_id', c.id).eq('user_id', c.owner_id);
+      });
+      var results = await Promise.all(checks);
+      results.forEach(function(res, i) {
+        if (res.count > 0) ownerArchivedSet.add(champOwners[i].id);
+      });
+    }
+  }
+  await renderDashArchive(archivedIds, memberships, ownerArchivedSet);
 }
 
 function renderDashChampCard(champ, memberships) {
@@ -3709,7 +3728,7 @@ function renderDashChampCard(champ, memberships) {
   return html;
 }
 
-async function renderDashArchive(archivedIds, memberships) {
+async function renderDashArchive(archivedIds, memberships, ownerArchivedIds) {
   var archSection = document.getElementById('dash-archive-section');
   var archList    = document.getElementById('dash-archive-list');
   if (!archSection || !archList) return;
@@ -3726,15 +3745,21 @@ async function renderDashArchive(archivedIds, memberships) {
   archChamps.forEach(function(c) {
     var fmt = (c.data||{}).format || 'standard';
     var isOwnerOfChamp = c.owner_id === currentUser.id;
-    // Se è owner: può ripristinare. Se è membro: non può ripristinare (owner ha archiviato)
-    var canRestore = isOwnerOfChamp;
+    // Può ripristinare se:
+    // - è l'owner (ripristina per tutti)
+    // - è un membro che ha archiviato autonomamente (il proprio archivio personale)
+    // Non può ripristinare solo se l'owner ha archiviato per tutti e lui è un semplice membro
+    // Per distinguere: se l'owner è tra gli archivianti, allora è stato l'owner ad archiviare
+    // Usiamo il flag ownerArchivedIds passato dalla funzione parent
+    var ownerArchivedThisForAll = ownerArchivedIds && ownerArchivedIds.has(c.id);
+    var canRestore = isOwnerOfChamp || !ownerArchivedThisForAll;
 
     var card = document.createElement('div');
     card.className = 'dash-champ-card';
     card.style.opacity = '0.65';
     var restoreBtn = canRestore
       ? '<button style="padding:5px 10px;background:rgba(16,185,129,.15);color:var(--green);border:1px solid rgba(16,185,129,.3);border-radius:7px;font-size:12px;cursor:pointer;font-weight:600;">&#8629; Ripristina</button>'
-      : '<span style="font-size:11px;color:var(--faint);align-self:center;">Archiviato dall\'admin</span>';
+      : '<span style="font-size:11px;color:var(--faint);align-self:center;">Archiviato dall\'organizzatore</span>';
     card.innerHTML = '<div style="display:flex;align-items:center;gap:8px;justify-content:space-between;">'
       + '<div class="dash-champ-name">' + esc(c.name) + (c.season?' <span style="font-size:11px;color:var(--muted);">'+esc(c.season)+'</span>':'') + '</div>'
       + '<div style="display:flex;gap:6px;align-items:center;">'
