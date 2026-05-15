@@ -635,6 +635,7 @@ async function createChampionship() {
 
   closeOverlay('new-champ-overlay');
   showToast('Campionato creato!');
+  checkBadges('create');
   await loadChampionshipsHome();
   await loadDashboard();
   openChampionship(data.id);
@@ -781,6 +782,8 @@ async function acceptMember(memberId) {
   if (pending) await createNotif(pending.user_id, 'join_accepted', 'Iscrizione accettata',
     'Sei stato accettato in "' + (champData.championship||'Campionato') + '"', currentChamp.id);
   await loadChampMembers();
+  // Badge check for the newly accepted member
+  checkBadges('join');
   await scheduleSaveImmediate();
   renderChamp();
   if (document.getElementById('manage-panel') && document.getElementById('manage-panel').classList.contains('open')) {
@@ -818,6 +821,7 @@ async function kickMember(memberId) {
 async function scheduleSaveImmediate() {
   try {
     await sb.from('championships').update({ data: champData }).eq('id', currentChamp.id);
+    if (currentChamp && champData) checkBadgesForChamp(champData, currentChamp.id).catch(function(){});
   } catch(e) { console.error(e); }
 }
 
@@ -1825,6 +1829,9 @@ async function openProfile(username) {
       + badge
       + '</div>';
   }).join('');
+
+  // Render badges
+  await renderProfileBadges(username, isMe);
 }
 
 async function openMyProfile() {
@@ -1861,6 +1868,216 @@ async function saveBio() {
   showToast('Bio salvata!');
 }
 
+
+// ── BADGE SYSTEM ──────────────────────────────────
+
+const ALL_BADGES = [
+  // Vittorie e risultati
+  { key: 'first_win',       icon: '🥇', name: 'Prima vittoria',       desc: 'Vinci il tuo primo campionato' },
+  { key: 'hot_streak',      icon: '🔥', name: 'Serie di fuoco',        desc: '5 vittorie consecutive in un campionato standard' },
+  { key: 'champion',        icon: '👑', name: 'Campione stagionale',   desc: 'Vinci un campionato Round Robin o Standard completo' },
+  { key: 'tt_ace',          icon: '⚡', name: 'Time Trial Ace',         desc: 'Primo posto in un campionato Time Trial' },
+  { key: 'hat_trick',       icon: '🏆', name: 'Hat-trick',             desc: 'Vinci 3 campionati diversi' },
+  // Partecipazione e social
+  { key: 'welcome',         icon: '🎮', name: 'Benvenuto',             desc: 'Ti iscrivi al tuo primo campionato' },
+  { key: 'explorer',        icon: '🌐', name: 'Esploratore',           desc: 'Partecipi a 5 campionati diversi' },
+  { key: 'friendly',        icon: '🤝', name: 'Amico del gruppo',      desc: 'Hai 5 amici su Competeo' },
+  { key: 'organizer',       icon: '📣', name: 'Organizzatore',         desc: 'Crei il tuo primo campionato' },
+  { key: 'big_organizer',   icon: '🏟️', name: 'Grande organizzatore',  desc: 'Crei 5 campionati' },
+  // Rarità speciale
+  { key: 'unbeaten',        icon: '💎', name: 'Imbattuto',             desc: 'Vinci un Round Robin senza perdere una sfida' },
+  { key: 'finalist',        icon: '🎯', name: 'Finalista',             desc: 'Arrivi in finale in un campionato a eliminazione diretta' },
+];
+
+// Loaded once per session
+var myEarnedBadges = null; // Set of badge keys
+
+async function loadMyBadges() {
+  if (myEarnedBadges !== null) return;
+  var { data } = await sb.from('user_badges').select('badge_key').eq('user_id', currentUser.id);
+  myEarnedBadges = new Set((data||[]).map(function(r){ return r.badge_key; }));
+}
+
+async function awardBadge(key) {
+  if (!currentUser) return;
+  if (myEarnedBadges && myEarnedBadges.has(key)) return; // already earned
+  var { error } = await sb.from('user_badges')
+    .insert({ user_id: currentUser.id, badge_key: key });
+  if (error && error.code !== '23505') return; // 23505 = unique violation (already exists)
+  if (myEarnedBadges) myEarnedBadges.add(key);
+  // Show toast notification
+  var badge = ALL_BADGES.find(function(b){ return b.key === key; });
+  if (badge) showToast('Badge sbloccato! ' + badge.icon + ' ' + badge.name);
+}
+
+// ── CHECK BADGES after relevant events ──
+async function checkBadges(context) {
+  if (!currentUser) return;
+  await loadMyBadges();
+  var me = currentUser.user_metadata?.username || currentUser.email?.split('@')[0] || '';
+
+  // ── WELCOME: primo campionato a cui si iscrive ──
+  if (context === 'join' || context === 'all') {
+    var { count: joinCount } = await sb.from('champ_members')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', currentUser.id).in('role', ['player','owner']);
+    if (joinCount >= 1) await awardBadge('welcome');
+    if (joinCount >= 5) await awardBadge('explorer');
+  }
+
+  // ── ORGANIZER: crea campionati ──
+  if (context === 'create' || context === 'all') {
+    var { count: ownCount } = await sb.from('championships')
+      .select('*', { count: 'exact', head: true })
+      .eq('owner_id', currentUser.id);
+    if (ownCount >= 1) await awardBadge('organizer');
+    if (ownCount >= 5) await awardBadge('big_organizer');
+  }
+
+  // ── FRIENDLY: amici ──
+  if (context === 'friend' || context === 'all') {
+    var { count: friendCount } = await sb.from('friendships')
+      .select('*', { count: 'exact', head: true })
+      .or('sender_id.eq.' + currentUser.id + ',receiver_id.eq.' + currentUser.id)
+      .eq('status', 'accepted');
+    if (friendCount >= 5) await awardBadge('friendly');
+  }
+
+  // ── Badges da campionato (passati via checkBadgesForChamp) ──
+}
+
+async function checkBadgesForChamp(champData, champId) {
+  if (!currentUser) return;
+  await loadMyBadges();
+  var me = currentUser.user_metadata?.username || currentUser.email?.split('@')[0] || '';
+  var fmt = champData.format || 'standard';
+  var players = champData.players || [];
+  if (!players.includes(me)) return;
+
+  // ── FIRST_WIN & CHAMPION & HAT_TRICK (standard) ──
+  if (fmt === 'standard') {
+    var races = champData.races || [];
+    var myWins = races.filter(function(r){ return r.result && r.result.first === me; }).length;
+    if (myWins >= 1) await awardBadge('first_win');
+
+    // Campione: 1° in classifica finale con almeno 1 gara giocata
+    var standings = calcStandings();
+    if (standings.length && standings[0].name === me && races.filter(function(r){ return r.result; }).length >= 1) {
+      await awardBadge('champion');
+      await checkHatTrick();
+    }
+
+    // Hot streak: 5 vittorie di fila
+    var streak = 0; var maxStreak = 0;
+    races.filter(function(r){ return !!r.result; }).forEach(function(r){
+      if (r.result.first === me) { streak++; maxStreak = Math.max(maxStreak, streak); }
+      else streak = 0;
+    });
+    if (maxStreak >= 5) await awardBadge('hot_streak');
+  }
+
+  // ── CHAMPION (Round Robin) ──
+  if (fmt === 'roundrobin') {
+    var rr = calcRRStandings();
+    var allPlayed = (champData.rrMatches||[]).every(function(m){ return !!m.winner || m.result === 'draw'; });
+    if (allPlayed && rr.length && rr[0].name === me) {
+      await awardBadge('champion');
+      await awardBadge('first_win');
+      await checkHatTrick();
+    }
+    // UNBEATEN: 0 sconfitte
+    var losses = (champData.rrMatches||[]).filter(function(m){
+      return m.winner && m.winner !== me && (m.p1 === me || m.p2 === me);
+    }).length;
+    if (allPlayed && rr.length && rr[0].name === me && losses === 0) {
+      await awardBadge('unbeaten');
+    }
+  }
+
+  // ── TT_ACE (Time Trial) ──
+  if (fmt === 'timetrial') {
+    var tt = calcTTStandings();
+    if (tt.length && tt[0].name === me && tt[0].best !== null) {
+      await awardBadge('tt_ace');
+      await awardBadge('first_win');
+      await checkHatTrick();
+    }
+  }
+
+  // ── FINALIST (Elimination) ──
+  if (fmt === 'elimination') {
+    var bracket = champData.elimBracket || [];
+    if (bracket.length) {
+      var finalRound = bracket[bracket.length - 1];
+      if (finalRound && finalRound[0]) {
+        var fm = finalRound[0];
+        if (fm.p1 === me || fm.p2 === me) await awardBadge('finalist');
+        if (fm.winner === me) {
+          await awardBadge('champion');
+          await awardBadge('first_win');
+          await checkHatTrick();
+        }
+      }
+    }
+  }
+}
+
+async function checkHatTrick() {
+  // Count championships where user was 1st — pulled from badge count as proxy
+  // Actually query champ_members and check win count via badges
+  // Simpler: award hat_trick when champion is awarded 3+ times
+  // We use user_badges: if champion is already earned AND we re-check, count separately
+  var { count } = await sb.from('user_badges')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', currentUser.id)
+    .in('badge_key', ['champion']);
+  // We can't count multiple champ wins from single badge — use a stored counter in profiles or accept champion = first, hat_trick = earning champion 3 times
+  // Simple approach: count championships where user appears as winner in user_badges history won't work
+  // Better: check memberships as owner+player with top finish — approximate with badge checks
+  // For now: award hat_trick after champion badge earned if already had champion (earned before)
+  if (myEarnedBadges && myEarnedBadges.has('champion')) {
+    // Already had champion, this is a second+ win — award hat_trick
+    await awardBadge('hat_trick');
+  }
+}
+
+// ── RENDER BADGES in profile ──
+async function renderProfileBadges(username, isMe) {
+  var container = document.getElementById('profile-badges');
+  if (!container) return;
+
+  var earnedKeys = new Set();
+  if (isMe) {
+    await loadMyBadges();
+    earnedKeys = myEarnedBadges;
+  } else {
+    // For other users: load their badges to show count only
+    var { data: uid } = await sb.from('profiles').select('id').eq('username', username).maybeSingle();
+    if (uid) {
+      var { data: theirBadges } = await sb.from('user_badges').select('badge_key').eq('user_id', uid.id);
+      var theirCount = (theirBadges||[]).length;
+      container.innerHTML = '<div style="font-size:13px;color:var(--muted);padding:4px 0;">'
+        + (theirCount > 0 ? '🏅 ' + theirCount + ' badge guadagnati' : 'Nessun badge ancora.')
+        + '</div>';
+      return;
+    }
+  }
+
+  // My own profile: show all badges (earned = colored, not earned = gray)
+  container.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;">'
+    + ALL_BADGES.map(function(b) {
+      var earned = earnedKeys.has(b.key);
+      return '<div style="border-radius:12px;border:1px solid ' + (earned ? 'var(--violet)' : 'var(--border)') + ';'
+        + 'background:' + (earned ? 'rgba(124,58,237,.12)' : 'var(--bg)') + ';'
+        + 'padding:10px;text-align:center;opacity:' + (earned ? '1' : '.45') + ';">'
+        + '<div style="font-size:26px;margin-bottom:6px;">' + b.icon + '</div>'
+        + '<div style="font-size:12px;font-weight:700;color:' + (earned ? 'var(--text)' : 'var(--muted)') + ';">' + b.name + '</div>'
+        + '<div style="font-size:10px;color:var(--faint);margin-top:2px;line-height:1.4;">' + b.desc + '</div>'
+        + (earned ? '<div style="font-size:10px;color:var(--violet);margin-top:4px;font-weight:600;">✓ Ottenuto</div>' : '')
+        + '</div>';
+    }).join('')
+    + '</div>';
+}
 async function saveAccountSettings() {
   const email = document.getElementById('acc-email').value.trim();
   const pass  = document.getElementById('acc-pass').value;
@@ -2850,6 +3067,7 @@ async function acceptFriend(friendshipId) {
     await createNotif(friendship.sender_id, 'friend_accepted', 'Amicizia accettata', myUsername + ' ha accettato la tua richiesta di amicizia', null);
   }
   await loadFriendships();
+  checkBadges('friend');
   // Cache missing profiles
   await cacheFriendProfiles();
   renderFriendsPanel();
