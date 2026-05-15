@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Come funziona — COMPETEO</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#080b14;--card:#0f1628;--border:#1e2a4a;
+  --text:#f0f2ff;--muted:#7b8ab8;--faint:#3a4468;
+  --violet:#7c3aed;--violet2:#4c1d95;--navy:#1e3a8a;
+  --accent:#818cf8;--green:#10b981;--gold:#f59e0b;
+}
+html{scroll-behavior:smooth;}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.7;}
+
+/* Header */
+.site-header{
+  background:linear-gradient(90deg,var(--violet2) 0%,var(--violet) 50%,var(--navy) 100%);
+  padding:0 24px;height:54px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100;
+}
+.logo{font-size:17px;font-weight:900;letter-spacing:1.5px;color:#fff;text-decoration:none;}
+.back-btn{font-size:13px;color:rgba(255,255,255,.8);text-decoration:none;transition:color .15s;}
+.back-btn:hover{color:#fff;}
+
+/* Hero */
+.hero{
+  background:linear-gradient(135deg,var(--violet2),var(--navy));
+  padding:56px 24px 48px;text-align:center;
+  border-bottom:1px solid var(--border);
+}
+.hero h1{font-size:32px;font-weight:900;margin-bottom:12px;}
+.hero p{font-size:16px;color:rgba(255,255,255,.7);max-width:520px;margin:0 auto;}
+
+/* Nav pills */
+.nav-pills{
+  display:flex;justify-content:center;gap:8px;padding:18px 24px;
+  flex-wrap:wrap;background:var(--card);border-bottom:1px solid var(--border);
+  position:sticky;top:54px;z-index:90;
+}
+.nav-pill{
+  padding:7px 16px;border-radius:50px;font-size:13px;font-weight:600;
+  text-decoration:none;color:var(--muted);border:1px solid var(--border);
+  background:transparent;transition:all .2s;cursor:pointer;
+}
+.nav-pill:hover,.nav-pill.active{background:var(--violet);color:#fff;border-color:var(--violet);}
+
+/* Layout */
+.container{max-width:760px;margin:0 auto;padding:48px 24px 80px;}
+
+/* Sections */
+.section{margin-bottom:64px;scroll-margin-top:120px;}
+.section-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:4px 12px;border-radius:6px;font-size:11px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.8px;margin-bottom:14px;
+  background:rgba(124,58,237,.2);color:var(--accent);border:1px solid rgba(124,58,237,.3);
+}
+.section h2{font-size:26px;font-weight:800;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--border);}
+.section h3{font-size:17px;font-weight:700;margin:28px 0 10px;color:var(--accent);}
+p{font-size:15px;color:rgba(240,242,255,.82);margin-bottom:14px;line-height:1.75;}
+strong{color:var(--text);}
+
+/* Feature cards */
+.feature-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin:20px 0;}
+.feature-card{
+  background:var(--card);border:1px solid var(--border);border-radius:14px;
+  padding:18px 16px;
+}
+.feature-icon{font-size:28px;margin-bottom:10px;}
+.feature-title{font-size:14px;font-weight:700;margin-bottom:6px;}
+.feature-desc{font-size:13px;color:var(--muted);line-height:1.6;}
+
+/* Format cards */
+.format-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin:20px 0;}
+.format-card{
+  background:var(--card);border:1px solid var(--border);border-radius:14px;
+  padding:20px 18px;
+}
+.format-head{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.format-icon{font-size:24px;}
+.format-name{font-size:15px;font-weight:800;}
+.format-tag{font-size:11px;color:var(--muted);margin-top:1px;}
+.format-desc{font-size:13px;color:rgba(240,242,255,.7);line-height:1.65;}
+
+/* Step list */
+.steps{margin:20px 0;}
+.step{display:flex;gap:16px;margin-bottom:20px;align-items:flex-start;}
+.step-num{
+  width:32px;height:32px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(135deg,var(--violet2),var(--violet));
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:800;color:#fff;
+}
+.step-content h4{font-size:15px;font-weight:700;margin-bottom:4px;}
+.step-content p{font-size:14px;color:var(--muted);margin:0;}
+
+/* Access cards */
+.access-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin:20px 0;}
+.access-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;}
+.access-icon{font-size:22px;margin-bottom:8px;}
+.access-name{font-size:14px;font-weight:700;margin-bottom:6px;}
+.access-desc{font-size:13px;color:var(--muted);line-height:1.6;}
+
+/* Badge preview */
+.badge-preview{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0;}
+.badge-chip{
+  display:flex;align-items:center;gap:7px;
+  padding:7px 13px;border-radius:50px;
+  background:rgba(124,58,237,.15);border:1px solid rgba(124,58,237,.3);
+  font-size:13px;
+}
+
+/* Highlight box */
+.highlight-box{
+  background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.25);
+  border-radius:12px;padding:16px 18px;margin:20px 0;
+  font-size:14px;color:rgba(240,242,255,.85);line-height:1.7;
+}
+.highlight-box strong{color:var(--green);}
+
+/* CTA */
+.cta-box{
+  background:linear-gradient(135deg,rgba(76,29,149,.5),rgba(30,58,138,.5));
+  border:1px solid rgba(124,58,237,.4);border-radius:18px;
+  padding:32px;text-align:center;margin-top:48px;
+}
+.cta-box h3{font-size:22px;font-weight:800;margin-bottom:10px;}
+.cta-box p{color:var(--muted);margin-bottom:20px;}
+.cta-btn{
+  display:inline-block;padding:13px 36px;
+  background:var(--violet);color:#fff;
+  border-radius:50px;font-size:15px;font-weight:700;
+  text-decoration:none;transition:opacity .15s;
+}
+.cta-btn:hover{opacity:.88;}
+
+/* Footer */
+.page-footer{text-align:center;padding:24px;border-top:1px solid var(--border);font-size:12px;color:var(--faint);}
+.footer-logo{font-size:13px;font-weight:900;letter-spacing:1.5px;
+  background:linear-gradient(90deg,var(--violet2),var(--violet));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+
+@media(max-width:600px){
+  .hero h1{font-size:24px;}
+  .container{padding:32px 16px 60px;}
+}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="index.html">COMPETEO</a>
+  <a class="back-btn" href="index.html">← Torna al sito</a>
+</header>
+
+<div class="hero">
+  <h1>Come funziona Competeo</h1>
+  <p>Tutto quello che ti serve per creare campionati memorabili con i tuoi amici, in pochi minuti.</p>
+</div>
+
+<nav class="nav-pills">
+  <a class="nav-pill active" href="#intro">Cos'è</a>
+  <a class="nav-pill" href="#formati">Formati</a>
+  <a class="nav-pill" href="#creare">Creare</a>
+  <a class="nav-pill" href="#accesso">Accesso</a>
+  <a class="nav-pill" href="#classifica">Classifica</a>
+  <a class="nav-pill" href="#profilo">Profilo</a>
+  <a class="nav-pill" href="#badge">Badge</a>
+</nav>
+
+<div class="container">
+
+  <!-- ══ COS'È COMPETEO ══ -->
+  <section class="section" id="intro">
+    <div class="section-badge">Introduzione</div>
+    <h2>Cos'è Competeo</h2>
+    <p>Competeo è la piattaforma pensata per chi ama competere con gli amici. Che si tratti di una lega di calcio virtuale, un torneo di videogiochi, gare automobilistiche su simulatore o qualsiasi altra sfida, Competeo ti permette di organizzare tutto in modo semplice, tenere le classifiche aggiornate in tempo reale e vivere ogni stagione con la serietà di un vero campionato.</p>
+    <p>Non serve installare nulla. Funziona dal browser su qualsiasi dispositivo — telefono, tablet o computer.</p>
+
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🏆</div>
+        <div class="feature-title">Campionati su misura</div>
+        <div class="feature-desc">Quattro formati diversi per adattarsi a ogni tipo di sfida, dal round robin al time trial.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📊</div>
+        <div class="feature-title">Classifiche in tempo reale</div>
+        <div class="feature-desc">Ogni risultato inserito aggiorna immediatamente la classifica. Nessun calcolo manuale.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">👥</div>
+        <div class="feature-title">Amici e social</div>
+        <div class="feature-desc">Aggiungi amici, invitali nei tuoi campionati e segui i loro progressi.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📱</div>
+        <div class="feature-title">Sempre con te</div>
+        <div class="feature-desc">Funziona su qualsiasi dispositivo. Condividi la classifica su WhatsApp o Telegram in un tocco.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ FORMATI ══ -->
+  <section class="section" id="formati">
+    <div class="section-badge">Formati di gioco</div>
+    <h2>I quattro formati</h2>
+    <p>Quando crei un campionato scegli il formato che meglio si adatta alla tua competizione. Ogni formato ha la sua logica di punteggio e la sua classifica.</p>
+
+    <div class="format-grid">
+      <div class="format-card">
+        <div class="format-head">
+          <div class="format-icon">🏁</div>
+          <div><div class="format-name">Standard</div><div class="format-tag">Gare a punti</div></div>
+        </div>
+        <div class="format-desc">Il classico campionato a gare. Ogni gara ha un primo e un secondo classificato. Il primo prende 3 punti, il secondo 1. Vince chi accumula più punti alla fine della stagione. Perfetto per campionati automobilistici, tornei di videogiochi a sessioni, leghe sportive.</div>
+      </div>
+      <div class="format-card">
+        <div class="format-head">
+          <div class="format-icon">⚔️</div>
+          <div><div class="format-name">Round Robin</div><div class="format-tag">Tutti contro tutti</div></div>
+        </div>
+        <div class="format-desc">Ogni partecipante sfida tutti gli altri. Si può giocare solo andata o andata e ritorno. Il sistema gestisce automaticamente il calendario degli scontri e la classifica con vittorie, pareggi e sconfitte. Ideale per leghe calcistiche, tornei di scacchi o qualsiasi sfida diretta.</div>
+      </div>
+      <div class="format-card">
+        <div class="format-head">
+          <div class="format-icon">🎯</div>
+          <div><div class="format-name">Eliminazione Diretta</div><div class="format-tag">Bracket a eliminazione</div></div>
+        </div>
+        <div class="format-desc">Il classico tabellone a eliminazione. Chi perde è fuori. L'admin sorteggia le coppie e il sistema costruisce il bracket automaticamente fino alla finale. Adatto a tornei veloci dove si vuole un vincitore assoluto in poche partite.</div>
+      </div>
+      <div class="format-card">
+        <div class="format-head">
+          <div class="format-icon">⏱️</div>
+          <div><div class="format-name">Time Trial</div><div class="format-tag">Migliore prestazione</div></div>
+        </div>
+        <div class="format-desc">Ogni partecipante effettua una o più prove. Vince chi registra il miglior tempo (o la distanza maggiore, a seconda dell'impostazione). Ogni giocatore può tentare più volte e viene considerata solo la prestazione migliore. Perfetto per simulatori di guida, gare cronometrate, contest di precisione.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ CREARE UN CAMPIONATO ══ -->
+  <section class="section" id="creare">
+    <div class="section-badge">Per iniziare</div>
+    <h2>Creare un campionato</h2>
+    <p>Creare un campionato richiede meno di un minuto. Ecco come funziona dall'idea alla prima gara.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <h4>Registrati e accedi</h4>
+          <p>Crea un account con email e password. Il tuo username è il nome con cui gli altri ti vedranno nelle classifiche — sceglilo bene perché non si può cambiare.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <h4>Clicca su "+ Nuovo campionato"</h4>
+          <p>Dalla home trovi il pulsante per creare. Ogni account può gestire fino a 10 campionati contemporaneamente.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <h4>Scegli formato, nome e accesso</h4>
+          <p>Dai un nome al campionato, indica l'anno o la stagione, scegli il formato (Standard, Round Robin, Eliminazione o Time Trial), la categoria (⚽ 🏎️ 🎲 🔫) e come vuoi gestire l'accesso.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <h4>Invita i partecipanti</h4>
+          <p>Condividi il link diretto oppure cerca i tuoi amici per username dalle impostazioni del campionato. Puoi anche usare la rubrica degli amici se li hai già aggiunti su Competeo.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">5</div>
+        <div class="step-content">
+          <h4>Inserisci i risultati e la classifica si aggiorna</h4>
+          <p>Da questo momento sei tu il direttore sportivo. Inserisci i risultati dopo ogni gara o sfida e la classifica si calcola automaticamente. Puoi anche trasmettere la live stream direttamente dalla pagina del campionato.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <strong>Consiglio:</strong> Usa la funzione <strong>Export classifica</strong> per generare un'immagine della classifica da condividere su WhatsApp o nei gruppi Telegram dopo ogni giornata. Crea engagement e mantiene alta l'attenzione di tutti i partecipanti.
+    </div>
+  </section>
+
+  <!-- ══ TIPI DI ACCESSO ══ -->
+  <section class="section" id="accesso">
+    <div class="section-badge">Privacy e accesso</div>
+    <h2>Chi può vedere il tuo campionato</h2>
+    <p>Ogni campionato ha un livello di accesso che puoi impostare alla creazione e modificare in qualsiasi momento dalle impostazioni.</p>
+
+    <div class="access-grid">
+      <div class="access-card">
+        <div class="access-icon">🌐</div>
+        <div class="access-name">Pubblico</div>
+        <div class="access-desc">Visibile a tutti gli utenti. Chiunque può trovarlo nella home e richiedere di partecipare. L'admin approva ogni richiesta prima che il giocatore entri.</div>
+      </div>
+      <div class="access-card">
+        <div class="access-icon">🔐</div>
+        <div class="access-name">Chiuso</div>
+        <div class="access-desc">Visibile solo ai partecipanti già iscritti. Non appare nella home per chi non è membro. Si entra solo su invito diretto dell'amministratore.</div>
+      </div>
+      <div class="access-card">
+        <div class="access-icon">🔒</div>
+        <div class="access-name">Privato</div>
+        <div class="access-desc">Visibile a tutti ma protetto da password. Chi conosce la password può entrare e richiedere l'iscrizione. Utile per gruppi selezionati con accesso controllato.</div>
+      </div>
+    </div>
+
+    <h3>Condividere il campionato</h3>
+    <p>Ogni campionato ha un link diretto che puoi copiare e incollare ovunque. Nelle impostazioni trovi anche i pulsanti per condividere direttamente su <strong>WhatsApp</strong>, <strong>Telegram</strong> e <strong>Instagram</strong>. Chi apre il link viene portato direttamente alla pagina del campionato dopo il login.</p>
+  </section>
+
+  <!-- ══ CLASSIFICA E RISULTATI ══ -->
+  <section class="section" id="classifica">
+    <div class="section-badge">Risultati e punteggi</div>
+    <h2>Come funziona la classifica</h2>
+
+    <h3>Campionato Standard</h3>
+    <p>Ogni gara assegna <strong>3 punti al primo classificato</strong> e <strong>1 punto al secondo</strong>. L'admin inserisce i risultati direttamente dal pannello di gestione. La classifica si aggiorna in tempo reale e i partecipanti vedono la loro posizione non appena il risultato è salvato.</p>
+
+    <h3>Round Robin</h3>
+    <p>Il sistema genera automaticamente tutte le sfide necessarie. Ogni vittoria vale <strong>3 punti</strong>, il pareggio <strong>1 punto</strong>, la sconfitta <strong>0</strong>. La classifica finale tiene conto di vittorie, pareggi, sconfitte, gol fatti e subiti. In caso di parità di punti, il sistema usa i criteri di spareggio classici.</p>
+
+    <h3>Eliminazione Diretta</h3>
+    <p>Il tabellone si costruisce con i seed assegnati dall'admin. Si gioca fino a quando rimane un solo vincitore. Il sistema avanza automaticamente i vincitori al turno successivo. I partecipanti eliminati possono comunque seguire il bracket e il campionato.</p>
+
+    <h3>Time Trial</h3>
+    <p>Ogni giocatore può registrare più prove. Nella classifica conta solo il <strong>miglior risultato</strong> di ciascuno. L'admin può scegliere se ordinare per tempo crescente (il più veloce vince) o decrescente (la distanza maggiore vince). L'unità di misura è personalizzabile: secondi, minuti, metri, chilometri.</p>
+
+    <h3>Esportare la classifica</h3>
+    <p>Con il pulsante <strong>Scarica classifica</strong> si genera un'immagine PNG con il nome del campionato, la data e tutti i punteggi. Pronta da condividere nei gruppi o sui social.</p>
+  </section>
+
+  <!-- ══ PROFILO ══ -->
+  <section class="section" id="profilo">
+    <div class="section-badge">Il tuo spazio</div>
+    <h2>Il profilo personale</h2>
+    <p>Ogni utente ha una pagina profilo pubblica. Cliccando sul nome di qualsiasi giocatore in classifica si apre il suo profilo, dove sono visibili i campionati a cui partecipa e il numero di badge guadagnati.</p>
+    <p>Nel <strong>tuo profilo personale</strong> puoi aggiungere una bio (una breve presentazione, massimo 200 caratteri), vedere tutti i badge sbloccati e quelli ancora da ottenere.</p>
+    <p>Dalla <strong>Dashboard</strong> — accessibile dal pulsante in alto — gestisci tutti i campionati a cui partecipi, puoi archiviarli per tenerli fuori dalla home mantenendo tutti i dati, o eliminare quelli che hai creato. Ogni campionato mostra la tua posizione in classifica e la prossima sfida in programma.</p>
+  </section>
+
+  <!-- ══ BADGE ══ -->
+  <section class="section" id="badge">
+    <div class="section-badge">Ricompense</div>
+    <h2>Il sistema badge</h2>
+    <p>Competeo premia il tuo impegno con i badge — traguardi sbloccabili che rimangono nel tuo profilo per sempre, anche se il campionato viene poi cancellato.</p>
+    <p>I badge sono visibili integralmente <strong>solo a te</strong> nel tuo profilo: li vedi tutti, colorati se conquistati e in grigio se ancora da ottenere. Gli altri utenti vedono solo il numero totale di badge che hai guadagnato.</p>
+
+    <div class="badge-preview">
+      <div class="badge-chip">🥇 Prima vittoria</div>
+      <div class="badge-chip">🔥 Serie di fuoco</div>
+      <div class="badge-chip">👑 Campione stagionale</div>
+      <div class="badge-chip">⚡ Time Trial Ace</div>
+      <div class="badge-chip">🏆 Hat-trick</div>
+      <div class="badge-chip">🎮 Benvenuto</div>
+      <div class="badge-chip">🌐 Esploratore</div>
+      <div class="badge-chip">🤝 Amico del gruppo</div>
+      <div class="badge-chip">📣 Organizzatore</div>
+      <div class="badge-chip">🏟️ Grande organizzatore</div>
+      <div class="badge-chip">💎 Imbattuto</div>
+      <div class="badge-chip">🎯 Finalista</div>
+    </div>
+
+    <p>I badge si sbloccano automaticamente: non devi fare nulla, il sistema riconosce i tuoi risultati e te li assegna in tempo reale con una notifica. Partecipa, crea, vinci — e la collezione cresce da sola.</p>
+  </section>
+
+  <!-- CTA -->
+  <div class="cta-box">
+    <h3>Pronto a iniziare?</h3>
+    <p>Crea il tuo primo campionato in meno di un minuto. È gratuito.</p>
+    <a href="index.html" class="cta-btn">Vai su Competeo →</a>
+  </div>
+
+</div>
+
+<footer class="page-footer">
+  <span class="footer-logo">COMPETEO</span>
+  &nbsp;&mdash;&nbsp;
+  <a href="legal.html" style="color:var(--faint);text-decoration:none;">Privacy & Note Legali</a>
+  &nbsp;·&nbsp;
+  <a href="mailto:info@competeo.it" style="color:var(--faint);text-decoration:none;">info@competeo.it</a>
+</footer>
+
+<script>
+const sections = ['intro','formati','creare','accesso','classifica','profilo','badge'];
+const observer = new IntersectionObserver(function(entries) {
+  entries.forEach(function(entry) {
+    if (entry.isIntersecting) {
+      var id = entry.target.id;
+      document.querySelectorAll('.nav-pill').forEach(function(p) {
+        p.classList.toggle('active', p.getAttribute('href') === '#' + id);
+      });
+    }
+  });
+}, { rootMargin: '-30% 0px -60% 0px' });
+sections.forEach(function(id) {
+  var el = document.getElementById(id); if (el) observer.observe(el);
+});
+</script>
+</body>
+</html>
