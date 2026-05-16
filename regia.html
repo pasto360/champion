@@ -67,7 +67,7 @@
     display: flex;
     flex-direction: row;
     gap: 10px;
-    align-items: flex-start;
+    align-items: stretch;
   }
 
   .pgm-wrap {
@@ -84,6 +84,25 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
+  }
+
+  .side-col .screen-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .side-col .video-box {
+    flex: 1;
+    padding-top: 0;
+    position: relative;
+  }
+
+  .side-col .video-box iframe {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
   }
 
   .screen-wrap {
@@ -243,6 +262,8 @@
     animation: pulse 1.2s ease-in-out infinite;
   }
   .viewers em { color: #4caf50; font-style: normal; font-size: 12px; }
+
+  @media (max-width: 768px) {
     .body {
       flex-direction: column;
       gap: 0;
