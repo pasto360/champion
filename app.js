@@ -1071,6 +1071,12 @@ function scheduleSave() {
 // ── RENDER ────────────────────────────────────────
 function renderChamp() {
   updateShareBar();
+  // Sync nav username in champ header
+  var champNavU = document.getElementById('champ-nav-username');
+  if (champNavU) {
+    var me = currentUser?.user_metadata?.username || currentUser?.email?.split('@')[0] || '';
+    champNavU.textContent = me;
+  }
   var champTitle = (champData.championship||'Campionato') + (champData.season?' · '+champData.season:'');
   var createdDate = currentChamp.created_at ? new Date(currentChamp.created_at).toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'}) : '';
   var champId = currentChamp.id || '';
@@ -3515,10 +3521,16 @@ async function loadNotifications() {
 
 function updateNotifBadge() {
   var unread = notifications.filter(function(n){ return !n.read; }).length;
+  var text = unread > 9 ? '9+' : String(unread);
+  var show = unread > 0;
+  // Main notif count badge
   var badge = document.getElementById('notif-count');
-  if (!badge) return;
-  badge.textContent = unread > 9 ? '9+' : unread;
-  badge.classList.toggle('show', unread > 0);
+  if (badge) { badge.textContent = text; badge.classList.toggle('show', show); }
+  // All header badges across pages
+  ['notif-badge-dash','notif-badge-champ'].forEach(function(id) {
+    var b = document.getElementById(id);
+    if (b) { b.style.display = show ? '' : 'none'; b.textContent = show ? text : ''; }
+  });
 }
 
 function openNotifPanel() {
