@@ -2197,9 +2197,13 @@ document.getElementById('manage-panel').addEventListener('click',function(e){if(
 function hideGlobalLoading(){document.getElementById('global-loading').classList.remove('open');}
 function setSyncStatus(type,label){
   const badge=document.getElementById('sync-badge');
+  if(!badge) return;
   badge.className='sync-badge sync-'+type;
-  badge.querySelector('.sync-dot').className='sync-dot'+(type==='saving'||type==='loading'?' pulsing':'');
-  document.getElementById('sync-label').textContent=label;
+  badge.style.display='';
+  var dot=badge.querySelector('.sync-dot');
+  if(dot) dot.className='sync-dot'+(type==='saving'||type==='loading'?' pulsing':'');
+  var lbl=document.getElementById('sync-label');
+  if(lbl) lbl.textContent=label;
 }
 let toastTimeout;
 function showToast(msg){
