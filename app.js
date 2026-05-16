@@ -537,7 +537,8 @@ function champCard(c, inFavSection=false) {
     ? ('<span class="card-fav-star active" onclick="event.stopPropagation();toggleFavById(\'' + c.id + '\')" title="Rimuovi dai preferiti">★</span>')
     : '';
 
-  return '<div class="champ-card ' + (mine?'champ-card-mine':'') + '" data-champid="' + c.id + '" onclick="openChampionship(this.getAttribute(\'data-champid\'))">'
+  var cid = c.id;
+  return '<div class="champ-card ' + (mine?'champ-card-mine':'') + '" onclick="openChampionship(\'' + cid + '\')">'
     + '<div class="champ-card-name">' + c.name + (favStarFav||favStar) + '</div>'
     + '<div class="champ-card-meta">' + champCategoryIcon(c) + (c.season||'') + (mine?' · <strong>Mio</strong>':'') + '</div>'
     + badge

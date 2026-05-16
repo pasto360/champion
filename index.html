@@ -244,15 +244,22 @@
 <div class="page" id="page-champ">
   <!-- header -->
   <div class="champ-page-header">
-    <h1 id="champ-hdr-title">Campionato</h1>
+    <div style="display:flex;align-items:center;gap:8px;min-width:0;">
+      <button class="hbtn" id="btn-manage-champ" onclick="openManagePanel()" style="display:none;flex-shrink:0;">⚙</button>
+      <button class="hbtn" id="btn-fav-champ" onclick="toggleFav()" title="Preferiti" style="flex-shrink:0;">☆</button>
+      <h1 id="champ-hdr-title" style="font-size:14px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin:0;">Campionato</h1>
+    </div>
     <div class="right">
-      <div class="sync-badge sync-loading" id="sync-badge">
-        <span class="sync-dot pulsing"></span>
-        <span id="sync-label">...</span>
-      </div>
-      <button class="hbtn" id="btn-manage-champ" onclick="openManagePanel()" style="display:none;">⚙</button>
-      <button class="hbtn" id="btn-fav-champ" onclick="toggleFav()" title="Aggiungi ai preferiti">☆</button>
-      <button class="hbtn" onclick="goHome()">← Home</button>
+      <button onclick="openMyProfile()" title="Il mio profilo" id="champ-profile-btn" style="display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:8px;padding:4px 10px;cursor:pointer;font-size:12px;flex-shrink:0;">
+        <span style="font-size:13px;">👤</span>
+        <span id="champ-nav-username" style="font-size:12px;font-weight:500;"></span>
+      </button>
+      <button class="notif-btn" id="notif-btn-champ" onclick="openNotifPanel()" title="Notifiche" style="position:relative;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:8px;padding:4px 9px;font-size:13px;cursor:pointer;">🔔<span class="notif-badge" id="notif-badge-champ" style="display:none;"></span></button>
+      <button class="friends-btn" id="friends-btn-champ" onclick="openFriendsPanel()" title="Amici">👥</button>
+      <button class="theme-toggle-btn" onclick="toggleTheme()" title="Tema">🌙</button>
+      <button class="hbtn" onclick="goHome()">Home</button>
+      <button class="hbtn" onclick="showPage('page-dashboard')">Dashboard</button>
+      <button class="hbtn red" onclick="doLogout()">Esci</button>
     </div>
   </div>
 
