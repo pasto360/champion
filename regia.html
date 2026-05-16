@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Regia Video</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@400;600;700&display=swap');
+
+  :root {
+    --bg: #0a0a0a;
+    --surface: #111;
+    --surface2: #161616;
+    --border: #222;
+    --border2: #2a2a2a;
+    --text: #e0e0e0;
+    --text2: #888;
+    --text3: #444;
+    --live: #e63232;
+    --live-bg: rgba(230,50,50,0.12);
+    --live-border: rgba(230,50,50,0.4);
+    --amber: #f0a500;
+    --amber-bg: rgba(240,165,0,0.1);
+    --amber-border: rgba(240,165,0,0.35);
+    --mono: 'Share Tech Mono', monospace;
+    --sans: 'Barlow Condensed', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    padding: 9px 18px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--surface);
+  }
+  .logo { font-family: var(--mono); font-size: 12px; color: var(--text2); letter-spacing: 0.12em; }
+  .logo em { color: var(--live); font-style: normal; }
+  .onair { font-family: var(--mono); font-size: 9px; color: var(--live); letter-spacing: 0.14em; display: flex; align-items: center; gap: 6px; }
+  .onair::before { content:''; width:6px; height:6px; border-radius:50%; background:var(--live); animation: pulse 1.2s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.15} }
+
+  .body {
+    display: flex;
+    flex: 1;
+    gap: 1px;
+    background: var(--border);
+  }
+
+  /* STAGE: grande a sinistra, A+B in colonna a destra */
+  .stage {
+    flex: 1;
+    min-width: 0;
+    background: var(--bg);
+    padding: 12px;
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .pgm-wrap {
+    flex: 2;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .side-col {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .screen-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .screen-meta {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    height: 16px;
+  }
+  .screen-tag { font-family: var(--mono); font-size: 9px; color: var(--text3); letter-spacing: 0.1em; flex-shrink: 0; }
+  .screen-name { font-family: var(--mono); font-size: 10px; color: var(--text2); letter-spacing: 0.04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .screen-name.pgm { color: var(--live); }
+
+  .video-box {
+    position: relative;
+    width: 100%;
+    padding-top: 56.25%;
+    background: #000;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .video-box iframe {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    display: block;
+  }
+  .video-box.flash { border-color: var(--amber); }
+
+  /* MIXER */
+  .mixer {
+    width: 230px;
+    flex-shrink: 0;
+    background: var(--surface);
+    padding: 12px 10px;
+    display: flex;
+    flex-direction: column;
+  }
+  .mixer-title {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--text3);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 12px;
+  }
+  .channels { display: flex; flex-direction: column; gap: 8px; }
+
+  .channel {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 9px 9px 8px;
+  }
+  .ch-head { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+  .ch-num { font-family: var(--mono); font-size: 9px; color: var(--text3); flex-shrink: 0; }
+  .ch-name {
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .ch-dots { display: flex; gap: 4px; flex-shrink: 0; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border2); transition: background 0.15s; }
+  .dot.live { background: var(--live); }
+  .dot.pvw  { background: var(--amber); }
+
+  .btns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; }
+  .btn {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.07em;
+    padding: 5px 2px 4px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text3);
+    cursor: pointer;
+    text-align: center;
+    text-transform: uppercase;
+    transition: all 0.12s;
+    line-height: 1.4;
+  }
+  .btn .sub { display: block; font-size: 7px; opacity: 0.5; margin-bottom: 1px; }
+  .btn:hover { border-color: var(--border2); color: var(--text2); background: rgba(255,255,255,0.03); }
+  .btn.live  { border-color: var(--live-border); background: var(--live-bg); color: var(--live); }
+  .btn.flash { border-color: var(--amber-border); background: var(--amber-bg); color: var(--amber); }
+
+  footer {
+    padding: 7px 18px;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+    display: flex;
+    gap: 20px;
+  }
+  .st { font-family: var(--mono); font-size: 9px; color: var(--text3); letter-spacing: 0.07em; }
+  .st span { color: var(--text2); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">VIDEO<em>DESK</em></div>
+  <div class="onair">ON AIR</div>
+</header>
+
+<div class="body">
+
+  <div class="stage">
+
+    <div class="pgm-wrap">
+      <div class="screen-meta">
+        <div class="screen-tag">PGM</div>
+        <div class="screen-name pgm" id="lbl-main"></div>
+      </div>
+      <div class="video-box" id="scr-main">
+        <iframe id="ifr-main" frameborder="0"
+          allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture;web-share"
+          referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+      </div>
+    </div>
+
+    <div class="side-col">
+      <div class="screen-wrap">
+        <div class="screen-meta">
+          <div class="screen-tag">A</div>
+          <div class="screen-name" id="lbl-a"></div>
+        </div>
+        <div class="video-box" id="scr-a">
+          <iframe id="ifr-a" frameborder="0"
+            allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture;web-share"
+            referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+        </div>
+      </div>
+      <div class="screen-wrap">
+        <div class="screen-meta">
+          <div class="screen-tag">B</div>
+          <div class="screen-name" id="lbl-b"></div>
+        </div>
+        <div class="video-box" id="scr-b">
+          <iframe id="ifr-b" frameborder="0"
+            allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture;web-share"
+            referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="mixer">
+    <div class="mixer-title">canali sorgente</div>
+    <div class="channels" id="channels"></div>
+  </div>
+
+</div>
+
+<footer>
+  <div class="st">PGM <span id="st-main">—</span></div>
+  <div class="st">A <span id="st-a">—</span></div>
+  <div class="st">B <span id="st-b">—</span></div>
+</footer>
+
+<script>
+const VIDEOS = [
+  { label: "Onboard Max",   src: "https://www.youtube.com/embed/Keqjx5zqeDE?si=NG9_KkrG-0GlAyVR" },
+  { label: "Onboard Kevin", src: "https://www.youtube.com/embed/uofChxeVADU?si=ZYaP8_IOFvKpJV6I" },
+  { label: "Sky Italia",    src: "https://www.youtube.com/embed/OPhDWfwPJsE?si=7dnvLdRnp3sKQJcO" },
+  { label: "24 Official",   src: "https://www.youtube.com/embed/ykB5jleVsAM?si=eVBbkmwecgF2ZocT" }
+];
+
+const DESTS = ["main", "a", "b"];
+const state = { main: 0, a: 1, b: 2 };
+
+function setIframe(dest, idx) {
+  document.getElementById("ifr-" + dest).src = VIDEOS[idx].src;
+}
+
+function updateUI() {
+  DESTS.forEach(dest => {
+    const v = VIDEOS[state[dest]];
+    document.getElementById("lbl-" + dest).textContent = v.label;
+    document.getElementById("st-" + dest).textContent = "CH0" + (state[dest]+1) + " " + v.label.toUpperCase();
+  });
+  document.querySelectorAll(".btn").forEach(btn => {
+    btn.classList.toggle("live", state[btn.dataset.dest] === +btn.dataset.ch);
+  });
+  for (let c = 0; c < VIDEOS.length; c++) {
+    DESTS.forEach(dest => {
+      const dot = document.getElementById("dot-" + c + "-" + dest);
+      if (!dot) return;
+      dot.classList.remove("live", "pvw");
+      if (state[dest] === c) dot.classList.add(dest === "main" ? "live" : "pvw");
+    });
+  }
+}
+
+function buildMixer() {
+  const container = document.getElementById("channels");
+  VIDEOS.forEach((v, c) => {
+    const ch = document.createElement("div");
+    ch.className = "channel";
+    ch.innerHTML = `
+      <div class="ch-head">
+        <div class="ch-num">0${c+1}</div>
+        <div class="ch-name">${v.label}</div>
+        <div class="ch-dots">
+          ${DESTS.map(d => `<div class="dot" id="dot-${c}-${d}"></div>`).join("")}
+        </div>
+      </div>
+      <div class="btns">
+        <button class="btn" data-ch="${c}" data-dest="main"><span class="sub">PGM</span>principale</button>
+        <button class="btn" data-ch="${c}" data-dest="a"><span class="sub">slot</span>A</button>
+        <button class="btn" data-ch="${c}" data-dest="b"><span class="sub">slot</span>B</button>
+      </div>`;
+    container.appendChild(ch);
+  });
+
+  document.querySelectorAll(".btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const ch = +btn.dataset.ch, dest = btn.dataset.dest;
+      if (state[dest] === ch) return;
+      const oldCh = state[dest];
+      const swapDest = DESTS.find(d => state[d] === ch);
+      if (swapDest) { state[swapDest] = oldCh; setIframe(swapDest, oldCh); }
+      state[dest] = ch;
+      setIframe(dest, ch);
+      const scr = document.getElementById("scr-" + dest);
+      scr.classList.add("flash");
+      setTimeout(() => scr.classList.remove("flash"), 450);
+      btn.classList.add("flash");
+      setTimeout(() => btn.classList.remove("flash"), 350);
+      updateUI();
+    });
+  });
+}
+
+buildMixer();
+DESTS.forEach(d => setIframe(d, state[d]));
+updateUI();
+</script>
+</body>
+</html>
