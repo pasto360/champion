@@ -367,13 +367,16 @@ async function renderJoinedChamps() {
 }
 
 async function loadChampionshipsHome() {
-  const [{data:champs, error}, {data:myMemberships}, {data:myArchives}] = await Promise.all([
+  const [champsRes, membershipsRes, archivesRes] = await Promise.all([
     sb.from('championships').select('id,name,season,access,closed,owner_id,created_at,data').order('created_at',{ascending:false}),
     sb.from('champ_members').select('champ_id').eq('user_id', currentUser.id).in('role', ['owner','player']),
     sb.from('user_archives').select('champ_id').eq('user_id', currentUser.id),
-    loadFavs(),
-    loadFriendships()
   ]);
+  await Promise.all([loadFavs(), loadFriendships()]);
+  const champs = champsRes.data || [];
+  const error  = champsRes.error;
+  const myMemberships = membershipsRes.data;
+  const myArchives    = archivesRes.data;
   // Build set of archived champ IDs — exclude from home
   var archivedSet = new Set((myArchives||[]).map(function(r){ return r.champ_id; }));
   // Build set of champ IDs where user is member (for closed champ access check)
