@@ -155,7 +155,7 @@
   }
   .classifica-crop iframe {
     position: absolute;
-    top: -180px;
+    top: -260px;
     left: 0;
     width: 100%;
     height: calc(100% + 260px);
@@ -225,7 +225,51 @@
     display: flex;
     gap: 20px;
   }
-  .st { display: none; }
+  .viewers {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text2);
+    letter-spacing: 0.08em;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 10px;
+  }
+  .viewers::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #4caf50;
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+  .viewers em { color: #4caf50; font-style: normal; font-size: 12px; }
+    .body {
+      flex-direction: column;
+      gap: 0;
+    }
+    .stage {
+      flex-direction: column;
+      padding: 8px;
+      gap: 8px;
+    }
+    .pgm-wrap { flex: none; width: 100%; }
+    .side-col {
+      flex: none;
+      width: 100%;
+      flex-direction: row;
+      gap: 8px;
+    }
+    .side-col .screen-wrap { flex: 1; }
+    .mixer {
+      width: 100%;
+      border-top: 1px solid var(--border);
+      border-left: none;
+    }
+    .channels { flex-direction: row; flex-wrap: wrap; gap: 6px; }
+    .channel { flex: 1; min-width: 140px; }
+    .classifica { height: 220px; }
+    .classifica-crop iframe { top: -220px; height: calc(100% + 220px); }
+  }
 
   #sponsor {
     border-top: 1px solid var(--border);
@@ -258,6 +302,7 @@
 <header>
   <div class="logo">VIDEO<em>DESK</em></div>
   <div class="onair">ON AIR</div>
+  <div class="viewers"><em id="viewer-count">1</em>&nbsp;collegati</div>
 </header>
 
 <div class="body">
@@ -390,6 +435,46 @@ function buildMixer() {
   });
 }
 
+// ── CONTATORE SPETTATORI (BroadcastChannel) ──────────────────────────────
+const CHANNEL_NAME = 'regia-viewers';
+const myId = Math.random().toString(36).slice(2);
+const peers = new Set([myId]);
+const bc = new BroadcastChannel(CHANNEL_NAME);
+
+function updateCount() {
+  document.getElementById('viewer-count').textContent = peers.size;
+}
+
+// Annuncia presenza agli altri
+function announce() {
+  bc.postMessage({ type: 'hello', id: myId });
+}
+
+// Risponde ai nuovi arrivati con la propria presenza
+bc.onmessage = (e) => {
+  const { type, id } = e.data;
+  if (type === 'hello') {
+    peers.add(id);
+    updateCount();
+    bc.postMessage({ type: 'ack', id: myId, to: id });
+  } else if (type === 'ack') {
+    peers.add(id);
+    updateCount();
+  } else if (type === 'bye') {
+    peers.delete(id);
+    updateCount();
+  }
+};
+
+// Annuncia la propria uscita
+window.addEventListener('beforeunload', () => {
+  bc.postMessage({ type: 'bye', id: myId });
+  bc.close();
+});
+
+// Ping periodico per recuperare eventuali nuovi arrivati
+announce();
+setInterval(announce, 5000);
 buildMixer();
 DESTS.forEach(d => setIframe(d, state[d]));
 updateUI();
