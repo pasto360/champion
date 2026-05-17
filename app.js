@@ -19,12 +19,11 @@ function getTheme() {
 
 function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
-  var icon = theme === 'light' ? '☀️' : '🌙';
-  ['theme-toggle-btn','theme-toggle-btn-dash'].forEach(function(id){
-    var b = document.getElementById(id); if (b) b.textContent = icon;
+  var isDark = theme === 'dark';
+  // Update all theme toggle icon classes
+  document.querySelectorAll('.theme-toggle-btn i').forEach(function(i) {
+    i.className = isDark ? 'ti ti-moon' : 'ti ti-sun';
   });
-  // also update any .theme-toggle-btn not by id
-  document.querySelectorAll('.theme-toggle-btn').forEach(function(b){ b.textContent = icon; });
 }
 
 function toggleTheme() {
@@ -3702,9 +3701,12 @@ function updateNotifBadge() {
   var unread = notifications.filter(function(n){ return !n.read; }).length;
   var text = unread > 9 ? '9+' : String(unread);
   var show = unread > 0;
-  // Main notif count badge
-  var badge = document.getElementById('notif-count');
-  if (badge) { badge.textContent = text; badge.classList.toggle('show', show); }
+  // Home notif dot badge
+  var badge = document.getElementById('notif-badge');
+  if (badge) badge.style.display = show ? '' : 'none';
+  // Count badge (old)
+  var countBadge = document.getElementById('notif-count');
+  if (countBadge) { countBadge.textContent = text; countBadge.classList.toggle('show', show); }
   // All header badges across pages
   ['notif-badge-dash','notif-badge-champ'].forEach(function(id) {
     var b = document.getElementById(id);
