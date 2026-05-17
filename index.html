@@ -13,7 +13,7 @@
 <script>
   // Apply saved theme immediately to avoid flash
   (function(){
-    var t = localStorage.getItem('rankit_theme') || 'dark';
+    var t = localStorage.getItem('rankit_theme') || 'light';
     document.documentElement.setAttribute('data-theme', t);
   })();
 </script>
@@ -70,29 +70,44 @@
 ══════════════════════════════════════════════════ -->
 <div class="page" id="page-home">
   <header class="app-header">
-    <h1 style="font-size:20px;font-weight:900;letter-spacing:1px;">RANKIT</h1>
-    <div class="right">
-      <span id="home-username" style="font-size:13px;color:rgba(255,255,255,.7);"></span>
-      <button class="notif-btn" id="notif-btn" onclick="openNotifPanel()" title="Notifiche">
-        🔔<span class="notif-count" id="notif-count">0</span>
+    <div style="display:flex;align-items:center;">
+      <div style="display:flex;align-items:flex-end;gap:2px;margin-right:8px;">
+        <div style="width:7px;height:14px;border-radius:2px 2px 0 0;background:var(--gold2);"></div>
+        <div style="width:7px;height:19px;border-radius:2px 2px 0 0;background:var(--gold);"></div>
+        <div style="width:7px;height:10px;border-radius:2px 2px 0 0;background:#ead99a;"></div>
+      </div>
+      <span style="font-family:Georgia,serif;font-size:15px;letter-spacing:3px;color:var(--text);font-style:italic;">rank<em style="font-style:normal;color:var(--gold);">it</em></span>
+    </div>
+    <div class="right" style="gap:6px;">
+      <button onclick="openMyProfile()" class="user-chip" title="Il mio profilo">
+        <div class="user-chip-av" id="home-username-av">?</div>
+        <span class="user-chip-name" id="home-username"></span>
       </button>
-      <button class="friends-btn" onclick="openFriendsPanel()" title="Amici">
-        👥<span id="friends-badge" class="notif-badge">0</span>
+      <button class="hbtn-icon" id="notif-btn" onclick="openNotifPanel()" aria-label="Notifiche">
+        <i class="ti ti-bell" aria-hidden="true"></i>
+        <span class="notif-dot-badge" id="notif-badge" style="display:none;"></span>
       </button>
-<button class="theme-toggle-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Cambia tema">🌙</button>
+      <button class="hbtn-icon" onclick="openFriendsPanel()" aria-label="Amici">
+        <i class="ti ti-users" aria-hidden="true"></i>
+      </button>
+      <button class="hbtn-icon theme-toggle-btn" id="theme-toggle-btn" onclick="toggleTheme()" aria-label="Tema">
+        <i class="ti ti-sun" aria-hidden="true"></i>
+      </button>
+      <div class="nav-vsep"></div>
       <button class="hbtn" onclick="showPage('page-dashboard')">Dashboard</button>
       <button class="hbtn red" onclick="doLogout()">Esci</button>
     </div>
   </header>
   <div class="home-container">
-    <div class="welcome-bar">
-      <div>
-        <h2>Campionati disponibili</h2>
-        <p>Clicca su un campionato per accedere</p>
+    <div class="welcome-greet">Bentornato, <em id="home-username-greet"></em></div>
+    <div class="welcome-count" id="home-champ-count"></div>
+    <div class="sec-header" id="my-champs-title" style="display:none;">
+      <div class="sec-header-left">
+        <div class="sec-header-rule"></div>
+        <div><div class="sec-eyebrow">I miei</div><div class="sec-title">Campionati creati</div></div>
       </div>
-      <button class="btn-new" onclick="openNewChampModal()">+ Nuovo campionato</button>
+      <button class="sec-action" onclick="openNewChampModal()" id="btn-new-champ">+ Nuovo</button>
     </div>
-    <div class="sec-title" id="my-champs-title">Da me creati</div>
     <div class="champ-grid list-grid" id="my-champs-grid"></div>
 
     <div class="sec-title" id="my-favs-title" style="display:none;">⭐ Preferiti</div>
@@ -103,7 +118,10 @@
 
     <!-- SEARCH + FILTRI -->
     <div class="search-bar">
-      <input class="search-input" type="text" id="champ-search" placeholder="🔍  Cerca campionato per nome..." oninput="onSearchInput()"/>
+      <div class="search-inner-wrap">
+        <div class="search-icon-wrap"><i class="ti ti-search" style="font-size:15px;" aria-hidden="true"></i></div>
+        <input class="search-input" type="text" id="champ-search" placeholder="Cerca campionato..." oninput="onSearchInput()"/>
+      </div>
     </div>
     <!-- Filtri rapidi -->
     <div id="search-filters" style="display:flex;flex-wrap:wrap;gap:7px;margin:10px 0 4px;">
@@ -122,7 +140,12 @@
       <button class="filter-pill" data-filter-fmt="timetrial" onclick="setFilterFmt('timetrial',this)" style="font-size:11px;">Time Trial</button>
     </div>
 
-    <div class="sec-title">Tutti i campionati</div>
+    <div class="sec-header" style="border-top:1px solid var(--border);padding-top:1.5rem;">
+      <div class="sec-header-left">
+        <div class="sec-header-rule"></div>
+        <div><div class="sec-eyebrow">Esplora</div><div class="sec-title">Tutti i campionati</div></div>
+      </div>
+    </div>
     <div class="champ-grid list-grid" id="all-champs-grid"></div>
     <div class="pagination" id="pagination"></div>
   </div>
@@ -244,10 +267,24 @@
 <div class="page" id="page-champ">
   <!-- header -->
   <div class="champ-page-header">
-    <div style="display:flex;align-items:center;gap:8px;min-width:0;">
-      <button class="hbtn" id="btn-manage-champ" onclick="openManagePanel()" style="display:none;flex-shrink:0;">⚙</button>
-      <button class="hbtn" id="btn-fav-champ" onclick="toggleFav()" title="Preferiti" style="flex-shrink:0;">☆</button>
-      <h1 id="champ-hdr-title" style="font-size:14px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin:0;">Campionato</h1>
+    <div style="min-width:0;flex:1;">
+      <div class="champ-eyebrow" id="champ-hdr-eyebrow">
+        <span class="champ-eyebrow-line"></span>
+        <span>Campionato</span>
+      </div>
+      <div>
+        <h1 id="champ-hdr-title" style="font-family:Georgia,serif;font-size:20px;font-weight:400;display:inline;">Campionato</h1>
+        <span id="champ-hdr-season" class="champ-season-inline"></span>
+      </div>
+      <div class="champ-hdr-meta" id="champ-hdr-meta"></div>
+    </div>
+    <div class="champ-hdr-actions">
+      <button class="champ-hdr-btn" id="btn-fav-champ" onclick="toggleFav()" title="Preferiti">
+        <i class="ti ti-star" style="font-size:13px;" aria-hidden="true"></i>
+      </button>
+      <button class="champ-hdr-btn gold" id="btn-manage-champ" onclick="openManagePanel()" style="display:none;">
+        <i class="ti ti-settings" style="font-size:13px;" aria-hidden="true"></i> Gestisci
+      </button>
     </div>
     <div class="right">
       <button onclick="openMyProfile()" title="Il mio profilo" id="champ-profile-btn" style="display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:8px;padding:4px 10px;cursor:pointer;font-size:12px;flex-shrink:0;">
@@ -256,7 +293,7 @@
       </button>
       <button class="notif-btn" id="notif-btn-champ" onclick="openNotifPanel()" title="Notifiche" style="position:relative;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:8px;padding:4px 9px;font-size:13px;cursor:pointer;">🔔<span class="notif-badge" id="notif-badge-champ" style="display:none;"></span></button>
       <button class="friends-btn" id="friends-btn-champ" onclick="openFriendsPanel()" title="Amici">👥</button>
-      <button class="theme-toggle-btn" onclick="toggleTheme()" title="Tema">🌙</button>
+      <button class="theme-toggle-btn" onclick="toggleTheme()" title="Tema">☀️</button>
       <button class="hbtn" onclick="goHome()">Home</button>
       <button class="hbtn" onclick="showPage('page-dashboard')">Dashboard</button>
       <button class="hbtn red" onclick="doLogout()">Esci</button>
@@ -605,7 +642,7 @@
         <a href="legal.html#cookies" target="_blank">Cookie Policy</a>
       </div>
       <div class="footer-bottom">
-        <span class="footer-logo-txt">RANKIT</span>
+        <span class="footer-logo-txt" style="font-family:Georgia,serif;font-style:italic;letter-spacing:2px;">rank<em style="font-style:normal;color:var(--gold);">it</em></span>
         <span class="footer-copy">&copy; 2025 Rankit &mdash; Tutti i diritti riservati.</span>
       </div>
     </div>

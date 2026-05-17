@@ -14,12 +14,12 @@ async function getIpHash() {
 
 // ── DARK / LIGHT MODE ─────────────────────────────
 function getTheme() {
-  return localStorage.getItem('rankit_theme') || 'dark';
+  return localStorage.getItem('rankit_theme') || 'light';
 }
 
 function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
-  var icon = theme === 'dark' ? '🌙' : '☀️';
+  var icon = theme === 'light' ? '☀️' : '🌙';
   ['theme-toggle-btn','theme-toggle-btn-dash'].forEach(function(id){
     var b = document.getElementById(id); if (b) b.textContent = icon;
   });
@@ -263,6 +263,10 @@ async function showHome() {
   const {data:profile} = await sb.auth.getUser();
   const username = profile?.user?.user_metadata?.username || currentUser?.email?.split('@')[0] || 'Utente';
   document.getElementById('home-username').textContent = username;
+  var avEl = document.getElementById('home-username-av');
+  if (avEl) avEl.textContent = username.substring(0,2).toUpperCase();
+  var greetEl = document.getElementById('home-username-greet');
+  if (greetEl) greetEl.textContent = username;
   loadFriendships().then(cacheFriendProfiles);
   showPage('page-home');
   await loadChampionshipsHome();
@@ -508,7 +512,7 @@ function selectCategory(cat, btn) {
 function champCategoryIcon(c) {
   var cat = c.category || (c.data && c.data.category) || '';
   if (!cat || !CATEGORY_ICONS[cat]) return '';
-  return '<span style="margin-right:4px;font-size:13px;">' + CATEGORY_ICONS[cat] + '</span>';
+  return CATEGORY_ICONS[cat];
 }
 function champCard(c, inFavSection=false) {
   const mine = c.owner_id === currentUser.id;
@@ -541,10 +545,19 @@ function champCard(c, inFavSection=false) {
     : '';
 
   var cid = c.id;
+  var fmt = (c.data && c.data.format) || 'standard';
   return '<div class="champ-card ' + (mine?'champ-card-mine':'') + '" onclick="openChampionship(\'' + cid + '\')">'
-    + '<div class="champ-card-name">' + c.name + (favStarFav||favStar) + '</div>'
-    + '<div class="champ-card-meta">' + champCategoryIcon(c) + (c.season||'') + (mine?' · <strong>Mio</strong>':'') + '</div>'
+    + '<div class="champ-card-top">'
+    + '<span class="champ-card-cat">' + champCategoryIcon(c) + '</span>'
+    + (mine ? '<span class="champ-card-pos" style="font-family:Georgia,serif;font-size:11px;font-style:italic;color:var(--gold);">Admin</span>' : '')
+    + '</div>'
+    + '<div class="champ-card-name">' + c.name + '</div>'
+    + '<div class="champ-card-meta">' + (c.season||'') + (c.season?' · ':'') + fmtLabel(fmt) + '</div>'
     + badge
+    + '<div class="champ-card-footer">'
+    + '<span class="champ-card-status"></span>'
+    + '<button class="champ-card-open" onclick="event.stopPropagation();openChampionship(\'' + cid + '\')">Apri →</button>'
+    + '</div>'
     + '</div>';
 }
 // ── DASHBOARD ─────────────────────────────────────
