@@ -1088,11 +1088,11 @@ function scheduleSave() {
 function renderChamp() {
   updateShareBar();
   // Sync nav username in champ header
+  var me = currentUser?.user_metadata?.username || currentUser?.email?.split('@')[0] || '';
   var champNavU = document.getElementById('champ-nav-username');
-  if (champNavU) {
-    var me = currentUser?.user_metadata?.username || currentUser?.email?.split('@')[0] || '';
-    champNavU.textContent = me;
-  }
+  if (champNavU) champNavU.textContent = me;
+  var champAv = document.getElementById('champ-username-av');
+  if (champAv) champAv.textContent = me.substring(0,2).toUpperCase();
   var champTitle = (champData.championship||'Campionato') + (champData.season?' · '+champData.season:'');
   var createdDate = currentChamp.created_at ? new Date(currentChamp.created_at).toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'}) : '';
   var champId = currentChamp.id || '';
