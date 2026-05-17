@@ -14,7 +14,7 @@ async function getIpHash() {
 
 // ── DARK / LIGHT MODE ─────────────────────────────
 function getTheme() {
-  return localStorage.getItem('competeo_theme') || 'dark';
+  return localStorage.getItem('rankit_theme') || 'dark';
 }
 
 function applyTheme(theme) {
@@ -29,7 +29,7 @@ function applyTheme(theme) {
 
 function toggleTheme() {
   var next = getTheme() === 'dark' ? 'light' : 'dark';
-  localStorage.setItem('competeo_theme', next);
+  localStorage.setItem('rankit_theme', next);
   applyTheme(next);
 }
 
@@ -1899,7 +1899,7 @@ const ALL_BADGES = [
   // Partecipazione e social
   { key: 'welcome',         icon: '🎮', name: 'Benvenuto',             desc: 'Ti iscrivi al tuo primo campionato' },
   { key: 'explorer',        icon: '🌐', name: 'Esploratore',           desc: 'Partecipi a 5 campionati diversi' },
-  { key: 'friendly',        icon: '🤝', name: 'Amico del gruppo',      desc: 'Hai 5 amici su Competeo' },
+  { key: 'friendly',        icon: '🤝', name: 'Amico del gruppo',      desc: 'Hai 5 amici su Rankit' },
   { key: 'organizer',       icon: '📣', name: 'Organizzatore',         desc: 'Crei il tuo primo campionato' },
   { key: 'big_organizer',   icon: '🏟️', name: 'Grande organizzatore',  desc: 'Crei 5 campionati' },
   // Rarità speciale
@@ -2175,7 +2175,7 @@ async function exportChampPDF() {
 
   // Header
   content += '<div style="background:linear-gradient(90deg,#4c1d95,#7c3aed);border-radius:12px;padding:20px 24px;margin-bottom:24px;">';
-  content += '<div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.6);letter-spacing:1px;margin-bottom:4px;">COMPETEO</div>';
+  content += '<div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.6);letter-spacing:1px;margin-bottom:4px;">RANKIT</div>';
   content += '<div style="font-size:22px;font-weight:900;color:#fff;">' + name + (season ? ' · ' + season : '') + '</div>';
   content += '<div style="font-size:12px;color:rgba(255,255,255,.6);margin-top:4px;">' + (fmtLabels[fmt]||fmt) + ' · ' + new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'}) + '</div>';
   content += '</div>';
@@ -2231,12 +2231,12 @@ async function exportChampPDF() {
     }
   }
 
-  content += '<div style="text-align:center;margin-top:24px;font-size:11px;color:#ccc;">competeo.it</div>';
+  content += '<div style="text-align:center;margin-top:24px;font-size:11px;color:#ccc;">rankit.it</div>';
   content += '</div>';
 
   // Open print window
   var printWin = window.open('', '_blank', 'width=700,height=900');
-  printWin.document.write('<!DOCTYPE html><html><head><title>' + name + (season?' '+season:'') + ' — Competeo</title>');
+  printWin.document.write('<!DOCTYPE html><html><head><title>' + name + (season?' '+season:'') + ' — Rankit</title>');
   printWin.document.write('<style>@media print{body{margin:0;}button{display:none!important;}}</style>');
   printWin.document.write('</head><body>');
   printWin.document.write('<div style="text-align:right;padding:12px 32px;"><button onclick="window.print()" style="padding:8px 20px;background:#7c3aed;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer;font-weight:600;">🖨️ Stampa / Salva PDF</button></div>');
@@ -3595,12 +3595,12 @@ async function inviteCheckedFriends() {
 function updateShareBar() {
   if (!currentChamp) return;
   var url = window.location.origin + window.location.pathname + '?champ=' + currentChamp.id;
-  var text = 'Partecipa al campionato "' + (champData.championship||'Competeo') + '" su Competeo! ' + url;
+  var text = 'Partecipa al campionato "' + (champData.championship||'Rankit') + '" su Rankit! ' + url;
   var waBtn = document.getElementById('share-wa');
   var tgBtn = document.getElementById('share-tg');
   var igBtn = document.getElementById('share-ig');
   if (waBtn) waBtn.href = 'https://wa.me/?text=' + encodeURIComponent(text);
-  if (tgBtn) tgBtn.href = 'https://t.me/share/url?url=' + encodeURIComponent(url) + '&text=' + encodeURIComponent('Partecipa al campionato "' + (champData.championship||'Competeo') + '"!');
+  if (tgBtn) tgBtn.href = 'https://t.me/share/url?url=' + encodeURIComponent(url) + '&text=' + encodeURIComponent('Partecipa al campionato "' + (champData.championship||'Rankit') + '"!');
   // Instagram: copia link e apre instagram.com
   if (igBtn) igBtn.onclick = function(e) {
     e.preventDefault();
@@ -4228,7 +4228,7 @@ async function resetChampFull() {
 // Genera il canvas della classifica (riutilizzato da download e share)
 async function buildStandingsCanvas() {
   try {
-    var champName = champData.championship || 'Competeo';
+    var champName = champData.championship || 'Rankit';
     var season = champData.season || '';
 
     // Crea un div temporaneo con la classifica stilizzata per l'export
@@ -4238,7 +4238,7 @@ async function buildStandingsCanvas() {
     // Header
     var header = document.createElement('div');
     header.style.cssText = 'background:linear-gradient(90deg,#4c1d95,#7c3aed,#1e3a8a);border-radius:10px;padding:16px 20px;margin-bottom:16px;';
-    header.innerHTML = '<div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.6);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">COMPETEO</div>'
+    header.innerHTML = '<div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.6);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">RANKIT</div>'
       + '<div style="font-size:20px;font-weight:900;color:#fff;">' + champName + (season ? ' · ' + season : '') + '</div>'
       + '<div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:4px;">Classifica — ' + new Date().toLocaleDateString("it-IT", {day:"2-digit",month:"long",year:"numeric"}) + '</div>';
     wrap.appendChild(header);
@@ -4287,7 +4287,7 @@ async function buildStandingsCanvas() {
     // Footer
     var footer = document.createElement('div');
     footer.style.cssText = 'text-align:center;margin-top:14px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:.5px;';
-    footer.textContent = 'competeo.it';
+    footer.textContent = 'rankit.it';
     wrap.appendChild(footer);
 
     document.body.appendChild(wrap);
@@ -4336,7 +4336,7 @@ async function shareStandingsImage(target) {
         await navigator.share({
           files: [file],
           title: 'Classifica ' + champName,
-          text: 'Classifica del campionato ' + champName + ' su Competeo!'
+          text: 'Classifica del campionato ' + champName + ' su Rankit!'
         });
         return;
       } catch(e) {
@@ -4353,9 +4353,9 @@ async function shareStandingsImage(target) {
 
     setTimeout(function() {
       if (target === 'whatsapp') {
-        window.open('https://wa.me/?text=' + encodeURIComponent('Classifica ' + champName + ' su Competeo!'), '_blank');
+        window.open('https://wa.me/?text=' + encodeURIComponent('Classifica ' + champName + ' su Rankit!'), '_blank');
       } else if (target === 'telegram') {
-        window.open('https://t.me/share/url?url=' + encodeURIComponent('https://competeo.it') + '&text=' + encodeURIComponent('Classifica ' + champName), '_blank');
+        window.open('https://t.me/share/url?url=' + encodeURIComponent('https://rankit.it') + '&text=' + encodeURIComponent('Classifica ' + champName), '_blank');
       } else if (target === 'instagram') {
         window.open('https://www.instagram.com/direct/inbox/', '_blank');
       }

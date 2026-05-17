@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="shortcut icon" href="favicon.svg">
-<title>COMPETEO</title>
+<title>RANKIT</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -13,7 +13,7 @@
 <script>
   // Apply saved theme immediately to avoid flash
   (function(){
-    var t = localStorage.getItem('competeo_theme') || 'dark';
+    var t = localStorage.getItem('rankit_theme') || 'dark';
     document.documentElement.setAttribute('data-theme', t);
   })();
 </script>
@@ -45,7 +45,7 @@
 <div class="auth-modal-overlay" id="auth-modal-overlay" onclick="if(event.target===this)closeAuthModal()">
   <div class="auth-modal-box" id="auth-modal-box">
     <button onclick="closeAuthModal()" style="position:absolute;top:12px;right:16px;background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;line-height:1;">×</button>
-    <div class="auth-logo" style="font-size:22px;font-weight:900;letter-spacing:1px;color:#fff;text-align:center;margin-bottom:4px;">COMPETEO</div>
+    <div class="auth-logo" style="font-size:22px;font-weight:900;letter-spacing:1px;color:#fff;text-align:center;margin-bottom:4px;">RANKIT</div>
     <div class="auth-tabs">
       <button class="auth-tab active" id="tab-login-btn" onclick="switchAuthTab('login')">Accedi</button>
       <button class="auth-tab" id="tab-reg-btn" onclick="switchAuthTab('register')">Registrati</button>
@@ -70,7 +70,7 @@
 ══════════════════════════════════════════════════ -->
 <div class="page" id="page-home">
   <header class="app-header">
-    <h1 style="font-size:20px;font-weight:900;letter-spacing:1px;">COMPETEO</h1>
+    <h1 style="font-size:20px;font-weight:900;letter-spacing:1px;">RANKIT</h1>
     <div class="right">
       <span id="home-username" style="font-size:13px;color:rgba(255,255,255,.7);"></span>
       <button class="notif-btn" id="notif-btn" onclick="openNotifPanel()" title="Notifiche">
@@ -133,7 +133,7 @@
 ══════════════════════════════════════════════════ -->
 <div class="page" id="page-dashboard">
   <header class="app-header">
-    <h1 style="font-size:18px;font-weight:900;letter-spacing:1px;">COMPETEO</h1>
+    <h1 style="font-size:18px;font-weight:900;letter-spacing:1px;">RANKIT</h1>
     <div class="right">
       <button onclick="openMyProfile()" title="Il mio profilo" style="display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:8px;padding:5px 12px;cursor:pointer;">
         <span style="font-size:14px;">👤</span>
@@ -190,7 +190,7 @@
 ══════════════════════════════════════════════════ -->
 <div class="page" id="page-profile">
   <header class="app-header">
-    <h1 style="font-size:18px;font-weight:900;letter-spacing:1px;">COMPETEO</h1>
+    <h1 style="font-size:18px;font-weight:900;letter-spacing:1px;">RANKIT</h1>
     <div class="right">
       <span id="profile-nav-username" style="font-size:13px;color:rgba(255,255,255,.7);cursor:pointer;" onclick="openMyProfile()" title="Il mio profilo"></span>
       <button class="notif-btn" onclick="openNotifPanel()" title="Notifiche" style="position:relative;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:8px;padding:5px 10px;font-size:14px;cursor:pointer;">🔔</button>
@@ -600,13 +600,13 @@
         <a href="help.html" target="_blank">Come funziona</a>
         <a href="legal.html#privacy" target="_blank">Privacy Policy</a>
         <a href="legal.html#legal" target="_blank">Termini di Servizio</a>
-        <a href="mailto:info@competeo.it">Contatti</a>
+        <a href="mailto:info@rankit.it">Contatti</a>
         <a href="legal.html#legal" target="_blank">Note Legali</a>
         <a href="legal.html#cookies" target="_blank">Cookie Policy</a>
       </div>
       <div class="footer-bottom">
-        <span class="footer-logo-txt">COMPETEO</span>
-        <span class="footer-copy">&copy; 2025 Competeo &mdash; Tutti i diritti riservati.</span>
+        <span class="footer-logo-txt">RANKIT</span>
+        <span class="footer-copy">&copy; 2025 Rankit &mdash; Tutti i diritti riservati.</span>
       </div>
     </div>
   </div>
