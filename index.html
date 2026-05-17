@@ -157,15 +157,30 @@
 ══════════════════════════════════════════════════ -->
 <div class="page" id="page-dashboard">
   <header class="app-header">
-    <h1 style="font-size:18px;font-weight:900;letter-spacing:1px;">RANKIT</h1>
-    <div class="right">
-      <button onclick="openMyProfile()" title="Il mio profilo" style="display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:8px;padding:5px 12px;cursor:pointer;">
-        <span style="font-size:14px;">👤</span>
-        <span id="dash-username" style="font-size:13px;font-weight:500;"></span>
+    <div style="display:flex;align-items:center;">
+      <div style="display:flex;align-items:flex-end;gap:2px;margin-right:8px;">
+        <div style="width:7px;height:14px;border-radius:2px 2px 0 0;background:var(--gold2);"></div>
+        <div style="width:7px;height:19px;border-radius:2px 2px 0 0;background:var(--gold);"></div>
+        <div style="width:7px;height:10px;border-radius:2px 2px 0 0;background:#ead99a;"></div>
+      </div>
+      <span style="font-family:Georgia,serif;font-size:15px;letter-spacing:3px;color:var(--text);font-style:italic;">rank<em style="font-style:normal;color:var(--gold);">it</em></span>
+    </div>
+    <div class="right" style="gap:6px;">
+      <button onclick="openMyProfile()" class="user-chip" title="Il mio profilo">
+        <div class="user-chip-av" id="dash-username-av">?</div>
+        <span class="user-chip-name" id="dash-username"></span>
       </button>
-      <button class="notif-btn" id="notif-btn-dash" onclick="openNotifPanel()" title="Notifiche" style="position:relative;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:8px;padding:5px 10px;font-size:14px;cursor:pointer;">🔔<span class="notif-badge" id="notif-badge-dash" style="display:none;"></span></button>
-      <button class="friends-btn" id="friends-btn-dash" onclick="openFriendsPanel()" title="Amici">👥</button>
-      <button class="theme-toggle-btn" id="theme-toggle-btn-dash" onclick="toggleTheme()" title="Cambia tema">🌙</button>
+      <button class="hbtn-icon" id="notif-btn-dash" onclick="openNotifPanel()" aria-label="Notifiche">
+        <i class="ti ti-bell" aria-hidden="true"></i>
+        <span class="notif-dot-badge" id="notif-badge-dash" style="display:none;"></span>
+      </button>
+      <button class="hbtn-icon" onclick="openFriendsPanel()" aria-label="Amici">
+        <i class="ti ti-users" aria-hidden="true"></i>
+      </button>
+      <button class="hbtn-icon theme-toggle-btn" id="theme-toggle-btn-dash" onclick="toggleTheme()" aria-label="Tema">
+        <i class="ti ti-sun" aria-hidden="true"></i>
+      </button>
+      <div class="nav-vsep"></div>
       <button class="hbtn" onclick="goHome()">Home</button>
       <button class="hbtn red" onclick="doLogout()">Esci</button>
     </div>

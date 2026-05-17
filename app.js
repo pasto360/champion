@@ -3814,6 +3814,8 @@ async function loadDashboard() {
   var username = profile.data?.user?.user_metadata?.username || currentUser?.email?.split('@')[0] || 'Utente';
   var el = document.getElementById('dash-username');
   if (el) el.textContent = username;
+  var av = document.getElementById('dash-username-av');
+  if (av) av.textContent = username.substring(0,2).toUpperCase();
   // Update theme icon on dashboard
   applyTheme(getTheme());
 
