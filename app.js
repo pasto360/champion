@@ -1685,6 +1685,14 @@ function renderManageSettings(){
   html += '</div>';
   // TT settings injected below
   // ── Invita per username ──
+  // ── Export sezione ──
+  html += '<div style="margin-bottom:14px;padding-top:14px;border-top:1px solid var(--border);">';
+  html += '<p class="manage-hint" style="margin-bottom:10px;">Esporta stagione</p>';
+  html += '<div style="display:flex;gap:8px;flex-wrap:wrap;">';
+  html += '<button onclick="exportChampCSV()" style="display:flex;align-items:center;gap:6px;padding:8px 16px;background:var(--card);border:1px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;color:var(--text);cursor:pointer;">📊 Scarica CSV</button>';
+  html += '<button onclick="exportChampPDF()" style="display:flex;align-items:center;gap:6px;padding:8px 16px;background:var(--card);border:1px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;color:var(--text);cursor:pointer;">📄 Scarica PDF</button>';
+  html += '</div></div>';
+
   html += '<div class="invite-section">';
   html += '<h4>Invita per username</h4>';
   html += '<p style="font-size:12px;color:#aaa;margin-bottom:10px;">Cerca un utente per username o email e invitalo direttamente — non serve che sia tuo amico.</p>';
@@ -2088,6 +2096,156 @@ async function renderProfileBadges(username, isMe) {
     }).join('')
     + '</div>';
 }
+
+// ── EXPORT STAGIONE ───────────────────────────────
+
+function exportChampCSV() {
+  var name = champData.championship || 'campionato';
+  var season = champData.season || '';
+  var fmt = champData.format || 'standard';
+  var standings = getStandingsData();
+  var rows = [['Posizione','Giocatore','Punteggio','Dettaglio']];
+
+  standings.forEach(function(p, i) {
+    rows.push([i+1, p.name, p.score, p.sub||'']);
+  });
+
+  // Add race/match detail based on format
+  if (fmt === 'standard') {
+    rows.push([]);
+    rows.push(['=== GARE ===']);
+    rows.push(['#','Nome gara','1° posto','2° posto']);
+    (champData.races||[]).forEach(function(r, i) {
+      rows.push([
+        i+1,
+        r.name || ('Gara ' + (i+1)),
+        (r.result && r.result.first)  || '—',
+        (r.result && r.result.second) || '—'
+      ]);
+    });
+  } else if (fmt === 'roundrobin') {
+    rows.push([]);
+    rows.push(['=== SCONTRI DIRETTI ===']);
+    rows.push(['Giocatore 1','Giocatore 2','Vincitore','Risultato']);
+    (champData.rrMatches||[]).filter(function(m){ return m.winner || m.result; }).forEach(function(m) {
+      rows.push([m.p1||'—', m.p2||'—', m.winner||'Pareggio', m.result||'—']);
+    });
+  } else if (fmt === 'timetrial') {
+    var unit = champData.ttUnit || 'time';
+    rows.push([]);
+    rows.push(['=== PROVE ===']);
+    rows.push(['Giocatore','Miglior risultato','N° prove']);
+    var tt = calcTTStandings();
+    tt.forEach(function(p) {
+      rows.push([p.name, p.best !== null ? formatTTValue(p.best, unit) : '—', p.runs]);
+    });
+  }
+
+  // CSV string
+  var csv = rows.map(function(row) {
+    return row.map(function(cell) {
+      var s = String(cell === null || cell === undefined ? '' : cell);
+      if (s.indexOf(',') >= 0 || s.indexOf('"') >= 0 || s.indexOf('\n') >= 0) {
+        s = '"' + s.replace(/"/g, '""') + '"';
+      }
+      return s;
+    }).join(',');
+  }).join('\n');
+
+  // Add BOM for Excel UTF-8
+  var blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+  var link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = (name + (season ? '-' + season : '') + '.csv').replace(/[^a-zA-Z0-9\-_.]/g, '-');
+  link.click();
+  URL.revokeObjectURL(link.href);
+  showToast('CSV esportato!');
+}
+
+async function exportChampPDF() {
+  var name = champData.championship || 'Campionato';
+  var season = champData.season || '';
+  var fmt = champData.format || 'standard';
+  var standings = getStandingsData();
+  var fmtLabels = { standard:'Standard', roundrobin:'Round Robin', elimination:'Eliminazione', timetrial:'Time Trial' };
+  var medals = ['🥇','🥈','🥉'];
+
+  // Build HTML content for PDF
+  var content = '<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:32px;color:#1a1d2e;">';
+
+  // Header
+  content += '<div style="background:linear-gradient(90deg,#4c1d95,#7c3aed);border-radius:12px;padding:20px 24px;margin-bottom:24px;">';
+  content += '<div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.6);letter-spacing:1px;margin-bottom:4px;">COMPETEO</div>';
+  content += '<div style="font-size:22px;font-weight:900;color:#fff;">' + name + (season ? ' · ' + season : '') + '</div>';
+  content += '<div style="font-size:12px;color:rgba(255,255,255,.6);margin-top:4px;">' + (fmtLabels[fmt]||fmt) + ' · ' + new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'}) + '</div>';
+  content += '</div>';
+
+  // Classifica
+  content += '<div style="font-size:13px;font-weight:700;color:#5a6282;text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;">Classifica finale</div>';
+  content += '<table style="width:100%;border-collapse:collapse;margin-bottom:24px;">';
+  content += '<tr style="background:#f4f6fb;"><th style="padding:8px 12px;text-align:left;font-size:12px;color:#5a6282;">Pos</th><th style="padding:8px 12px;text-align:left;font-size:12px;color:#5a6282;">Giocatore</th><th style="padding:8px 12px;text-align:right;font-size:12px;color:#5a6282;">Punti</th><th style="padding:8px 12px;text-align:right;font-size:12px;color:#5a6282;">Dettaglio</th></tr>';
+  standings.forEach(function(p, i) {
+    var bg = i % 2 === 0 ? '#fff' : '#f9f9fc';
+    content += '<tr style="background:' + bg + ';border-bottom:1px solid #eee;">';
+    content += '<td style="padding:8px 12px;font-size:14px;">' + (medals[i] || (i+1)+'°') + '</td>';
+    content += '<td style="padding:8px 12px;font-size:14px;font-weight:600;">' + esc(p.name) + '</td>';
+    content += '<td style="padding:8px 12px;font-size:14px;text-align:right;font-weight:700;color:#7c3aed;">' + p.score + '</td>';
+    content += '<td style="padding:8px 12px;font-size:12px;text-align:right;color:#aaa;">' + (p.sub||'') + '</td>';
+    content += '</tr>';
+  });
+  content += '</table>';
+
+  // Dettaglio gare/sfide
+  if (fmt === 'standard') {
+    var races = (champData.races||[]).filter(function(r){ return r.result; });
+    if (races.length) {
+      content += '<div style="font-size:13px;font-weight:700;color:#5a6282;text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;">Risultati gare</div>';
+      content += '<table style="width:100%;border-collapse:collapse;margin-bottom:24px;">';
+      content += '<tr style="background:#f4f6fb;"><th style="padding:8px 12px;text-align:left;font-size:12px;color:#5a6282;">#</th><th style="padding:8px 12px;text-align:left;font-size:12px;color:#5a6282;">Gara</th><th style="padding:8px 12px;text-align:left;font-size:12px;color:#5a6282;">1°</th><th style="padding:8px 12px;text-align:left;font-size:12px;color:#5a6282;">2°</th></tr>';
+      races.forEach(function(r, i) {
+        var bg = i % 2 === 0 ? '#fff' : '#f9f9fc';
+        content += '<tr style="background:' + bg + ';border-bottom:1px solid #eee;">';
+        content += '<td style="padding:8px 12px;font-size:12px;color:#aaa;">' + (i+1) + '</td>';
+        content += '<td style="padding:8px 12px;font-size:13px;">' + esc(r.name||('Gara '+(i+1))) + '</td>';
+        content += '<td style="padding:8px 12px;font-size:13px;font-weight:600;">🥇 ' + esc(r.result.first||'—') + '</td>';
+        content += '<td style="padding:8px 12px;font-size:13px;">🥈 ' + esc(r.result.second||'—') + '</td>';
+        content += '</tr>';
+      });
+      content += '</table>';
+    }
+  } else if (fmt === 'roundrobin') {
+    var matches = (champData.rrMatches||[]).filter(function(m){ return m.winner||m.result; });
+    if (matches.length) {
+      content += '<div style="font-size:13px;font-weight:700;color:#5a6282;text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;">Scontri diretti</div>';
+      content += '<table style="width:100%;border-collapse:collapse;margin-bottom:24px;">';
+      content += '<tr style="background:#f4f6fb;"><th style="padding:8px 12px;text-align:left;font-size:12px;color:#5a6282;">Giocatore 1</th><th style="padding:8px 12px;text-align:left;font-size:12px;color:#5a6282;">Giocatore 2</th><th style="padding:8px 12px;text-align:left;font-size:12px;color:#5a6282;">Vincitore</th></tr>';
+      matches.forEach(function(m, i) {
+        var bg = i % 2 === 0 ? '#fff' : '#f9f9fc';
+        content += '<tr style="background:' + bg + ';border-bottom:1px solid #eee;">';
+        content += '<td style="padding:8px 12px;font-size:13px;' + (m.winner===m.p1?'font-weight:700;':'') + '">' + esc(m.p1||'—') + '</td>';
+        content += '<td style="padding:8px 12px;font-size:13px;' + (m.winner===m.p2?'font-weight:700;':'') + '">' + esc(m.p2||'—') + '</td>';
+        content += '<td style="padding:8px 12px;font-size:13px;font-weight:600;color:#7c3aed;">' + esc(m.winner||'Pareggio') + '</td>';
+        content += '</tr>';
+      });
+      content += '</table>';
+    }
+  }
+
+  content += '<div style="text-align:center;margin-top:24px;font-size:11px;color:#ccc;">competeo.it</div>';
+  content += '</div>';
+
+  // Open print window
+  var printWin = window.open('', '_blank', 'width=700,height=900');
+  printWin.document.write('<!DOCTYPE html><html><head><title>' + name + (season?' '+season:'') + ' — Competeo</title>');
+  printWin.document.write('<style>@media print{body{margin:0;}button{display:none!important;}}</style>');
+  printWin.document.write('</head><body>');
+  printWin.document.write('<div style="text-align:right;padding:12px 32px;"><button onclick="window.print()" style="padding:8px 20px;background:#7c3aed;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer;font-weight:600;">🖨️ Stampa / Salva PDF</button></div>');
+  printWin.document.write(content);
+  printWin.document.write('</body></html>');
+  printWin.document.close();
+  showToast('PDF pronto — usa Stampa > Salva come PDF');
+}
+
 async function saveAccountSettings() {
   const email = document.getElementById('acc-email').value.trim();
   const pass  = document.getElementById('acc-pass').value;
