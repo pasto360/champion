@@ -1070,3 +1070,5 @@ select:focus{border-color:var(--text);}
 [data-theme="dark"] .share-strip{background:rgba(255,255,255,.04);}
 [data-theme="dark"] .tab-bar{background:var(--bg);}
 [data-theme="dark"] .filter-pill.active{background:var(--accent);border-color:var(--accent);}
+
+#races-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;}

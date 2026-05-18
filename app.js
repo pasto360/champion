@@ -1325,49 +1325,38 @@ function closeReplay() {
 }
 
 function renderRaces() {
-  const races=champData.races||[];
-  document.getElementById('races-count').textContent=races.length+' circuiti';
-  document.getElementById('races-grid').innerHTML=races.map((r,idx)=>{
-    const ytId=getYtId(r.replayUrl);
-    const dateStr = r.date ? new Date(r.date).toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'}) : '';
-    if(r.replayUrl) console.log('[Replay] gara:',r.name,'url:',r.replayUrl,'ytId:',ytId);
-    const replayChip = ytId
-      ? `<span class="replay-chip" onclick="openReplay('${ytId}','${r.replayUrl}')">▶ Replay</span>`
-      : (r.replayUrl ? `<a class="replay-chip" href="${r.replayUrl}" target="_blank" rel="noopener">▶ Replay</a>` : '');
-
-    let top;
-    const bannerIcon = r.result ? '🏁' : '⏳';
-    const bannerText = r.result ? 'Disputata' : 'Da disputare';
-    const bannerClass = r.result ? 'done' : 'pending';
-    top = `<div class="race-banner ${bannerClass}">
-      <div class="race-banner-row1"><span class="race-banner-icon">${bannerIcon}</span>${replayChip}</div>
-      <span>${bannerText}</span>
-      ${dateStr ? `<span class="race-banner-date">${dateStr}</span>` : ''}
-    </div>`;
-
-    let res;
-    if(r.result){
-      res=`<div class="result-block">
-        <div class="result-row"><div style="display:flex;align-items:center;"><span class="pos-badge b1">1°</span><span class="res-driver">${r.result.first}</span></div><span class="res-pts gold">+1</span></div>
-        <div class="result-row"><div style="display:flex;align-items:center;"><span class="pos-badge b2">2°</span><span class="res-driver">${r.result.second}</span></div><span class="res-pts">0</span></div>
-      </div>`;
-    } else {
-      res=`<div class="result-block"><div class="no-result">Non disputata</div></div>`;
-    }
-    const canEdit=isOwner;
-    return `<div class="race-card">
-      ${top}
-      <div class="race-content">
-        <div class="race-num">#${idx+1}</div>
-        <div class="race-name">${r.name}</div>
-        ${res}
-      </div>
-      <div class="race-footer">
-        <button class="btn-race ${r.result?'done':''}" onclick="openResult('${r.id}')" ${!canEdit?'disabled title="Solo il proprietario può inserire risultati"':''}>
-          ${r.result?'✎ Modifica':'+ Risultato'}
-        </button>
-      </div>
-    </div>`;
+  var races = champData.races || [];
+  document.getElementById('races-count').textContent = races.length + ' gare';
+  document.getElementById('races-grid').innerHTML = races.map(function(r, idx) {
+    var dateStr = r.date ? new Date(r.date).toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'}) : '';
+    var done = !!r.result;
+    var statusDot = '<span style="width:7px;height:7px;border-radius:50%;background:' + (done ? '#276749' : 'var(--faint)') + ';display:inline-block;margin-right:6px;flex-shrink:0;"></span>';
+    var statusTxt = '<span style="font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:' + (done ? '#276749' : 'var(--muted)') + ';">' + (done ? 'Completata' : 'Da giocare') + '</span>';
+    var dateTxt = dateStr ? '<span style="font-size:11px;color:var(--muted);font-family:Georgia,serif;font-style:italic;">' + dateStr + '</span>' : '';
+    var resTxt = done
+      ? '<div style="display:flex;flex-direction:column;gap:4px;margin:.6rem 0;">'
+        + '<div style="display:flex;align-items:center;gap:8px;"><span style="font-size:14px;width:20px;text-align:center;">🥇</span><span style="font-size:13px;color:var(--text);">' + esc(r.result.first||'') + '</span><span style="font-size:11px;color:var(--gold);font-family:Georgia,serif;font-style:italic;margin-left:auto;">+3 pt</span></div>'
+        + '<div style="display:flex;align-items:center;gap:8px;"><span style="font-size:14px;width:20px;text-align:center;">🥈</span><span style="font-size:13px;color:var(--text);">' + esc(r.result.second||'') + '</span><span style="font-size:11px;color:var(--gold);font-family:Georgia,serif;font-style:italic;margin-left:auto;">+1 pt</span></div>'
+        + '</div>'
+      : '<div style="padding:.4rem 0 .6rem;"><span style="font-size:12px;color:var(--muted);font-style:italic;">Nessun risultato inserito</span></div>';
+    var ytId = getYtId(r.replayUrl);
+    var replayChip = ytId
+      ? '<span style="font-size:10px;padding:3px 8px;border:1px solid var(--border);border-radius:2px;color:var(--muted);cursor:pointer;" onclick="openReplay(\'' + ytId + '\',\'' + (r.replayUrl||'') + '\')">▶ Replay</span>'
+      : (r.replayUrl ? '<a style="font-size:10px;padding:3px 8px;border:1px solid var(--border);border-radius:2px;color:var(--muted);text-decoration:none;" href="' + r.replayUrl + '" target="_blank">▶ Replay</a>' : '');
+    var editBtn = isOwner
+      ? '<button onclick="openResult(\'' + r.id + '\')" style="font-size:10px;letter-spacing:.5px;padding:5px 12px;border:1px solid ' + (done ? 'var(--border2)' : 'var(--gold)') + ';border-radius:2px;background:' + (done ? 'transparent' : 'var(--gold-bg)') + ';color:' + (done ? 'var(--muted)' : 'var(--gold)') + ';cursor:pointer;"><i class=\'ti ti-pencil\' style=\'font-size:11px;margin-right:4px;\'></i>' + (done ? 'Modifica risultato' : 'Inserisci risultato') + '</button>'
+      : '';
+    var desc = r.description ? '<div style="font-size:12px;color:var(--muted);line-height:1.5;margin:.15rem 0 .5rem;">' + esc(r.description) + '</div>' : '';
+    return '<div style="background:var(--card);border:1px solid var(--border);border-radius:3px;padding:1rem;display:flex;flex-direction:column;">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;">'
+      + '<div style="display:flex;align-items:center;">' + statusDot + statusTxt + '</div>' + dateTxt
+      + '</div>'
+      + '<div style="font-family:Georgia,serif;font-size:16px;color:var(--text);margin-bottom:.1rem;">' + esc(r.name) + '</div>'
+      + desc + resTxt
+      + '<div style="display:flex;align-items:center;justify-content:space-between;padding-top:.6rem;border-top:1px solid var(--bg2);">'
+      + '<div>' + replayChip + '</div>' + editBtn
+      + '</div>'
+      + '</div>';
   }).join('');
 }
 
