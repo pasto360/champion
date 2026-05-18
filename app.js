@@ -1,4 +1,21 @@
 
+// ── GLOBAL ERROR HANDLER ─────────────────────────
+window.addEventListener('unhandledrejection', function(event) {
+  console.error('[Unhandled Promise]', event.reason);
+  // Prevent silent freezes
+  event.preventDefault();
+  // If it's a network error, show a gentle message
+  var msg = event.reason && event.reason.message;
+  if (msg && (msg.includes('fetch') || msg.includes('network') || msg.includes('Failed'))) {
+    showToast('Problema di connessione — riprova');
+  }
+});
+
+window.addEventListener('error', function(event) {
+  console.error('[Global Error]', event.message, event.filename, event.lineno);
+});
+
+
 // ── RATE LIMITING ─────────────────────────────────
 async function getIpHash() {
   try {
@@ -448,6 +465,7 @@ async function renderJoinedChamps() {
 }
 
 async function loadChampionshipsHome() {
+
   const [champsRes, membershipsRes, archivesRes] = await Promise.all([
     sb.from('championships').select('id,name,season,access,closed,owner_id,created_at,data').order('created_at',{ascending:false}),
     sb.from('champ_members').select('champ_id').eq('user_id', currentUser.id).in('role', ['owner','player']),
