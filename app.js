@@ -3923,7 +3923,7 @@ async function loadDashboard() {
 
   var champIds = (memberships||[]).map(function(m){ return m.champ_id; });
   if (!champIds.length) {
-    document.getElementById('dash-stats-row').innerHTML = '';
+    var _dsr=document.getElementById('dash-stats-row'); if(_dsr) _dsr.innerHTML='';
     document.getElementById('dash-champs-list').innerHTML =
       '<div style="color:var(--muted);font-size:13px;padding:20px 0;">Non sei ancora iscritto a nessun campionato.</div>';
     return;
@@ -3948,7 +3948,7 @@ async function loadDashboard() {
   // Stats rapide
   var ownedCount = champs.filter(function(c){ return c.owner_id === currentUser.id; }).length;
   var playingCount = champs.filter(function(c){ return c.owner_id !== currentUser.id; }).length;
-  // Stats row removed
+  // Stats row removed (element may not exist)
 
   // Render campionati attivi
   var html = '';
