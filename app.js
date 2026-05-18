@@ -425,6 +425,7 @@ function renderFavs() {
   title.style.display = favChamps.length ? 'block' : 'none';
   grid.style.display  = favChamps.length ? '' : 'none';
   grid.innerHTML = favChamps.map(c => champCard(c, true)).join('');
+  setTimeout(attachChampCardListeners, 0);
 }
 
 async function renderJoinedChamps() {
@@ -443,6 +444,7 @@ async function renderJoinedChamps() {
   title.style.display = joined.length ? 'block' : 'none';
   grid.style.display  = joined.length ? '' : 'none';
   grid.innerHTML = joined.map(c => champCard(c)).join('');
+  setTimeout(attachChampCardListeners, 0);
 }
 
 async function loadChampionshipsHome() {
@@ -470,6 +472,7 @@ async function loadChampionshipsHome() {
   document.getElementById('my-champs-title').style.display = mine.length?'block':'none';
   myGrid.style.display = mine.length?'':'none';
   myGrid.innerHTML = mine.map(c=>champCard(c)).join('');
+  setTimeout(attachChampCardListeners, 0);
 
   // Aggiorna il pulsante "Nuovo campionato" con contatore
   var btnNew = document.querySelector('.btn-new');
@@ -546,6 +549,8 @@ function renderAllChamps() {
     ? slice.map(champCard).join('')
     : `<div class="empty-state"><div class="big">🔍</div><p>${query?'Nessun campionato trovato':'Nessun campionato disponibile'}</p></div>`;
 
+  // Attach click listeners via delegation
+  setTimeout(attachChampCardListeners, 0);
   // Pagination
   const pag = document.getElementById('pagination');
   if (totalPages <= 1) { pag.innerHTML=''; return; }
@@ -621,7 +626,7 @@ function champCard(c, inFavSection=false) {
 
   var cid = c.id;
   var fmt = (c.data && c.data.format) || 'standard';
-  return '<div class="champ-card ' + (mine?'champ-card-mine':'') + '" onclick="openChampionship(\'' + cid + '\')">'
+  return '<div class="champ-card ' + (mine?'champ-card-mine':'') + '" " data-cid="' + cid + '" role="button" tabindex="0">'
     + '<div class="champ-card-top">'
     + '<span class="champ-card-cat">' + champCategoryIcon(c) + '</span>'
     + (mine ? '<span class="champ-card-pos" style="font-family:Georgia,serif;font-size:11px;font-style:italic;color:var(--gold);">Admin</span>' : '')
@@ -1851,96 +1856,115 @@ function goPage(n) { currentPage = n; renderAllChamps(); window.scrollTo(0,0); }
 var profileViewingUser = null; // username being viewed
 
 async function openProfile(username) {
+  if (!username) return;
   profileViewingUser = username;
   showPage('page-profile');
-
-  // Load profile data
-  var { data: prof } = await sb.from('profiles')
-    .select('username,bio,created_at')
-    .eq('username', username)
-    .maybeSingle();
 
   var myUsername = currentUser?.user_metadata?.username || currentUser?.email?.split('@')[0] || '';
   var isMe = (username === myUsername);
 
-  // Avatar initials
-  var initials = (username||'?').substring(0,2).toUpperCase();
-  document.getElementById('profile-avatar').textContent = initials;
-  document.getElementById('profile-username').textContent = username;
-  var myU = currentUser?.user_metadata?.username || currentUser?.email?.split('@')[0] || '';
+  // ── Sync nav ──
   var navU = document.getElementById('profile-nav-username');
-  if (navU) navU.textContent = myU;
+  if (navU) navU.textContent = myUsername;
   var navAv = document.getElementById('profile-nav-av');
-  if (navAv) navAv.textContent = myU.substring(0,2).toUpperCase();
+  if (navAv) navAv.textContent = myUsername.substring(0,2).toUpperCase();
 
-  var joined = prof && prof.created_at
-    ? 'Membro dal ' + new Date(prof.created_at).toLocaleDateString('it-IT',{month:'long',year:'numeric'})
-    : '';
-  document.getElementById('profile-joined').textContent = joined;
+  // ── Avatar + username ──
+  var initials = username.substring(0,2).toUpperCase();
+  var avEl = document.getElementById('profile-avatar');
+  if (avEl) avEl.textContent = initials;
+  var unEl = document.getElementById('profile-username');
+  if (unEl) unEl.textContent = username;
 
-  // Bio
-  var bio = (prof && prof.bio) || '';
+  // ── Bio ──
   var bioView = document.getElementById('profile-bio-view');
   var bioEditBtn = document.getElementById('profile-bio-edit-btn');
-  bioView.textContent = bio || (isMe ? 'Aggiungi una bio...' : 'Nessuna bio.');
-  bioView.style.color = bio ? 'var(--text)' : 'var(--faint)';
-  document.getElementById('profile-bio-edit').style.display = 'none';
-  bioView.style.display = '';
-  bioEditBtn.style.display = isMe ? '' : 'none';
+  var bioEdit = document.getElementById('profile-bio-edit');
 
-  // Stats: campionati giocati — cerca prima per user_id tramite profiles
-  var { data: profUser } = await sb.from('profiles')
-    .select('id').eq('username', username).maybeSingle();
-  var profileUserId = profUser ? profUser.id : null;
-
-  var memberships = [];
-  if (profileUserId) {
-    // Cerca per user_id (più affidabile)
-    var { data: mByUid, error: memErr } = await sb.from('champ_members')
-      .select('champ_id,role,championships(id,name,season,data,owner_id)')
-      .eq('user_id', profileUserId)
-      .in('role', ['owner','player']);
-  if (memErr) console.warn('memberships error:', memErr.message);
-    memberships = mByUid || [];
-  }
-  if (!memberships.length) {
-    // Fallback: cerca per username
-    var { data: mByName } = await sb.from('champ_members')
-      .select('champ_id,role,championships(id,name,season,data)')
+  // ── Load profile from DB ──
+  try {
+    var { data: prof } = await sb.from('profiles')
+      .select('username,bio,created_at')
       .eq('username', username)
-      .in('role', ['owner','player']);
-    memberships = mByName || [];
+      .maybeSingle();
+
+    var joined = prof && prof.created_at
+      ? 'Membro dal ' + new Date(prof.created_at).toLocaleDateString('it-IT',{month:'long',year:'numeric'})
+      : '';
+    var joinEl = document.getElementById('profile-joined');
+    if (joinEl) joinEl.textContent = joined;
+
+    var bio = (prof && prof.bio) || '';
+    if (bioView) {
+      bioView.textContent = bio || (isMe ? 'Aggiungi una bio...' : 'Nessuna bio.');
+      bioView.style.color = bio ? 'var(--text)' : 'var(--faint)';
+      bioView.style.display = '';
+    }
+    if (bioEdit) bioEdit.style.display = 'none';
+    if (bioEditBtn) bioEditBtn.style.display = isMe ? '' : 'none';
+  } catch(e) {
+    console.warn('profile load error:', e);
   }
 
-  var total = memberships.length;
-  var owned = memberships.filter(function(m){ return m.role === 'owner'; }).length;
-  var playing = total - owned;
+  // ── Load memberships ──
+  try {
+    var memberships = [];
 
-  document.getElementById('profile-stats-row').innerHTML =
-    '<div style="background:var(--card);border:1px solid var(--border);border-radius:3px;padding:14px 12px;text-align:center;"><div style="font-family:Georgia,serif;font-size:24px;font-style:italic;color:var(--gold);">' + total + '</div><div style="font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin-top:3px;">Campionati</div></div>' +
-    '<div style="background:var(--card);border:1px solid var(--border);border-radius:3px;padding:14px 12px;text-align:center;"><div style="font-family:Georgia,serif;font-size:24px;font-style:italic;color:var(--gold);">' + owned + '</div><div style="font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin-top:3px;">Creati</div></div>' +
-    '<div style="background:var(--card);border:1px solid var(--border);border-radius:3px;padding:14px 12px;text-align:center;"><div style="font-family:Georgia,serif;font-size:24px;font-style:italic;color:var(--gold);">' + playing + '</div><div style="font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin-top:3px;">Partecipazione</div></div>';
+    // Try by current user id if viewing own profile
+    if (isMe && currentUser) {
+      var { data: mByUid } = await sb.from('champ_members')
+        .select('champ_id,role,championships(id,name,season,data,owner_id)')
+        .eq('user_id', currentUser.id)
+        .in('role', ['owner','player']);
+      memberships = mByUid || [];
+    }
 
-  // Champs list
-  var list = document.getElementById('profile-champs-list');
-  if (!memberships.length) {
-    list.innerHTML = '<div style="color:var(--muted);font-size:13px;">Nessun campionato.</div>';
-    return;
+    // Fallback: search by username
+    if (!memberships.length) {
+      var { data: mByName } = await sb.from('champ_members')
+        .select('champ_id,role,championships(id,name,season,data,owner_id)')
+        .eq('username', username)
+        .in('role', ['owner','player']);
+      memberships = mByName || [];
+    }
+
+    var total   = memberships.length;
+    var owned   = memberships.filter(function(m){ return m.role === 'owner'; }).length;
+    var playing = total - owned;
+
+    var statsEl = document.getElementById('profile-stats-row');
+    if (statsEl) {
+      statsEl.innerHTML =
+        '<div style="background:var(--card);border:1px solid var(--border);border-radius:3px;padding:14px 12px;text-align:center;"><div style="font-family:Georgia,serif;font-size:24px;font-style:italic;color:var(--gold);">' + total + '</div><div style="font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin-top:3px;">Campionati</div></div>' +
+        '<div style="background:var(--card);border:1px solid var(--border);border-radius:3px;padding:14px 12px;text-align:center;"><div style="font-family:Georgia,serif;font-size:24px;font-style:italic;color:var(--gold);">' + owned + '</div><div style="font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin-top:3px;">Creati</div></div>' +
+        '<div style="background:var(--card);border:1px solid var(--border);border-radius:3px;padding:14px 12px;text-align:center;"><div style="font-family:Georgia,serif;font-size:24px;font-style:italic;color:var(--gold);">' + playing + '</div><div style="font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin-top:3px;">Partecipazione</div></div>';
+    }
+
+    // ── Champs list ──
+    var list = document.getElementById('profile-champs-list');
+    if (list) {
+      if (!memberships.length) {
+        list.innerHTML = '<div style="color:var(--muted);font-size:13px;">Nessun campionato.</div>';
+      } else {
+        list.innerHTML = memberships.map(function(m) {
+          var c = m.championships;
+          if (!c) return '';
+          var badge = m.role === 'owner' ? '<span class="profile-champ-badge">👑 Owner</span>' : '';
+          return '<div class="profile-champ-row">'
+            + '<div class="profile-champ-name">' + esc(c.name) + (c.season ? ' <span style="font-size:11px;color:var(--muted);">' + esc(c.season) + '</span>' : '') + '</div>'
+            + badge + '</div>';
+        }).join('');
+      }
+    }
+
+    // ── Badges ──
+    await renderProfileBadges(username, isMe);
+
+  } catch(e) {
+    console.warn('profile memberships error:', e);
   }
-  list.innerHTML = memberships.map(function(m) {
-    var c = m.championships;
-    if (!c) return '';
-    var fmt = (c.data||{}).format || 'standard';
-    var badge = m.role === 'owner' ? '<span class="profile-champ-badge">👑 Owner</span>' : '';
-    return '<div class="profile-champ-row">'
-      + '<div class="profile-champ-name">' + esc(c.name) + (c.season?' <span style="font-size:11px;color:var(--muted);">'+esc(c.season)+'</span>':'') + '</div>'
-      + badge
-      + '</div>';
-  }).join('');
-
-  // Render badges
-  await renderProfileBadges(username, isMe);
 }
+
 
 async function openMyProfile() {
   var me = currentUser?.user_metadata?.username || currentUser?.email?.split('@')[0] || '';
@@ -3901,6 +3925,19 @@ function esc(s) {
 // ══════════════════════════════════════════════════
 // ── DASHBOARD AVANZATA ────────────────────────────
 // ══════════════════════════════════════════════════
+
+function attachChampCardListeners() {
+  document.querySelectorAll('[data-cid]').forEach(function(el) {
+    if (el._champListenerAttached) return; // avoid duplicates
+    el._champListenerAttached = true;
+    el.style.cursor = 'pointer';
+    el.addEventListener('click', function(e) {
+      if (e.target.closest('button')) return; // don't intercept button clicks inside card
+      var cid = el.getAttribute('data-cid');
+      if (cid) openChampionship(cid);
+    });
+  });
+}
 function dashStat(num, lbl) {
   return '<div class="dash-stat-card"><div class="dash-stat-num">' + num + '</div><div class="dash-stat-lbl">' + lbl + '</div></div>';
 }
