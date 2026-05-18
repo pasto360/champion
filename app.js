@@ -293,6 +293,42 @@ function setAuthLoading(on) {
 }
 
 // ── HOME ──────────────────────────────────────────
+
+async function showInviteResponse(champId, notifId, notifBody) {
+  var msg = notifBody || 'Vuoi partecipare a questo campionato?';
+  // Simple confirm dialog
+  if (confirm(msg + '\n\nAccetti l\'invito?')) {
+    await acceptInvite(champId, notifId);
+  } else {
+    await declineInvite(champId, notifId);
+  }
+}
+
+async function acceptInvite(champId, notifId) {
+  // Upgrade role from 'invited' to 'player'
+  var { error } = await sb.from('champ_members')
+    .update({ role: 'player' })
+    .eq('champ_id', champId).eq('user_id', currentUser.id).eq('role', 'invited');
+  if (error) { showToast('Errore: ' + error.message); return; }
+  // Mark notification as read
+  await sb.from('notifications').update({ read: true }).eq('id', notifId);
+  showToast('Iscrizione confermata!');
+  checkBadges('join');
+  await loadChampionshipsHome();
+  closeNotifPanel();
+  openChampionship(champId);
+}
+
+async function declineInvite(champId, notifId) {
+  // Remove the 'invited' record
+  await sb.from('champ_members')
+    .delete().eq('champ_id', champId).eq('user_id', currentUser.id).eq('role', 'invited');
+  // Mark notification as read
+  await sb.from('notifications').update({ read: true }).eq('id', notifId);
+  showToast('Invito rifiutato');
+  closeNotifPanel();
+}
+
 async function showHome() {
   applyTheme(getTheme());
   startOnlineTracking();
@@ -704,7 +740,7 @@ const sessionAccess = new Map(); // champId -> true
 async function openChampionship(id) {
   if (!id) { showToast('ID campionato non valido'); return; }
   if (!currentUser) { showToast('Sessione scaduta, effettua di nuovo il login'); showPage('page-auth'); return; }
-
+  try {
   const {data:champ, error} = await sb.from('championships').select('*').eq('id', id).single();
   if (error || !champ) { showToast('Campionato non trovato'); return; }
 
@@ -739,6 +775,10 @@ async function openChampionship(id) {
   }
   // Campionato PUBBLICO o membro/owner: accesso diretto
   await loadChampPage(champ);
+  } catch(e) {
+    console.error('[openChampionship error]', e);
+    showToast('Errore apertura campionato: ' + e.message);
+  }
 }
 
 async function submitAccess() {
@@ -782,11 +822,16 @@ async function loadChampPage(champ) {
   else switchTab('races');
   repositionChart();
 
-  renderChamp();
-  updateFavBtn();
-  setSyncStatus('ok','Online');
   showPage('page-champ');
+  updateFavBtn();
+  setSyncStatus('ok', 'Online');
   if (isOwner) startPendingPoll();
+  try {
+    renderChamp();
+  } catch(e) {
+    console.error('[renderChamp error]', e);
+    showToast('Errore nel caricamento del campionato');
+  }
 }
 
 async function loadChampMembers() {
@@ -3358,16 +3403,15 @@ async function inviteUser(inputEl, resEl) {
     res.textContent = (target.username||target.email) + ' — ' + roleLabel;
     return;
   }
-  // Insert directly as 'player'
-  const { error } = await sb.from('champ_members').insert({ champ_id: currentChamp.id, user_id: target.id, username: target.username||target.email, role: 'player' });
+  // Insert as 'invited' — l'utente deve accettare
+  const { error } = await sb.from('champ_members').insert({ champ_id: currentChamp.id, user_id: target.id, username: target.username||target.email, role: 'invited' });
   if (error) { res.textContent = 'Errore: ' + error.message; return; }
-  // Notifica all'utente invitato
+  // Notifica con possibilità di accettare/rifiutare
   var champName = champData.championship || currentChamp.name || 'un campionato';
-  await createNotif(target.id, 'champ_invite', 'Sei stato invitato!',
-    'Sei stato aggiunto al campionato "' + champName + '"', currentChamp.id);
+  await createNotif(target.id, 'champ_invite', 'Invito a un campionato',
+    'Sei stato invitato a partecipare a "' + champName + '"', currentChamp.id);
   await loadChampMembers();
-  await scheduleSaveImmediate();
-  res.innerHTML = '<span style="color:#2dc653;font-weight:600;">✓ ' + (target.username||target.email) + ' aggiunto al campionato!</span>';
+  res.innerHTML = '<span style="color:var(--green);font-weight:600;">✓ Invito inviato a ' + (target.username||target.email) + '</span>';
   document.getElementById('invite-input').value = '';
   renderChamp();
 }
@@ -3622,12 +3666,12 @@ async function inviteCheckedFriends() {
     var username = el.getAttribute('data-username') || uid;
     var { data: existing } = await sb.from('champ_members').select('id').eq('champ_id', currentChamp.id).eq('user_id', uid).maybeSingle();
     if (existing) continue;
-    var { error: insErr } = await sb.from('champ_members').insert({ champ_id: currentChamp.id, user_id: uid, username: username, role: 'player' });
+    var { error: insErr } = await sb.from('champ_members').insert({ champ_id: currentChamp.id, user_id: uid, username: username, role: 'invited' });
     if (insErr) { errors.push(username); continue; }
-    // Notifica all'amico invitato
+    // Notifica — l'amico deve accettare
     var cn = champData.championship || currentChamp.name || 'un campionato';
-    await createNotif(uid, 'champ_invite', 'Sei stato invitato!',
-      'Sei stato aggiunto al campionato "' + cn + '"', currentChamp.id);
+    await createNotif(uid, 'champ_invite', 'Invito a un campionato',
+      'Sei stato invitato a partecipare a "' + cn + '"', currentChamp.id);
   }
   await loadChampMembers();
   await scheduleSaveImmediate();
@@ -3778,7 +3822,26 @@ function renderNotifList() {
       + '</div></div>';
     if (n.champ_id) {
       item.style.cursor = 'pointer';
-      item.addEventListener('click', function() { closeNotifPanel(); openChampionship(n.champ_id); });
+      (function(notif) {
+        if (notif.type === 'champ_invite') {
+          // Show accept/decline buttons inline
+          var actionsDiv = document.createElement('div');
+          actionsDiv.style.cssText = 'display:flex;gap:8px;margin-top:8px;';
+          var acceptBtn = document.createElement('button');
+          acceptBtn.textContent = 'Accetta';
+          acceptBtn.style.cssText = 'padding:4px 14px;background:var(--green);color:#fff;border:none;border-radius:2px;font-size:11px;letter-spacing:.4px;cursor:pointer;';
+          var declineBtn = document.createElement('button');
+          declineBtn.textContent = 'Rifiuta';
+          declineBtn.style.cssText = 'padding:4px 14px;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:2px;font-size:11px;letter-spacing:.4px;cursor:pointer;';
+          acceptBtn.addEventListener('click', function(e) { e.stopPropagation(); acceptInvite(notif.champ_id, notif.id); });
+          declineBtn.addEventListener('click', function(e) { e.stopPropagation(); declineInvite(notif.champ_id, notif.id); });
+          actionsDiv.appendChild(acceptBtn);
+          actionsDiv.appendChild(declineBtn);
+          item.appendChild(actionsDiv);
+        } else {
+          item.addEventListener('click', function() { closeNotifPanel(); openChampionship(notif.champ_id); });
+        }
+      })(n);
     }
     item.addEventListener('mouseenter', function() { markNotifRead(n.id); });
     container.appendChild(item);
