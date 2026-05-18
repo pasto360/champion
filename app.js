@@ -4073,13 +4073,15 @@ async function renderDashArchive(archivedIds, memberships, ownerArchivedIds) {
 async function leaveChamp(champId, champName) {
   if (!confirm('Vuoi rimuoverti da "' + champName + '"?\nI tuoi risultati verranno rimossi dal campionato.')) return;
 
+  try {
   // Load full champ data
   var { data: champRow } = await sb.from('championships')
     .select('id,data').eq('id', champId).single();
   if (!champRow) { showToast('Campionato non trovato'); return; }
 
   var d = champRow.data || {};
-  var me = document.getElementById('dash-username')?.textContent || '';
+  // Get username reliably from currentUser, not from DOM
+  var me = currentUser?.user_metadata?.username || currentUser?.email?.split('@')[0] || '';
   var fmt = d.format || 'standard';
 
   // ── Remove from players list ──
@@ -4144,8 +4146,12 @@ async function leaveChamp(champId, champName) {
     .delete().eq('champ_id', champId).eq('user_id', currentUser.id);
 
   showToast('Hai lasciato il campionato');
-  loadDashboard();
-  loadChampionshipsHome();
+  try { await loadDashboard(); } catch(e) { console.error('loadDashboard error', e); }
+  try { await loadChampionshipsHome(); } catch(e) { console.error('loadHome error', e); }
+  } catch(e) {
+    console.error('[leaveChamp error]', e);
+    showToast('Errore durante l\'uscita: ' + e.message);
+  }
 }
 
 
