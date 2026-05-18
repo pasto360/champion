@@ -5,153 +5,64 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Note Legali & Privacy — RANKIT</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0;}
 :root{
-  --bg:#080b14;--card:#0f1628;--border:#1e2a4a;--border2:#2d3f6e;
-  --text:#f0f2ff;--muted:#7b8ab8;--faint:#3a4468;
-  --violet:#7c3aed;--violet2:#4c1d95;--navy:#1e3a8a;
-  --accent:#818cf8;--green:#10b981;
+  --bg:#f8f6f0;--card:#fff;--border:#e2ddd6;--border2:#cbc6bc;
+  --text:#0d0d0d;--text2:#3a3a3a;--muted:#888882;--faint:#c8c4bb;
+  --gold:#c9a84c;--gold2:#e8c96e;--gold-bg:#faf6eb;
 }
+*{box-sizing:border-box;margin:0;padding:0;}
 html{scroll-behavior:smooth;}
 body{
-  font-family:'Segoe UI',system-ui,sans-serif;
-  background:var(--bg);color:var(--text);
-  min-height:100vh;line-height:1.7;
+  font-family:'Segoe UI',Arial,sans-serif;
+  background:#f8f6f0;
+  background-image:
+    radial-gradient(ellipse 80% 60% at 5% 0%, rgba(201,168,76,.10) 0%, transparent 55%),
+    linear-gradient(150deg, #fdf9f2 0%, #ede8dd 55%, #f5f2eb 100%);
+  background-attachment:fixed;
+  color:var(--text);line-height:1.75;font-size:15px;
 }
-
-/* ── HEADER ── */
 .site-header{
-  background:linear-gradient(90deg,var(--violet2) 0%,var(--violet) 50%,var(--navy) 100%);
-  padding:0 24px;height:54px;
+  background:rgba(255,255,255,.95);backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--border);
+  padding:0 2rem;height:48px;
   display:flex;align-items:center;justify-content:space-between;
   position:sticky;top:0;z-index:100;
 }
-.logo{
-  font-size:17px;font-weight:900;letter-spacing:1.5px;color:#fff;
-  text-decoration:none;
-}
-.back-btn{
-  font-size:13px;color:rgba(255,255,255,.8);text-decoration:none;
-  display:flex;align-items:center;gap:5px;
-  transition:color .15s;
-}
-.back-btn:hover{color:#fff;}
-
-/* ── HERO ── */
-.hero{
-  background:linear-gradient(135deg,var(--violet2),var(--navy));
-  padding:48px 24px 40px;text-align:center;
-  border-bottom:1px solid var(--border);
-}
-.hero h1{font-size:28px;font-weight:800;letter-spacing:.5px;margin-bottom:8px;}
-.hero p{font-size:14px;color:rgba(255,255,255,.65);max-width:480px;margin:0 auto;}
-.last-update{
-  display:inline-block;margin-top:14px;
-  padding:4px 12px;border-radius:20px;
-  background:rgba(255,255,255,.1);font-size:11px;
-  color:rgba(255,255,255,.6);letter-spacing:.3px;
-}
-
-/* ── NAV PILLS ── */
-.nav-pills{
-  display:flex;justify-content:center;gap:8px;
-  padding:20px 24px;flex-wrap:wrap;
-  background:var(--card);border-bottom:1px solid var(--border);
-  position:sticky;top:54px;z-index:90;
-}
-.nav-pill{
-  padding:7px 18px;border-radius:50px;font-size:13px;font-weight:600;
-  text-decoration:none;color:var(--muted);
-  border:1px solid var(--border);background:transparent;
-  transition:all .2s;cursor:pointer;
-}
-.nav-pill:hover,.nav-pill.active{
-  background:var(--violet);color:#fff;border-color:var(--violet);
-}
-
-/* ── LAYOUT ── */
-.container{max-width:780px;margin:0 auto;padding:40px 24px 60px;}
-
-/* ── SECTION ── */
-.section{margin-bottom:48px;scroll-margin-top:120px;}
-.section-badge{
-  display:inline-flex;align-items:center;gap:6px;
-  padding:4px 12px;border-radius:6px;font-size:11px;font-weight:700;
-  text-transform:uppercase;letter-spacing:.8px;margin-bottom:14px;
-  background:rgba(124,58,237,.2);color:var(--accent);border:1px solid rgba(124,58,237,.3);
-}
+.logo{font-family:Georgia,serif;font-size:15px;letter-spacing:3px;color:var(--text);font-style:italic;text-decoration:none;}
+.logo em{font-style:normal;color:var(--gold);}
+.container{max-width:760px;margin:0 auto;padding:48px 24px 80px;}
+.section{margin-bottom:56px;scroll-margin-top:60px;}
 .section h2{
-  font-size:22px;font-weight:800;margin-bottom:20px;
-  padding-bottom:12px;border-bottom:1px solid var(--border);
+  font-family:Georgia,serif;font-size:22px;font-weight:400;color:var(--text);
+  padding-bottom:12px;border-bottom:1px solid var(--border);margin-bottom:20px;
 }
-.section h3{font-size:15px;font-weight:700;margin:24px 0 8px;color:var(--accent);}
-
-/* ── PROSE ── */
-p{font-size:14px;color:rgba(240,242,255,.8);margin-bottom:12px;}
-ul,ol{padding-left:20px;margin-bottom:12px;}
-li{font-size:14px;color:rgba(240,242,255,.8);margin-bottom:6px;}
-strong{color:var(--text);font-weight:600;}
-a{color:var(--accent);text-decoration:none;}
-a:hover{text-decoration:underline;}
-
-/* ── INFO CARD ── */
-.info-card{
-  background:var(--card);border:1px solid var(--border);
-  border-radius:12px;padding:16px 18px;margin-bottom:16px;
+.section h3{font-size:15px;font-weight:600;color:var(--text2);margin:24px 0 10px;}
+p{color:var(--text2);margin-bottom:14px;}
+ul{padding-left:20px;color:var(--text2);}
+ul li{margin-bottom:6px;}
+strong{color:var(--text);}
+.toc{
+  background:var(--card);border:1px solid var(--border);border-radius:3px;
+  padding:20px 24px;margin-bottom:48px;
 }
-.info-card h4{font-size:13px;font-weight:700;color:var(--accent);margin-bottom:8px;}
-.info-card p{margin:0;font-size:13px;}
-
-/* ── TABLE ── */
-.data-table{width:100%;border-collapse:collapse;margin-bottom:16px;font-size:13px;}
-.data-table th{
-  text-align:left;padding:10px 12px;
-  background:var(--faint);color:var(--muted);
-  font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;
-}
-.data-table td{padding:10px 12px;border-bottom:1px solid var(--border);}
-.data-table tr:last-child td{border-bottom:none;}
-.data-table tr:hover td{background:rgba(255,255,255,.02);}
-
-/* ── CONTACT BOX ── */
-.contact-box{
-  background:linear-gradient(135deg,rgba(124,58,237,.15),rgba(30,58,138,.15));
-  border:1px solid rgba(124,58,237,.3);border-radius:14px;
-  padding:20px 22px;margin-top:20px;
-  display:flex;align-items:center;gap:14px;
-}
-.contact-icon{font-size:28px;flex-shrink:0;}
-.contact-box h4{font-size:14px;font-weight:700;margin-bottom:4px;}
-.contact-box p{font-size:13px;color:var(--muted);margin:0;}
-
-/* ── COOKIE TABLE ── */
-.cookie-type{
-  display:inline-block;padding:2px 8px;border-radius:4px;
-  font-size:11px;font-weight:700;
-}
-.cookie-type.essential{background:rgba(16,185,129,.2);color:var(--green);}
-.cookie-type.analytics{background:rgba(129,140,248,.2);color:var(--accent);}
-.cookie-type.marketing{background:rgba(245,158,11,.2);color:#f59e0b;}
-
-/* ── FOOTER ── */
-.page-footer{
-  text-align:center;padding:24px;
-  border-top:1px solid var(--border);
-  font-size:12px;color:var(--faint);
-}
-
-/* ── SCROLL SPY ── */
-@media(max-width:600px){
-  .hero h1{font-size:22px;}
-  .container{padding:28px 16px 48px;}
-}
+.toc-title{font-family:Georgia,serif;font-size:13px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;}
+.toc a{display:block;font-size:13px;color:var(--text2);text-decoration:none;padding:4px 0;border-bottom:1px solid var(--bg-2);}
+.toc a:hover{color:var(--gold);}
+.page-footer{text-align:center;padding:24px;border-top:1px solid var(--border);font-size:11px;color:var(--muted);}
+.footer-logo{font-family:Georgia,serif;font-size:13px;letter-spacing:2px;font-style:italic;}
+.footer-logo em{font-style:normal;color:var(--gold);}
+a{color:var(--gold);}a:hover{color:var(--text);}
 </style>
 </head>
 <body>
 
 <header class="site-header">
-  <a class="logo" href="index.html">RANKIT</a>
-  <div style="display:flex;gap:16px;align-items:center;"><a style="font-size:13px;color:rgba(255,255,255,.8);text-decoration:none;" href="help.html">Guida</a><a class="back-btn" href="index.html">← Torna al sito</a></div>
+  <a class="logo" href="index.html">rank<em>it</em></a>
+  <nav style="display:flex;align-items:center;gap:6px;">
+    <a href="help.html" style="font-size:11px;color:var(--muted);letter-spacing:.4px;text-decoration:none;padding:0 8px;">Guida</a>
+    <div style="width:1px;height:16px;background:var(--border);"></div>
+    <a href="index.html" style="font-size:11px;letter-spacing:.4px;padding:5px 14px;background:var(--text);color:var(--card);border-radius:2px;text-decoration:none;">Torna al sito</a>
+  </nav>
 </header>
 
 <div class="hero">
@@ -333,7 +244,12 @@ a:hover{text-decoration:underline;}
 </div>
 
 <footer class="page-footer">
-  &copy; 2025 Mario Rossi — RANKIT &mdash; Via Italia 1 &mdash; <a href="mailto:info@rankit.it">info@rankit.it</a>
+  <span class="footer-logo">rank<em>it</em></span>
+  &nbsp;—&nbsp;
+  <a href="legal.html">Privacy & Note Legali</a>
+  &nbsp;·&nbsp;
+  <a href="mailto:info@rankit.it">info@rankit.it</a>
+  <br><span style="font-size:10px;margin-top:6px;display:block;">© 2025 Rankit — Tutti i diritti riservati</span>
 </footer>
 
 <script>
