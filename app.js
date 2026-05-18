@@ -195,12 +195,15 @@ async function updateLastSeen() {
 }
 
 async function loadOnlineCount() {
-  var since = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+  // Considera online solo chi ha aggiornato last_seen negli ultimi 16 minuti
+  // e la cui last_seen NON è null (utenti vecchi senza tracking vanno esclusi)
+  var since = new Date(Date.now() - 16 * 60 * 1000).toISOString();
   var { count } = await sb.from('profiles')
     .select('*', { count: 'exact', head: true })
+    .not('last_seen', 'is', null)
     .gte('last_seen', since);
   document.querySelectorAll('.online-count').forEach(function(el) {
-    el.textContent = count !== null ? count : '—';
+    el.textContent = (count !== null && count > 0) ? count : '0';
   });
 }
 
