@@ -2196,37 +2196,46 @@ async function renderProfileBadges(username, isMe) {
   var container = document.getElementById('profile-badges');
   if (!container) return;
 
-  var earnedKeys = new Set();
-  if (isMe) {
-    await loadMyBadges();
-    earnedKeys = myEarnedBadges;
-  } else {
-    // For other users: load their badges to show count only
-    var { data: uid } = await sb.from('profiles').select('id').eq('username', username).maybeSingle();
-    if (uid) {
-      var { data: theirBadges } = await sb.from('user_badges').select('badge_key').eq('user_id', uid.id);
-      var theirCount = (theirBadges||[]).length;
-      container.innerHTML = '<div style="font-size:13px;color:var(--muted);padding:4px 0;">'
-        + (theirCount > 0 ? '🏅 ' + theirCount + ' badge guadagnati' : 'Nessun badge ancora.')
-        + '</div>';
+  try {
+    var earnedKeys = new Set();
+    if (isMe) {
+      await loadMyBadges();
+      earnedKeys = myEarnedBadges || new Set();
+    } else {
+      // Per altri utenti: mostra solo il conteggio
+      var { data: profRow } = await sb.from('profiles')
+        .select('id').eq('username', username).maybeSingle();
+      if (profRow && profRow.id) {
+        var { data: theirBadges } = await sb.from('user_badges')
+          .select('badge_key').eq('user_id', profRow.id);
+        var theirCount = (theirBadges||[]).length;
+        container.innerHTML = '<div style="font-size:13px;color:var(--muted);padding:4px 0;">'
+          + (theirCount > 0 ? '🏅 ' + theirCount + ' badge guadagnati' : 'Nessun badge ancora.')
+          + '</div>';
+      } else {
+        container.innerHTML = '<div style="font-size:13px;color:var(--muted);">Nessun badge ancora.</div>';
+      }
       return;
     }
-  }
 
-  // My own profile: show all badges (earned = colored, not earned = gray)
-  container.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;">'
-    + ALL_BADGES.map(function(b) {
-      var earned = earnedKeys.has(b.key);
-      return '<div style="border-radius:12px;border:1px solid ' + (earned ? 'var(--violet)' : 'var(--border)') + ';'
-        + 'background:' + (earned ? 'rgba(124,58,237,.12)' : 'var(--bg)') + ';'
-        + 'padding:10px;text-align:center;opacity:' + (earned ? '1' : '.45') + ';">'
-        + '<div style="font-size:26px;margin-bottom:6px;">' + b.icon + '</div>'
-        + '<div style="font-size:12px;font-weight:700;color:' + (earned ? 'var(--text)' : 'var(--muted)') + ';">' + b.name + '</div>'
-        + '<div style="font-size:10px;color:var(--faint);margin-top:2px;line-height:1.4;">' + b.desc + '</div>'
-        + (earned ? '<div style="font-size:10px;color:var(--violet);margin-top:4px;font-weight:600;">✓ Ottenuto</div>' : '')
-        + '</div>';
-    }).join('')
-    + '</div>';
+    // Profilo personale: tutti i badge (colorati/grigi)
+    container.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;">'
+      + ALL_BADGES.map(function(b) {
+        var earned = earnedKeys.has(b.key);
+        return '<div style="border-radius:3px;border:1px solid ' + (earned ? 'var(--gold)' : 'var(--border)') + ';'
+          + 'background:' + (earned ? 'var(--gold-bg)' : 'var(--bg)') + ';'
+          + 'padding:12px 10px;text-align:center;opacity:' + (earned ? '1' : '.5') + ';transition:opacity .15s;">'
+          + '<div style="font-size:24px;margin-bottom:6px;">' + b.icon + '</div>'
+          + '<div style="font-size:12px;font-weight:600;color:' + (earned ? 'var(--text)' : 'var(--muted)') + ';margin-bottom:4px;">' + b.name + '</div>'
+          + '<div style="font-size:10px;color:var(--muted);line-height:1.4;">' + b.desc + '</div>'
+          + (earned ? '<div style="font-size:10px;color:var(--gold);margin-top:6px;font-weight:700;letter-spacing:.4px;">✓ Ottenuto</div>' : '')
+          + '</div>';
+      }).join('')
+      + '</div>';
+  } catch(e) {
+    console.warn('renderProfileBadges error:', e);
+    if (container) container.innerHTML = '<div style="font-size:13px;color:var(--muted);">Badge non disponibili.</div>';
+  }
 }
 
 // ── EXPORT STAGIONE ───────────────────────────────
