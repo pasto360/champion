@@ -1097,3 +1097,10 @@ select:focus{border-color:var(--text);}
 }
 [data-theme="dark"] .app-header{background:rgba(13,13,20,.92);}
 [data-theme="dark"] .tab-bar{background:rgba(13,13,20,.92);}
+
+/* ── ONLINE INDICATOR ───────────────────────────── */
+@keyframes pulse-green {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: .3; }
+}
+.online-dot { animation: pulse-green 2s ease-in-out infinite; }

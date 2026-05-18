@@ -183,6 +183,41 @@ async function checkIfBanned(email) {
     return data && data.banned === true;
   } catch(e) { return false; }
 }
+
+// ── UTENTI ONLINE ─────────────────────────────────
+var onlineInterval = null;
+
+async function updateLastSeen() {
+  if (!currentUser) return;
+  await sb.from('profiles')
+    .update({ last_seen: new Date().toISOString() })
+    .eq('id', currentUser.id);
+}
+
+async function loadOnlineCount() {
+  var since = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+  var { count } = await sb.from('profiles')
+    .select('*', { count: 'exact', head: true })
+    .gte('last_seen', since);
+  document.querySelectorAll('.online-count').forEach(function(el) {
+    el.textContent = count !== null ? count : '—';
+  });
+}
+
+function startOnlineTracking() {
+  updateLastSeen();
+  loadOnlineCount();
+  if (onlineInterval) clearInterval(onlineInterval);
+  onlineInterval = setInterval(function() {
+    updateLastSeen();
+    loadOnlineCount();
+  }, 15 * 60 * 1000); // ogni 15 minuti
+}
+
+function stopOnlineTracking() {
+  if (onlineInterval) { clearInterval(onlineInterval); onlineInterval = null; }
+}
+
 async function doLogin() {
   const email = document.getElementById('login-email').value.trim();
   const pass  = document.getElementById('login-pass').value;
@@ -244,6 +279,7 @@ async function doRegister() {
 
 async function doLogout() {
   await sb.auth.signOut();
+  stopOnlineTracking();
   currentUser = null; currentChamp = null; champMembers = []; userFavIds = []; closedMemberships = new Set();
   showPage('page-auth');
 }
@@ -256,6 +292,7 @@ function setAuthLoading(on) {
 // ── HOME ──────────────────────────────────────────
 async function showHome() {
   applyTheme(getTheme());
+  startOnlineTracking();
   await loadSiteTheme();
   startNotifPolling();
   checkUrlChampParam();
@@ -1782,8 +1819,11 @@ async function openProfile(username) {
   var initials = (username||'?').substring(0,2).toUpperCase();
   document.getElementById('profile-avatar').textContent = initials;
   document.getElementById('profile-username').textContent = username;
+  var myU = currentUser?.user_metadata?.username || currentUser?.email?.split('@')[0] || '';
   var navU = document.getElementById('profile-nav-username');
-  if (navU) navU.textContent = currentUser?.user_metadata?.username || '';
+  if (navU) navU.textContent = myU;
+  var navAv = document.getElementById('profile-nav-av');
+  if (navAv) navAv.textContent = myU.substring(0,2).toUpperCase();
 
   var joined = prof && prof.created_at
     ? 'Membro dal ' + new Date(prof.created_at).toLocaleDateString('it-IT',{month:'long',year:'numeric'})
@@ -1808,10 +1848,11 @@ async function openProfile(username) {
   var memberships = [];
   if (profileUserId) {
     // Cerca per user_id (più affidabile)
-    var { data: mByUid } = await sb.from('champ_members')
-      .select('champ_id,role,championships(id,name,season,data)')
+    var { data: mByUid, error: memErr } = await sb.from('champ_members')
+      .select('champ_id,role,championships(id,name,season,data,owner_id)')
       .eq('user_id', profileUserId)
       .in('role', ['owner','player']);
+  if (memErr) console.warn('memberships error:', memErr.message);
     memberships = mByUid || [];
   }
   if (!memberships.length) {
@@ -1828,9 +1869,9 @@ async function openProfile(username) {
   var playing = total - owned;
 
   document.getElementById('profile-stats-row').innerHTML =
-    '<div class="profile-stat-card"><div class="profile-stat-num">' + total + '</div><div class="profile-stat-lbl">Campionati</div></div>' +
-    '<div class="profile-stat-card"><div class="profile-stat-num">' + owned + '</div><div class="profile-stat-lbl">Da me creati</div></div>' +
-    '<div class="profile-stat-card"><div class="profile-stat-num">' + playing + '</div><div class="profile-stat-lbl">Partecipazione</div></div>';
+    '<div style="background:var(--card);border:1px solid var(--border);border-radius:3px;padding:14px 12px;text-align:center;"><div style="font-family:Georgia,serif;font-size:24px;font-style:italic;color:var(--gold);">' + total + '</div><div style="font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin-top:3px;">Campionati</div></div>' +
+    '<div style="background:var(--card);border:1px solid var(--border);border-radius:3px;padding:14px 12px;text-align:center;"><div style="font-family:Georgia,serif;font-size:24px;font-style:italic;color:var(--gold);">' + owned + '</div><div style="font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin-top:3px;">Creati</div></div>' +
+    '<div style="background:var(--card);border:1px solid var(--border);border-radius:3px;padding:14px 12px;text-align:center;"><div style="font-family:Georgia,serif;font-size:24px;font-style:italic;color:var(--gold);">' + playing + '</div><div style="font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin-top:3px;">Partecipazione</div></div>';
 
   // Champs list
   var list = document.getElementById('profile-champs-list');
