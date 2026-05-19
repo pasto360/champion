@@ -142,8 +142,10 @@ window.addEventListener('DOMContentLoaded', async () => {
       var urlParams = new URLSearchParams(window.location.search);
       var champParam = urlParams.get('champ');
       if (champParam) {
+        // Clean URL first to avoid re-opening on next showHome
+        history.replaceState(null, '', window.location.pathname);
         await showHome();
-        await _openChampionshipInternal(champParam);
+        await openChampionship(champParam);
       } else {
         await showHome();
       }
@@ -768,11 +770,6 @@ const sessionAccess = new Map(); // champId -> true
 async function openChampionship(id) {
   if (!id) { showToast('ID campionato non valido'); return; }
   if (!currentUser) { showToast('Sessione scaduta, effettua di nuovo il login'); showPage('page-auth'); return; }
-  // Navigate via URL — guarantees clean state on every open
-  window.location.href = window.location.pathname + '?champ=' + encodeURIComponent(id);
-}
-
-async function _openChampionshipInternal(id) {
   try {
   const {data:champ, error} = await sb.from('championships').select('*').eq('id', id).single();
   if (error || !champ) { showToast('Campionato non trovato'); return; }
