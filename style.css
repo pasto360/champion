@@ -1104,3 +1104,9 @@ select:focus{border-color:var(--text);}
   50%       { opacity: .3; }
 }
 .online-dot { animation: pulse-green 2s ease-in-out infinite; }
+
+/* ── CHAMP LOADING OVERLAY ─────────────────────── */
+@keyframes pulse-bar {
+  0%, 100% { transform: scaleY(1); opacity:1; }
+  50%       { transform: scaleY(.5); opacity:.5; }
+}

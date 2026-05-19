@@ -767,9 +767,31 @@ async function createChampionship() {
 // In-memory session access cache (never localStorage)
 const sessionAccess = new Map(); // champId -> true
 
+
+function showChampLoading(show) {
+  var el = document.getElementById('champ-loading-overlay');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'champ-loading-overlay';
+    el.style.cssText = 'position:fixed;inset:0;background:rgba(253,249,242,.85);'
+      + 'backdrop-filter:blur(4px);z-index:9999;display:flex;flex-direction:column;'
+      + 'align-items:center;justify-content:center;gap:16px;';
+    el.innerHTML = '<div style="display:flex;align-items:flex-end;gap:3px;">'
+      + '<div style="width:8px;height:20px;border-radius:2px 2px 0 0;background:var(--gold2);animation:pulse-bar .8s ease-in-out infinite;animation-delay:0s;"></div>'
+      + '<div style="width:8px;height:28px;border-radius:2px 2px 0 0;background:var(--gold);animation:pulse-bar .8s ease-in-out infinite;animation-delay:.15s;"></div>'
+      + '<div style="width:8px;height:14px;border-radius:2px 2px 0 0;background:#ead99a;animation:pulse-bar .8s ease-in-out infinite;animation-delay:.3s;"></div>'
+      + '</div>'
+      + '<div style="font-family:Georgia,serif;font-size:14px;letter-spacing:1px;color:var(--muted);font-style:italic;">Apertura campionato...</div>';
+    document.body.appendChild(el);
+  }
+  el.style.display = show ? 'flex' : 'none';
+}
+
 async function openChampionship(id) {
   if (!id) { showToast('ID campionato non valido'); return; }
   if (!currentUser) { showToast('Sessione scaduta, effettua di nuovo il login'); showPage('page-auth'); return; }
+  // Show immediate feedback so user knows click was registered
+  showChampLoading(true);
   try {
   const {data:champ, error} = await sb.from('championships').select('*').eq('id', id).single();
   if (error || !champ) { showToast('Campionato non trovato'); return; }
@@ -807,6 +829,7 @@ async function openChampionship(id) {
   await loadChampPage(champ);
   } catch(e) {
     console.error('[openChampionship error]', e);
+    showChampLoading(false);
     showToast('Errore apertura campionato: ' + e.message);
   }
 }
@@ -853,6 +876,7 @@ async function loadChampPage(champ) {
   repositionChart();
 
   showPage('page-champ');
+  showChampLoading(false);
   updateFavBtn();
   setSyncStatus('ok', 'Online');
   if (isOwner) startPendingPoll();
