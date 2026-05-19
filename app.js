@@ -131,7 +131,6 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   const {data:{session}} = await sb.auth.getSession();
   if (session) {
-    // Check ban before restoring session
     const banCheck = await checkIfBanned(session.user.email);
     if (banCheck) {
       await sb.auth.signOut();
@@ -139,7 +138,15 @@ window.addEventListener('DOMContentLoaded', async () => {
       setTimeout(function(){ document.getElementById('auth-err').textContent = "Account sospeso. Contatta l'amministratore."; }, 100);
     } else {
       currentUser = session.user;
-      await showHome();
+      // Check if URL has ?champ= param — open directly
+      var urlParams = new URLSearchParams(window.location.search);
+      var champParam = urlParams.get('champ');
+      if (champParam) {
+        await showHome();
+        await _openChampionshipInternal(champParam);
+      } else {
+        await showHome();
+      }
     }
   } else {
     showPage('page-auth');
@@ -168,9 +175,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 
 // ── PAGE ROUTING ──────────────────────────────────
 async function goHome() {
-  showPage('page-home');
-  // Always reload fresh from DB when returning home
-  await loadChampionshipsHome();
+  window.location.href = window.location.pathname;
 }
 
 function showPage(id) {
@@ -763,6 +768,11 @@ const sessionAccess = new Map(); // champId -> true
 async function openChampionship(id) {
   if (!id) { showToast('ID campionato non valido'); return; }
   if (!currentUser) { showToast('Sessione scaduta, effettua di nuovo il login'); showPage('page-auth'); return; }
+  // Navigate via URL — guarantees clean state on every open
+  window.location.href = window.location.pathname + '?champ=' + encodeURIComponent(id);
+}
+
+async function _openChampionshipInternal(id) {
   try {
   const {data:champ, error} = await sb.from('championships').select('*').eq('id', id).single();
   if (error || !champ) { showToast('Campionato non trovato'); return; }
