@@ -1110,3 +1110,89 @@ select:focus{border-color:var(--text);}
   0%, 100% { transform: scaleY(1); opacity:1; }
   50%       { transform: scaleY(.5); opacity:.5; }
 }
+
+/* ══════════════════════════════════════════════════
+   MOBILE FIXES — responsive layout
+══════════════════════════════════════════════════ */
+
+/* ── App header: compress on mobile ── */
+@media(max-width:600px){
+  .app-header{padding:0 10px;height:44px;}
+  .app-header .logo-word{font-size:13px;letter-spacing:2px;}
+  .user-chip-name{display:none;}
+  .nav-vsep{display:none;}
+  .hbtn{font-size:11px;padding:4px 8px;}
+  .hbtn-icon{width:28px;height:28px;}
+  .online-count,.online-count+span{display:none!important;}
+  .user-chip{padding:4px 8px;}
+}
+
+/* ── Champ header: stack on mobile ── */
+@media(max-width:600px){
+  .champ-page-header{flex-direction:column;gap:8px;padding:10px 12px;}
+  .champ-hdr-actions{width:100%;justify-content:flex-start;}
+  .champ-hdr-btn{font-size:11px;padding:5px 10px;}
+  .share-strip{padding:.4rem 12px;gap:5px;}
+  .share-strip-label{display:none;}
+}
+
+/* ── Champ layout: single column on mobile ── */
+@media(max-width:767px){
+  .champ-layout{display:block!important;padding:10px;}
+  #races-grid{grid-template-columns:1fr!important;}
+}
+
+/* ── Standings: show inline below races on mobile ── */
+@media(max-width:767px){
+  .standings-col{margin-top:16px;}
+  .standings-card{border-radius:3px;}
+}
+
+/* ── Tab bar: scrollable on mobile ── */
+@media(max-width:600px){
+  .tab-bar-inner{padding:0 8px;}
+  .tab-btn{padding:8px 10px;font-size:10px;letter-spacing:.3px;}
+  .tab-btn i{display:none;}
+}
+
+/* ── Champ grid: 2 cols on mobile ── */
+@media(max-width:500px){
+  .champ-grid,.champ-grid.list-grid{
+    grid-template-columns:repeat(2,1fr)!important;
+    gap:8px;
+  }
+  .champ-card{padding:.8rem;}
+  .champ-card-name{font-size:13px;}
+}
+
+/* ── Search filters: wrap nicely ── */
+@media(max-width:500px){
+  #search-filters{gap:5px;}
+  .filter-pill{font-size:9px;padding:3px 8px;}
+}
+
+/* ── Dashboard: full width ── */
+@media(max-width:600px){
+  .dash-container{padding:12px;}
+  .champ-grid.list-grid{grid-template-columns:repeat(2,1fr)!important;}
+}
+
+/* ── Manage panel: full width ── */
+@media(max-width:600px){
+  .manage-inner{border-radius:16px 16px 0 0;}
+  .scoring-grid{grid-template-columns:repeat(5,1fr)!important;}
+}
+
+/* ── Profile: full width ── */
+@media(max-width:600px){
+  .dash-container{padding:12px!important;}
+}
+
+/* ── Welcome section ── */
+@media(max-width:600px){
+  .welcome-greet{font-size:16px;padding:1rem 12px .2rem;}
+  .welcome-count{padding:0 12px .4rem;}
+  .sec-header{padding:.8rem 12px .5rem;}
+  .champ-grid{padding:0 12px!important;}
+  .search-bar{padding:.4rem 12px .5rem;}
+}

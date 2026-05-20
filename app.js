@@ -726,6 +726,7 @@ async function createChampionship() {
   const category = (document.getElementById('nc-category') || {}).value || '';
   const defaultData = {
     championship: name, season, format: selectedChampType, category,
+    scoring: [3,1,0,0,0,0,0,0,0,0],
     players: [username],
     prizes: ['','',''], races: [], liveUrl: 'https://www.youtube.com/@pixel-race/live',
     rrMatches: [], elimBracket: null,
@@ -857,6 +858,8 @@ async function loadChampPage(champ) {
   champData = {};
   currentChamp = champ;
   champData = JSON.parse(JSON.stringify(champ.data || {})); // deep copy to avoid reference issues
+  // Migrate legacy results to positions[] format
+  migrateRaceResults();
   isOwner = champ.owner_id === currentUser?.id;
 
   // Load members from DB (fresh for this championship)
@@ -1291,11 +1294,57 @@ function renderChamp() {
   renderLive();
 }
 
+
+// ── SCORING SCHEMA ────────────────────────────────
+// champData.scoring = [3,1,0,0,...] (10 elements, one per position)
+
+// ── MIGRATE LEGACY RESULTS ────────────────────────
+// Converts old {first, second} format to {positions: [...]}
+function migrateRaceResults() {
+  var changed = false;
+  (champData.races||[]).forEach(function(r) {
+    if (r.result && !r.result.positions) {
+      var positions = [];
+      var players = champData.players || [];
+      // Fill with empty slots up to player count
+      for (var i = 0; i < Math.min(players.length, 10); i++) positions.push('');
+      if (r.result.first)  positions[0] = r.result.first;
+      if (r.result.second) positions[1] = r.result.second;
+      r.result.positions = positions;
+      r.result.first  = positions[0];
+      r.result.second = positions[1];
+      changed = true;
+    }
+  });
+  // Save migrated data silently
+  if (changed && currentChamp) {
+    sb.from('championships').update({ data: champData }).eq('id', currentChamp.id).then(function(){});
+  }
+}
+
+function getScoring() {
+  var s = champData.scoring;
+  if (!s || !Array.isArray(s) || s.length < 10) {
+    // Default: 1st=3pt, 2nd=1pt, rest=0
+    s = [3,1,0,0,0,0,0,0,0,0];
+    // Pad to 10 if shorter
+    while (s.length < 10) s.push(0);
+  }
+  return s;
+}
+
+function getPtsForPos(pos) { // pos is 0-based
+  return getScoring()[pos] || 0;
+}
+
 function calcStandings() {
   const pts={};
   (champData.players||[]).forEach(p=>pts[p]=0);
   (champData.races||[]).forEach(r=>{
-    if(r.result&&r.result.first) pts[r.result.first]=(pts[r.result.first]||0)+1;
+    if (!r.result || !r.result.positions) return;
+    r.result.positions.forEach(function(player, idx) {
+      if (player) pts[player] = (pts[player]||0) + getPtsForPos(idx);
+    });
   });
   return (champData.players||[]).map(p=>({name:p,pts:pts[p]||0})).sort((a,b)=>b.pts-a.pts);
 }
@@ -1316,7 +1365,7 @@ function renderStandings() {
     return `<div class="s-row">
       <div class="s-pos ${posCls[i]||''}">${i===0?'🏆':i+1}</div>
       <div><div class="s-name" style="color:${color};cursor:pointer;" onclick="openProfile(\'${p.name}\')">${p.name}</div>
-        <div class="s-sub">${wins} vittori${wins!==1?'e':'a'}</div></div>
+        <div class="s-sub">${p.pts} pt</div></div>
       <div class="s-pts">${p.pts}<br><span>pt</span></div>
     </div>`;
   }).join('');
@@ -1472,12 +1521,25 @@ function renderRaces() {
     var statusDot = '<span style="width:7px;height:7px;border-radius:50%;background:' + (done ? '#276749' : 'var(--faint)') + ';display:inline-block;margin-right:6px;flex-shrink:0;"></span>';
     var statusTxt = '<span style="font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:' + (done ? '#276749' : 'var(--muted)') + ';">' + (done ? 'Completata' : 'Da giocare') + '</span>';
     var dateTxt = dateStr ? '<span style="font-size:11px;color:var(--muted);font-family:Georgia,serif;font-style:italic;">' + dateStr + '</span>' : '';
-    var resTxt = done
-      ? '<div style="display:flex;flex-direction:column;gap:4px;margin:.6rem 0;">'
-        + '<div style="display:flex;align-items:center;gap:8px;"><span style="font-size:14px;width:20px;text-align:center;">🥇</span><span style="font-size:13px;color:var(--text);">' + esc(r.result.first||'') + '</span><span style="font-size:11px;color:var(--gold);font-family:Georgia,serif;font-style:italic;margin-left:auto;">+3 pt</span></div>'
-        + '<div style="display:flex;align-items:center;gap:8px;"><span style="font-size:14px;width:20px;text-align:center;">🥈</span><span style="font-size:13px;color:var(--text);">' + esc(r.result.second||'') + '</span><span style="font-size:11px;color:var(--gold);font-family:Georgia,serif;font-style:italic;margin-left:auto;">+1 pt</span></div>'
-        + '</div>'
-      : '<div style="padding:.4rem 0 .6rem;"><span style="font-size:12px;color:var(--muted);font-style:italic;">Nessun risultato inserito</span></div>';
+    var medals = ['🥇','🥈','🥉','4°','5°','6°','7°','8°','9°','10°'];
+    var resTxt = '';
+    if (done) {
+      var positions = r.result.positions || [r.result.first, r.result.second];
+      var scoring = getScoring();
+      resTxt = '<div style="display:flex;flex-direction:column;gap:4px;margin:.6rem 0;">';
+      positions.forEach(function(player, idx) {
+        if (!player) return;
+        var pts = scoring[idx] || 0;
+        resTxt += '<div style="display:flex;align-items:center;gap:8px;">'
+          + '<span style="font-size:13px;width:20px;text-align:center;">' + (medals[idx]||'') + '</span>'
+          + '<span style="font-size:13px;color:var(--text);">' + esc(player) + '</span>'
+          + (pts > 0 ? '<span style="font-size:11px;color:var(--gold);font-family:Georgia,serif;font-style:italic;margin-left:auto;">+' + pts + ' pt</span>' : '')
+          + '</div>';
+      });
+      resTxt += '</div>';
+    } else {
+      resTxt = '<div style="padding:.4rem 0 .6rem;"><span style="font-size:12px;color:var(--muted);font-style:italic;">Nessun risultato inserito</span></div>';
+    }
     var ytId = getYtId(r.replayUrl);
     var replayChip = ytId
       ? '<span style="font-size:10px;padding:3px 8px;border:1px solid var(--border);border-radius:2px;color:var(--muted);cursor:pointer;" onclick="openReplay(\'' + ytId + '\',\'' + (r.replayUrl||'') + '\')">▶ Replay</span>'
@@ -1507,32 +1569,52 @@ function openResult(id){
   document.getElementById('result-title').textContent=r.name;
   document.getElementById('result-sub').textContent='Gara '+((champData.races||[]).indexOf(r)+1)+' · Chi ha vinto?';
   const players=champData.players||[];
-  document.getElementById('result-selects').innerHTML=
-    ['🥇 1° Posto','🥈 2° Posto'].map((lbl,i)=>`
-      <div style="margin-bottom:14px;"><label style="display:block;font-size:12px;font-weight:600;color:#666;margin-bottom:5px;">${lbl}</label>
-        <select id="res-pos-${i}">
-          <option value="">— Nessuno —</option>
-          ${players.map(p=>`<option value="${p}">${p}</option>`).join('')}
-        </select></div>`).join('');
-  if(r.result){
-    document.getElementById('res-pos-0').value=r.result.first||'';
-    document.getElementById('res-pos-1').value=r.result.second||'';
+  var scoring = getScoring();
+  var medals = ['🥇','🥈','🥉','4°','5°','6°','7°','8°','9°','10°'];
+  var nPlayers = Math.min(players.length, 10);
+  document.getElementById('result-selects').innerHTML = Array.from({length:nPlayers},(_,i)=>`
+    <div style="margin-bottom:10px;">
+      <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin-bottom:4px;">
+        <span>${medals[i]}</span>
+        <span>${scoring[i] > 0 ? '+'+scoring[i]+' pt' : '0 pt'}</span>
+      </label>
+      <select id="res-pos-${i}" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:3px;background:var(--card);color:var(--text);font-size:13px;outline:none;">
+        <option value="">— Nessuno —</option>
+        ${players.map(p=>`<option value="${p}">${p}</option>`).join('')}
+      </select>
+    </div>`).join('');
+  if(r.result && r.result.positions) {
+    r.result.positions.forEach(function(player, i) {
+      var el = document.getElementById('res-pos-'+i);
+      if (el && player) el.value = player;
+    });
+  } else if (r.result) {
+    // Legacy: convert first/second to positions array
+    if (r.result.first)  { var e0=document.getElementById('res-pos-0'); if(e0) e0.value=r.result.first; }
+    if (r.result.second) { var e1=document.getElementById('res-pos-1'); if(e1) e1.value=r.result.second; }
   }
   openOverlay('result-overlay');
 }
 function saveResult(){
-  const first=document.getElementById('res-pos-0').value;
-  const second=document.getElementById('res-pos-1').value;
-  if(!first&&!second){
-    const r=(champData.races||[]).find(r=>r.id===resultingRaceId);
+  var nPlayers = Math.min((champData.players||[]).length, 10);
+  var positions = [];
+  for (var i = 0; i < nPlayers; i++) {
+    var el = document.getElementById('res-pos-'+i);
+    positions.push(el ? el.value : '');
+  }
+  var anyFilled = positions.some(function(p){ return p !== ''; });
+  if (!anyFilled) {
+    var r=(champData.races||[]).find(r=>r.id===resultingRaceId);
     if(r)r.result=null;
     scheduleSave();renderChamp();closeOverlay('result-overlay');showToast('Risultato rimosso');return;
   }
-  if(first&&second&&first===second){showToast('1° e 2° uguali');return;}
-  if(!first){showToast('Seleziona il 1°');return;}
-  if(!second){showToast('Seleziona il 2°');return;}
-  const r=(champData.races||[]).find(r=>r.id===resultingRaceId);
-  if(r)r.result={first,second};
+  // Check duplicates
+  var filled = positions.filter(function(p){ return p !== ''; });
+  var unique = new Set(filled);
+  if (unique.size !== filled.length) { showToast('Stesso giocatore in più posizioni'); return; }
+  if (!positions[0]) { showToast('Seleziona almeno il 1° posto'); return; }
+  var r=(champData.races||[]).find(r=>r.id===resultingRaceId);
+  if(r) r.result = { positions: positions, first: positions[0], second: positions[1]||'' };
   scheduleSave();renderChamp();closeOverlay('result-overlay');showToast('Salvato!');
 }
 
@@ -1814,6 +1896,21 @@ function renderManageSettings(){
     html += '<button type="button" class="cat-btn' + (curCat===o.v?' selected':'') + '" data-cat="'+o.v+'" onclick="selectSettingsCategory(\'' + o.v + '\',this)">' + o.l + '</button>';
   });
   html += '</div><input type="hidden" id="settings-category" value="' + curCat + '"/></div>';
+  // ── Scoring schema ──
+  var scoring = getScoring();
+  var medals = ['🥇','🥈','🥉','4°','5°','6°','7°','8°','9°','10°'];
+  html += '<div style="margin:14px 0 10px;padding-top:14px;border-top:1px solid var(--border);">';
+  html += '<p class="manage-hint" style="margin-bottom:10px;">Punteggi per posizione</p>';
+  html += '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;" id="scoring-grid">';
+  for (var pi=0; pi<10; pi++) {
+    html += '<div style="text-align:center;">'
+      + '<div style="font-size:11px;color:var(--muted);margin-bottom:4px;">' + medals[pi] + '</div>'
+      + '<input type="number" min="0" max="99" id="scoring-pos-'+pi+'" value="' + (scoring[pi]||0) + '" '
+      + 'style="width:100%;padding:6px 4px;text-align:center;border:1px solid var(--border);border-radius:3px;'
+      + 'background:var(--card);color:var(--text);font-size:14px;font-weight:600;outline:none;" />'
+      + '</div>';
+  }
+  html += '</div></div>';
   html += '<button class="btn-primary" style="margin-top:8px;" onclick="saveChampSettings()">Salva impostazioni</button>';
   if ((champData.format||'standard') === 'timetrial') html += renderTTSettings();
   // Danger zone
@@ -1860,6 +1957,13 @@ function saveChampName(val){
 async function saveChampSettings(){
   var catEl = document.getElementById('settings-category');
   if (catEl) champData.category = catEl.value;
+  // Save scoring schema
+  var newScoring = [];
+  for (var si=0; si<10; si++) {
+    var el = document.getElementById('scoring-pos-'+si);
+    newScoring.push(el ? parseInt(el.value)||0 : 0);
+  }
+  champData.scoring = newScoring;
   const pass   = (document.getElementById('set-champ-pass')||{}).value?.trim() || '';
   const access = document.getElementById('set-champ-access').value;
   const newName = [champData.championship, champData.season].filter(Boolean).join(' ') || currentChamp.name;
