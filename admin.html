@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DUELIA — Admin</title>
+<title>RANKIT — Admin</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -82,7 +82,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 <div id="login-screen">
   <div class="login-box">
-    <h1>DUELIA</h1>
+    <h1>RANKIT</h1>
     <p>Area Amministratore</p>
     <input type="password" id="admin-pass" placeholder="Password admin" onkeydown="if(event.key==='Enter')tryLogin()"/>
     <button onclick="tryLogin()">Accedi</button>
@@ -93,7 +93,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 <div id="admin-screen">
   <div class="admin-header">
-    <h1>DUELIA Admin</h1>
+    <h1>RANKIT Admin</h1>
     <div style="display:flex;align-items:center;gap:16px;">
       <span id="admin-clock" style="font-size:12px;opacity:.8;"></span>
       <button class="logout-btn" onclick="adminLogout()">Esci</button>
@@ -149,25 +149,25 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         </div>
 
       <div class="panel" id="panel-backup">
-        <div class="panel-title">💾 Backup & Ripristino</div>
+        <div class="panel-title" style="color:#e8e8e8;">💾 Backup & Ripristino</div>
 
         <!-- EXPORT -->
-        <div style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:12px;padding:24px;margin-bottom:20px;">
-          <div style="font-size:15px;font-weight:700;margin-bottom:6px;">📤 Esporta backup</div>
-          <div style="font-size:13px;color:#777;margin-bottom:16px;line-height:1.6;">
-            Esporta un file JSON completo con tutti i campionati, risultati e iscrizioni.
+        <div style="background:#1e1e1e;border:1px solid #3a3a3a;border-radius:12px;padding:24px;margin-bottom:20px;">
+          <div style="font-size:16px;font-weight:700;margin-bottom:8px;color:#e8e8e8;">📤 Esporta backup</div>
+          <div style="font-size:13px;color:#aaa;margin-bottom:16px;line-height:1.6;">
+            Esporta un file JSON completo con tutti i campionati, risultati e iscrizioni.<br>
             Usalo come punto di ripristino prima di modifiche strutturali.
           </div>
-          <button onclick="exportBackup()" style="padding:10px 24px;background:#4a7a4a;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">
-            📥 Scarica backup JSON
+          <button onclick="exportBackup()" style="padding:11px 28px;background:#4a7a4a;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:.3px;">
+            ⬇️ Scarica backup JSON
           </button>
-          <div id="export-status" style="margin-top:10px;font-size:12px;color:#7a9e7e;"></div>
+          <div id="export-status" style="margin-top:12px;font-size:13px;color:#7a9e7e;min-height:18px;"></div>
         </div>
 
         <!-- IMPORT -->
-        <div style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:12px;padding:24px;">
-          <div style="font-size:15px;font-weight:700;margin-bottom:6px;">📥 Ripristina backup</div>
-          <div style="font-size:13px;color:#777;margin-bottom:8px;line-height:1.6;">
+        <div style="background:#1e1e1e;border:1px solid #3a3a3a;border-radius:12px;padding:24px;">
+          <div style="font-size:16px;font-weight:700;margin-bottom:8px;color:#e8e8e8;">📥 Ripristina backup</div>
+          <div style="font-size:13px;color:#aaa;margin-bottom:8px;line-height:1.6;">
             Carica un file JSON precedentemente esportato.<br>
             <strong style="color:#e06060;">⚠️ Attenzione:</strong> il ripristino sovrascrive i campionati esistenti con lo stesso ID.
             I campionati non presenti nel backup non vengono eliminati.
