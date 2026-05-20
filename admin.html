@@ -105,7 +105,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <button class="sidebar-btn" onclick="showPanel('users',this)">👤 Utenti</button>
       <button class="sidebar-btn" onclick="showPanel('champs',this)">🏆 Campionati</button>
       <button class="sidebar-btn" onclick="showPanel('blacklist',this)">🚫 Blacklist</button>
-      <button class="sidebar-btn" onclick="showPanel('theme',this)">🎨 Tema</button>
       <button class="sidebar-btn" onclick="showPanel('backup',this)">💾 Backup</button>
     </div>
     <div class="main-panel">
@@ -151,17 +150,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
           <input type="text" id="new-word" placeholder="Nuova parola da bloccare..." onkeydown="if(event.key==='Enter')addWord()"/>
           <button onclick="addWord()">+ Aggiungi</button>
         </div>
-      </div>
-
-      <!-- TEMA -->
-      <div class="panel" id="panel-theme">
-        <div class="panel-title">🎨 Gestione Tema</div>
-        <p style="font-size:13px;color:#aaa;margin-bottom:16px;">Modifica i colori del sito. Salvati sul database, attivi al prossimo login degli utenti.</p>
-        <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
-          <button onclick="saveTheme()" style="padding:9px 20px;background:#4a7a4a;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">💾 Salva colori</button>
-          <button onclick="resetTheme()" style="padding:9px 20px;background:#2a2a2a;color:#aaa;border:1px solid #333;border-radius:8px;font-size:13px;cursor:pointer;">↩ Default</button>
-        </div>
-        <div id="theme-grid"></div>
       </div>
 
       <!-- BACKUP -->
@@ -279,7 +267,6 @@ function showPanel(name, btn) {
   if (name === 'users')     loadUsers();
   if (name === 'champs')    loadChamps();
   if (name === 'blacklist') loadBlacklist();
-  if (name === 'theme')     loadTheme();
 }
 
 function toast(msg) {
@@ -509,8 +496,21 @@ async function resetTheme() {
 async function exportBackup() {
   var statusEl = document.getElementById('export-status');
   statusEl.textContent = '⏳ Raccolta dati in corso...';
+  // Ensure we have an auth session for RLS
+  var { data: sessionData } = await sb.auth.getSession();
+  if (!sessionData || !sessionData.session) {
+    statusEl.textContent = '⚠️ Sessione non trovata. Apri prima il sito principale (rankit), poi riapri questa pagina admin.';
+    statusEl.style.color = '#f59e0b';
+    return;
+  }
   try {
-    var { data: champs, error: ce } = await sb.from('championships').select('*').order('created_at', { ascending: true });
+    var { data: champs, error: ce } = await sb.from('championships').select('*').order('created_at', { ascending: true }).limit(1000);
+    if (ce) { console.error('champs error:', ce); throw new Error('Championships: ' + ce.message); }
+    if (!champs || champs.length === 0) {
+      statusEl.textContent = '⚠️ Nessun campionato trovato (controlla i permessi RLS)';
+      statusEl.style.color = '#f59e0b';
+      return;
+    }
     if (ce) throw new Error('Championships: ' + ce.message);
     var { data: members, error: me } = await sb.from('champ_members').select('*');
     if (me) throw new Error('Members: ' + me.message);
@@ -621,6 +621,13 @@ document.querySelectorAll('.modal-overlay').forEach(el => {
 });
 
 // ── BOOT ─────────────────────────────────────────────
+// Try to restore Supabase session from main app (same browser)
+sb.auth.getSession().then(function(res) {
+  // Session available — RLS will work with this user's token
+  if (res.data && res.data.session) {
+    console.log('Supabase session restored:', res.data.session.user.email);
+  }
+});
 if (sessionStorage.getItem('rankit_admin_ok') === '1') enterAdmin();
 </script>
 </body>
