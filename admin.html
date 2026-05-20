@@ -8,134 +8,183 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0f0f0f;color:#e8e8e8;min-height:100vh;}
+
+/* LOGIN */
 #login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;}
 .login-box{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:16px;padding:40px 36px;width:340px;text-align:center;}
-.login-box h1{font-size:24px;font-weight:900;letter-spacing:2px;color:#7a9e7e;margin-bottom:4px;}
-.login-box p{font-size:12px;color:#555;margin-bottom:28px;letter-spacing:1px;text-transform:uppercase;}
+.login-box h1{font-size:22px;font-weight:900;letter-spacing:3px;color:#7a9e7e;margin-bottom:4px;font-style:italic;}
+.login-box .sub{font-size:11px;color:#555;margin-bottom:28px;letter-spacing:1px;text-transform:uppercase;}
 .login-box input{width:100%;padding:12px 14px;background:#111;border:1px solid #333;border-radius:10px;color:#e8e8e8;font-size:14px;margin-bottom:12px;outline:none;}
 .login-box input:focus{border-color:#7a9e7e;}
 .login-box button{width:100%;padding:13px;background:#4a7a4a;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;}
-.login-box button:hover{background:#5a9a5a;}
 .login-err{color:#e06060;font-size:13px;margin-top:10px;min-height:18px;}
+.hint{margin-top:18px;font-size:11px;color:#333;line-height:1.6;}
+.hint code{color:#555;}
+
+/* ADMIN SHELL */
 #admin-screen{display:none;}
-.admin-header{background:#7a9e7e;color:#fff;padding:0 24px;height:54px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
-.admin-header h1{font-size:18px;font-weight:900;letter-spacing:2px;}
-.logout-btn{background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:5px 14px;font-size:12px;cursor:pointer;font-weight:600;}
-.logout-btn:hover{background:rgba(255,255,255,.3);}
-.admin-body{display:grid;grid-template-columns:180px 1fr;min-height:calc(100vh - 54px);}
-.sidebar{background:#141414;border-right:1px solid #222;padding:20px 0;}
-.sidebar-btn{display:block;width:100%;text-align:left;padding:11px 20px;background:none;border:none;color:#888;font-size:13px;cursor:pointer;transition:color .15s,background .15s;}
-.sidebar-btn:hover{color:#e8e8e8;background:#1e1e1e;}
-.sidebar-btn.active{color:#7a9e7e;background:#1a2a1a;font-weight:600;border-left:3px solid #7a9e7e;}
-.main-panel{padding:28px;background:#111;}
+.admin-header{background:#1a2a1a;border-bottom:1px solid #2a3a2a;padding:0 24px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.admin-header h1{font-size:15px;font-weight:900;letter-spacing:2px;color:#7a9e7e;}
+.hdr-right{display:flex;align-items:center;gap:16px;}
+.hdr-clock{font-size:11px;color:#555;}
+.logout-btn{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);color:#aaa;border-radius:6px;padding:5px 14px;font-size:12px;cursor:pointer;}
+.logout-btn:hover{background:rgba(255,255,255,.18);color:#fff;}
+
+.admin-body{display:grid;grid-template-columns:190px 1fr;min-height:calc(100vh - 52px);}
+
+/* SIDEBAR */
+.sidebar{background:#111;border-right:1px solid #1e1e1e;padding:16px 0;}
+.nav-section{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#444;padding:12px 18px 6px;}
+.sidebar-btn{display:block;width:100%;text-align:left;padding:10px 18px;background:none;border:none;color:#666;font-size:13px;cursor:pointer;transition:all .15s;border-left:3px solid transparent;}
+.sidebar-btn:hover{color:#ccc;background:#1a1a1a;}
+.sidebar-btn.active{color:#7a9e7e;background:#1a2a1a;border-left-color:#7a9e7e;font-weight:600;}
+
+/* MAIN PANEL */
+.main-panel{padding:28px;overflow-y:auto;}
 .panel{display:none;}
 .panel.active{display:block;}
-.panel-title{font-size:18px;font-weight:700;margin-bottom:20px;}
-.stat-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;margin-bottom:28px;}
-.stat-card{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:12px;padding:18px;text-align:center;}
-.stat-card .num{font-size:32px;font-weight:900;color:#7a9e7e;}
-.stat-card .lbl{font-size:12px;color:#555;margin-top:4px;text-transform:uppercase;letter-spacing:.5px;}
-.search-bar{display:flex;gap:10px;margin-bottom:18px;}
-.search-bar input{flex:1;padding:9px 14px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:8px;color:#e8e8e8;font-size:13px;outline:none;}
-.search-bar input:focus{border-color:#7a9e7e;}
-.search-bar button{padding:9px 16px;background:#2a2a2a;border:none;border-radius:8px;color:#888;font-size:13px;cursor:pointer;}
-.search-bar button:hover{background:#333;color:#ccc;}
+.panel-title{font-size:20px;font-weight:700;margin-bottom:6px;}
+.panel-sub{font-size:13px;color:#555;margin-bottom:24px;}
+
+/* STAT CARDS */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-bottom:28px;}
+.stat-card{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:10px;padding:16px;text-align:center;}
+.stat-num{font-size:30px;font-weight:900;color:#7a9e7e;}
+.stat-lbl{font-size:11px;color:#555;margin-top:4px;text-transform:uppercase;letter-spacing:.5px;}
+
+/* TABLES */
+.toolbar{display:flex;gap:10px;margin-bottom:16px;align-items:center;}
+.toolbar input{flex:1;padding:9px 14px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:8px;color:#e8e8e8;font-size:13px;outline:none;}
+.toolbar input:focus{border-color:#7a9e7e;}
+.toolbar button{padding:9px 16px;background:#2a2a2a;border:1px solid #333;border-radius:8px;color:#888;font-size:13px;cursor:pointer;}
+.toolbar button:hover{background:#333;color:#ccc;}
 .data-table{width:100%;border-collapse:collapse;font-size:13px;}
-.data-table th{text-align:left;padding:10px 12px;border-bottom:1px solid #2a2a2a;color:#555;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.5px;}
-.data-table td{padding:10px 12px;border-bottom:1px solid #1e1e1e;vertical-align:middle;}
-.data-table tr:hover td{background:#181818;}
-.mono{font-family:monospace;font-size:11px;color:#555;}
-.act-btn{padding:4px 10px;border-radius:6px;border:none;font-size:12px;font-weight:600;cursor:pointer;margin-right:4px;transition:opacity .15s;}
+.data-table th{text-align:left;padding:10px 14px;border-bottom:1px solid #222;color:#555;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.5px;}
+.data-table td{padding:10px 14px;border-bottom:1px solid #1a1a1a;vertical-align:middle;}
+.data-table tr:hover td{background:#161616;}
+.mono{font-family:monospace;font-size:11px;color:#444;}
+.act-btn{padding:4px 10px;border-radius:6px;border:none;font-size:12px;font-weight:600;cursor:pointer;margin-right:4px;}
 .act-btn:hover{opacity:.8;}
-.act-btn.red{background:#5a1a1a;color:#e08080;}
-.act-btn.yellow{background:#4a3a00;color:#e0c060;}
-.act-btn.green{background:#1a3a1a;color:#80c080;}
-.act-btn.blue{background:#1a2a4a;color:#80a0e0;}
+.act-btn.red{background:#3a1010;color:#e08080;}
+.act-btn.yellow{background:#3a2a00;color:#e0c060;}
+.act-btn.green{background:#103a10;color:#80e080;}
+.act-btn.blue{background:#10203a;color:#80b0e0;}
 .badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;}
-.badge.banned{background:#5a1a1a;color:#e08080;}
-.badge.ok{background:#1a3a1a;color:#80c080;}
+.badge.banned{background:#3a1010;color:#e08080;}
+.badge.ok{background:#103a10;color:#80e080;}
+.loading{color:#444;font-size:13px;padding:20px 0;}
+
+/* BLACKLIST */
 .word-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;min-height:32px;}
-.word-chip{display:inline-flex;align-items:center;gap:5px;background:#2a1a1a;border:1px solid #4a2a2a;border-radius:6px;padding:4px 10px;font-size:13px;color:#e08080;}
-.word-chip button{background:none;border:none;color:#884444;cursor:pointer;font-size:15px;line-height:1;padding:0;}
-.add-word-row{display:flex;gap:8px;}
-.add-word-row input{flex:1;padding:9px 14px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:8px;color:#e8e8e8;font-size:13px;outline:none;}
-.add-word-row input:focus{border-color:#7a9e7e;}
-.add-word-row button{padding:9px 16px;background:#4a7a4a;border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;}
+.word-chip{display:inline-flex;align-items:center;gap:5px;background:#2a1515;border:1px solid #4a2525;border-radius:6px;padding:4px 10px;font-size:13px;color:#e08080;}
+.word-chip button{background:none;border:none;color:#884444;cursor:pointer;font-size:16px;line-height:1;padding:0;}
+
+/* BACKUP */
+.backup-card{border-radius:12px;padding:24px;margin-bottom:20px;}
+.backup-card.export{background:#141f14;border:1px solid #2a4a2a;}
+.backup-card.import-card{background:#1f1414;border:1px solid #4a2a2a;}
+.backup-title{font-size:15px;font-weight:700;color:#e8e8e8;margin-bottom:8px;}
+.backup-desc{font-size:13px;color:#888;line-height:1.6;margin-bottom:16px;}
+.backup-btn{padding:10px 24px;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;}
+.backup-btn.green{background:#2a5a2a;color:#fff;}
+.backup-btn.green:hover{background:#3a6a3a;}
+.status-msg{margin-top:12px;font-size:13px;min-height:18px;}
+.file-label{display:inline-block;padding:9px 20px;background:#2a2a2a;color:#ccc;border-radius:8px;font-size:13px;cursor:pointer;border:1px solid #333;}
+.file-label:hover{background:#333;}
+.preview-box{background:#0d0d0d;border:1px solid #2a2a2a;border-radius:8px;padding:14px;font-size:12px;color:#aaa;line-height:1.8;margin:12px 0;display:none;}
+.restore-btn{padding:10px 24px;background:#3a1a00;color:#f59e0b;border:1px solid #6a3a00;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;}
+.restore-btn:disabled{opacity:.4;cursor:not-allowed;}
+.restore-btn:not(:disabled):hover{background:#4a2a00;}
+.warn{color:#e06060;font-weight:600;}
+
+/* MODALS */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:500;}
 .modal-overlay.open{display:flex;}
-.modal-box{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:14px;padding:28px;width:380px;}
-.modal-box h3{font-size:16px;font-weight:700;margin-bottom:12px;}
-.modal-box p{font-size:13px;color:#888;margin-bottom:16px;line-height:1.6;}
+.modal-box{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:14px;padding:28px;width:360px;}
+.modal-box h3{font-size:16px;font-weight:700;margin-bottom:10px;}
+.modal-box p{font-size:13px;color:#888;margin-bottom:16px;line-height:1.5;}
 .modal-box input{width:100%;padding:10px 12px;background:#111;border:1px solid #333;border-radius:8px;color:#e8e8e8;font-size:13px;margin-bottom:12px;outline:none;}
 .modal-box input:focus{border-color:#7a9e7e;}
-.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:8px;}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;}
 .modal-actions button{padding:8px 18px;border-radius:8px;border:none;font-size:13px;font-weight:600;cursor:pointer;}
 .btn-cancel{background:#2a2a2a;color:#888;}
-.btn-confirm{background:#4a7a4a;color:#fff;}
-.btn-danger{background:#7a1a1a;color:#fff;}
-.toast-admin{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#7a9e7e;color:#fff;padding:9px 20px;border-radius:20px;font-size:13px;font-weight:700;opacity:0;transition:opacity .3s;z-index:600;pointer-events:none;white-space:nowrap;}
-.toast-admin.show{opacity:1;}
-.loading{color:#555;font-size:13px;padding:20px 0;}
+.btn-confirm{background:#3a6a3a;color:#fff;}
+.btn-danger{background:#6a1a1a;color:#fff;}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#2a5a2a;color:#a0e0a0;padding:10px 22px;border-radius:20px;font-size:13px;font-weight:700;opacity:0;transition:opacity .3s;z-index:600;pointer-events:none;white-space:nowrap;}
+.toast.show{opacity:1;}
 </style>
 </head>
 <body>
 
+<!-- LOGIN -->
 <div id="login-screen">
   <div class="login-box">
-    <h1>RANKIT</h1>
-    <p>Area Amministratore</p>
+    <h1>rankit</h1>
+    <div class="sub">Area Amministratore</div>
     <input type="password" id="admin-pass" placeholder="Password admin" onkeydown="if(event.key==='Enter')tryLogin()"/>
     <button onclick="tryLogin()">Accedi</button>
     <div class="login-err" id="login-err"></div>
-    <p style="margin-top:18px;font-size:11px;color:#333;">Per generare l'hash: apri la console e digita:<br><code style="color:#555;">sha256('tuapassword').then(console.log)</code></p>
+    <div class="hint">Per generare l'hash:<br><code>sha256('password').then(console.log)</code></div>
   </div>
 </div>
 
+<!-- ADMIN -->
 <div id="admin-screen">
   <div class="admin-header">
     <h1>RANKIT Admin</h1>
-    <div style="display:flex;align-items:center;gap:16px;">
-      <span id="admin-clock" style="font-size:12px;opacity:.8;"></span>
+    <div class="hdr-right">
+      <span class="hdr-clock" id="admin-clock"></span>
       <button class="logout-btn" onclick="adminLogout()">Esci</button>
     </div>
   </div>
+
   <div class="admin-body">
     <div class="sidebar">
+      <div class="nav-section">Panoramica</div>
       <button class="sidebar-btn active" onclick="showPanel('dashboard',this)">📊 Dashboard</button>
+      <div class="nav-section">Gestione</div>
       <button class="sidebar-btn" onclick="showPanel('users',this)">👤 Utenti</button>
       <button class="sidebar-btn" onclick="showPanel('champs',this)">🏆 Campionati</button>
       <button class="sidebar-btn" onclick="showPanel('blacklist',this)">🚫 Blacklist</button>
+      <div class="nav-section">Sistema</div>
       <button class="sidebar-btn" onclick="showPanel('backup',this)">💾 Backup</button>
     </div>
+
     <div class="main-panel">
 
       <!-- DASHBOARD -->
       <div class="panel active" id="panel-dashboard">
         <div class="panel-title">Dashboard</div>
-        <div class="stat-cards">
-          <div class="stat-card"><div class="num" id="s-users">—</div><div class="lbl">Utenti totali</div></div>
-          <div class="stat-card"><div class="num" id="s-banned">—</div><div class="lbl">Bannati</div></div>
-          <div class="stat-card"><div class="num" id="s-champs">—</div><div class="lbl">Campionati</div></div>
-          <div class="stat-card"><div class="num" id="s-words">—</div><div class="lbl">Parole bloccate</div></div>
+        <div class="panel-sub">Panoramica del sistema</div>
+        <div class="stat-grid">
+          <div class="stat-card"><div class="stat-num" id="s-users">—</div><div class="stat-lbl">Utenti</div></div>
+          <div class="stat-card"><div class="stat-num" id="s-banned">—</div><div class="stat-lbl">Bannati</div></div>
+          <div class="stat-card"><div class="stat-num" id="s-champs">—</div><div class="stat-lbl">Campionati</div></div>
+          <div class="stat-card"><div class="stat-num" id="s-members">—</div><div class="stat-lbl">Iscrizioni</div></div>
+          <div class="stat-card"><div class="stat-num" id="s-words">—</div><div class="stat-lbl">Parole bloccate</div></div>
         </div>
-        <p style="font-size:12px;color:#555;">Aggiornato: <span id="dash-time">—</span></p>
+        <p style="font-size:12px;color:#444;">Aggiornato alle <span id="dash-time">—</span> · <a href="#" onclick="loadDashboard();return false;" style="color:#7a9e7e;text-decoration:none;">↻ aggiorna</a></p>
       </div>
 
       <!-- USERS -->
       <div class="panel" id="panel-users">
         <div class="panel-title">Gestione Utenti</div>
-        <div class="search-bar">
-          <input type="text" id="user-q" placeholder="Cerca email o username..." oninput="filterUsers()"/>
+        <div class="panel-sub">Cerca, banna o elimina account</div>
+        <div class="toolbar">
+          <input type="text" id="user-q" placeholder="Cerca per email o username..." oninput="filterUsers()"/>
           <button onclick="loadUsers()">↻ Aggiorna</button>
         </div>
         <div id="users-list"><div class="loading">Caricamento...</div></div>
       </div>
 
-      <!-- CHAMPIONSHIPS -->
+      <!-- CHAMPS -->
       <div class="panel" id="panel-champs">
         <div class="panel-title">Gestione Campionati</div>
-        <div class="search-bar">
-          <input type="text" id="champ-q" placeholder="Cerca nome..." oninput="filterChamps()"/>
+        <div class="panel-sub">Rinomina o elimina campionati</div>
+        <div class="toolbar">
+          <input type="text" id="champ-q" placeholder="Cerca per nome o ID..." oninput="filterChamps()"/>
           <button onclick="loadChamps()">↻ Aggiorna</button>
         </div>
         <div id="champs-list"><div class="loading">Caricamento...</div></div>
@@ -144,36 +193,37 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <!-- BLACKLIST -->
       <div class="panel" id="panel-blacklist">
         <div class="panel-title">Blacklist Parole</div>
-        <p style="font-size:13px;color:#666;margin-bottom:16px;">Parole vietate in nomi utente e campionati.</p>
+        <div class="panel-sub">Parole vietate in nomi utente e campionati</div>
         <div class="word-chips" id="word-chips"><span class="loading">Caricamento...</span></div>
-        <div class="add-word-row">
-          <input type="text" id="new-word" placeholder="Nuova parola da bloccare..." onkeydown="if(event.key==='Enter')addWord()"/>
-          <button onclick="addWord()">+ Aggiungi</button>
+        <div class="toolbar" style="margin-bottom:0;">
+          <input type="text" id="new-word" placeholder="Aggiungi parola..." onkeydown="if(event.key==='Enter')addWord()"/>
+          <button onclick="addWord()" style="background:#2a4a2a;color:#7a9e7e;border-color:#3a6a3a;">+ Aggiungi</button>
         </div>
       </div>
 
       <!-- BACKUP -->
       <div class="panel" id="panel-backup">
-        <div class="panel-title">💾 Backup & Ripristino</div>
-        <div style="background:#1c2a1c;border:2px solid #3a6a3a;border-radius:12px;padding:24px;margin-bottom:20px;">
-          <div style="font-size:15px;font-weight:700;margin-bottom:8px;color:#e8e8e8;">📤 Esporta backup</div>
-          <div style="font-size:13px;color:#aaa;margin-bottom:16px;line-height:1.6;">Esporta un file JSON completo con tutti i campionati, risultati e iscrizioni.<br>Usalo come punto di ripristino prima di modifiche strutturali.</div>
-          <button onclick="exportBackup()" style="padding:11px 28px;background:#4a7a4a;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;">⬇️ Scarica backup JSON</button>
-          <div id="export-status" style="margin-top:12px;font-size:13px;color:#7a9e7e;min-height:18px;"></div>
+        <div class="panel-title">Backup & Ripristino</div>
+        <div class="panel-sub">Salva o ripristina tutti i dati del sito</div>
+
+        <div class="backup-card export">
+          <div class="backup-title">📤 Esporta backup</div>
+          <div class="backup-desc">Scarica un file JSON con tutti i campionati, risultati e iscrizioni. Usalo come punto di ripristino prima di modifiche strutturali.</div>
+          <button class="backup-btn green" onclick="exportBackup()">⬇️ Scarica backup JSON</button>
+          <div class="status-msg" id="export-status"></div>
         </div>
-        <div style="background:#2a1c1c;border:2px solid #6a3a3a;border-radius:12px;padding:24px;">
-          <div style="font-size:15px;font-weight:700;margin-bottom:8px;color:#e8e8e8;">📥 Ripristina backup</div>
-          <div style="font-size:13px;color:#aaa;margin-bottom:12px;line-height:1.6;">Carica un file JSON precedentemente esportato.<br><strong style="color:#e06060;">⚠️ Attenzione:</strong> il ripristino sovrascrive i campionati esistenti con lo stesso ID.</div>
-          <div style="margin-bottom:14px;">
-            <label style="display:inline-block;padding:9px 20px;background:#2a2a2a;color:#ccc;border-radius:8px;font-size:13px;cursor:pointer;border:1px solid #333;">
-              📂 Scegli file JSON
-              <input type="file" id="backup-file-input" accept=".json" onchange="previewBackup(this)" style="display:none;">
-            </label>
-            <span id="backup-filename" style="margin-left:10px;font-size:12px;color:#666;"></span>
-          </div>
-          <div id="backup-preview" style="display:none;margin-bottom:14px;padding:14px;background:#111;border-radius:8px;font-size:12px;color:#aaa;line-height:1.8;"></div>
-          <button id="backup-import-btn" onclick="importBackup()" disabled style="padding:10px 24px;background:#5a1a1a;color:#e08080;border:1px solid #7a2a2a;border-radius:8px;font-size:13px;font-weight:700;cursor:not-allowed;opacity:.5;">♻️ Ripristina</button>
-          <div id="import-status" style="margin-top:10px;font-size:13px;min-height:18px;"></div>
+
+        <div class="backup-card import-card">
+          <div class="backup-title">📥 Ripristina backup</div>
+          <div class="backup-desc">Carica un file JSON precedentemente esportato.<br><span class="warn">⚠️ Sovrascrive i campionati esistenti con lo stesso ID. Operazione irreversibile.</span></div>
+          <label class="file-label">
+            📂 Scegli file JSON
+            <input type="file" id="backup-file-input" accept=".json" onchange="previewBackup(this)" style="display:none;">
+          </label>
+          <span id="backup-filename" style="margin-left:10px;font-size:12px;color:#555;"></span>
+          <div class="preview-box" id="backup-preview"></div>
+          <button class="restore-btn" id="backup-import-btn" onclick="importBackup()" disabled>♻️ Ripristina</button>
+          <div class="status-msg" id="import-status"></div>
         </div>
       </div>
 
@@ -192,16 +242,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     </div>
   </div>
 </div>
+
 <div class="modal-overlay" id="modal-del-champ">
   <div class="modal-box">
     <h3 id="del-champ-title">Elimina campionato</h3>
-    <p>Questa azione è <strong style="color:#e08080;">irreversibile</strong>. Tutti i dati verranno eliminati.</p>
+    <p>Azione <strong style="color:#e08080;">irreversibile</strong>. Tutti i dati, i membri e i risultati verranno eliminati permanentemente.</p>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModal('modal-del-champ')">Annulla</button>
       <button class="btn-danger" onclick="confirmDelChamp()">Elimina definitivamente</button>
     </div>
   </div>
 </div>
+
 <div class="modal-overlay" id="modal-del-user">
   <div class="modal-box">
     <h3 id="del-user-title">Elimina utente</h3>
@@ -213,13 +265,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </div>
 </div>
 
-<div class="toast-admin" id="toast"></div>
+<div class="toast" id="toast"></div>
+
 <script>
+// ── CONFIG ────────────────────────────────────────────
+// Cambia ADMIN_HASH con lo SHA-256 della tua password:
+// Apri la console → sha256('tuapassword').then(console.log)
 const ADMIN_HASH = '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918';
+
 const SUPA_URL = 'https://jhoruzazoqpqlytcbjev.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impob3J1emF6b3FwcWx5dGNiamV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyNjg2MjcsImV4cCI6MjA5MTg0NDYyN30.wcQgwe3KJwSugqPW57JR2Qn5q5RZXLxGMSL9xNsKYSk';
 const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
 
+// ── AUTH ──────────────────────────────────────────────
 async function sha256(str) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
   return [...new Uint8Array(buf)].map(x => x.toString(16).padStart(2,'0')).join('');
@@ -256,9 +314,10 @@ function startClock() {
     document.getElementById('admin-clock').textContent =
       new Date().toLocaleString('it-IT',{weekday:'short',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
   };
-  tick(); setInterval(tick, 30000);
+  tick(); setInterval(tick, 60000);
 }
 
+// ── NAVIGATION ────────────────────────────────────────
 function showPanel(name, btn) {
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.remove('active'));
@@ -269,32 +328,42 @@ function showPanel(name, btn) {
   if (name === 'blacklist') loadBlacklist();
 }
 
-function toast(msg) {
+// ── TOAST ─────────────────────────────────────────────
+function toast(msg, type) {
   const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2800);
+  t.textContent = msg;
+  t.style.background = type === 'err' ? '#5a1a1a' : '#1a3a1a';
+  t.style.color = type === 'err' ? '#e08080' : '#80e080';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
 }
 
-// ── DASHBOARD ──────────────────────────────────────
+// ── DASHBOARD ─────────────────────────────────────────
 async function loadDashboard() {
-  const [r1, r2, r3, r4] = await Promise.all([
-    sb.from('profiles').select('*', {count:'exact', head:true}),
-    sb.from('profiles').select('*', {count:'exact', head:true}).eq('banned', true),
-    sb.from('championships').select('*', {count:'exact', head:true}),
-    sb.from('blacklist_words').select('*', {count:'exact', head:true}),
-  ]);
-  document.getElementById('s-users').textContent  = r1.count ?? '?';
-  document.getElementById('s-banned').textContent = r2.count ?? '?';
-  document.getElementById('s-champs').textContent = r3.count ?? '?';
-  document.getElementById('s-words').textContent  = r4.count ?? '?';
-  document.getElementById('dash-time').textContent = new Date().toLocaleTimeString('it-IT');
+  try {
+    const [r1, r2, r3, r4, r5] = await Promise.all([
+      sb.from('profiles').select('*', {count:'exact', head:true}),
+      sb.from('profiles').select('*', {count:'exact', head:true}).eq('banned', true),
+      sb.from('championships').select('*', {count:'exact', head:true}),
+      sb.from('champ_members').select('*', {count:'exact', head:true}),
+      sb.from('blacklist_words').select('*', {count:'exact', head:true}),
+    ]);
+    document.getElementById('s-users').textContent   = r1.count ?? '?';
+    document.getElementById('s-banned').textContent  = r2.count ?? '?';
+    document.getElementById('s-champs').textContent  = r3.count ?? '?';
+    document.getElementById('s-members').textContent = r4.count ?? '?';
+    document.getElementById('s-words').textContent   = r5.count ?? '?';
+    document.getElementById('dash-time').textContent = new Date().toLocaleTimeString('it-IT');
+  } catch(e) { console.error('loadDashboard:', e); }
 }
 
-// ── USERS ───────────────────────────────────────────
+// ── USERS ─────────────────────────────────────────────
 let allUsers = [];
 async function loadUsers() {
   document.getElementById('users-list').innerHTML = '<div class="loading">Caricamento...</div>';
-  const { data, error } = await sb.from('profiles').select('id,username,email,banned,created_at').order('created_at', { ascending: false });
+  const { data, error } = await sb.from('profiles')
+    .select('id,username,email,banned,created_at')
+    .order('created_at', { ascending: false });
   if (error) { document.getElementById('users-list').innerHTML = '<div class="loading" style="color:#e06060;">Errore: ' + esc(error.message) + '</div>'; return; }
   allUsers = data || [];
   renderUsers(allUsers);
@@ -305,14 +374,20 @@ function renderUsers(users) {
   let html = '<table class="data-table"><thead><tr><th>Username</th><th>Email</th><th>Registrato</th><th>Stato</th><th>Azioni</th></tr></thead><tbody>';
   for (const u of users) {
     const date = u.created_at ? new Date(u.created_at).toLocaleDateString('it-IT') : '—';
-    const isBanned = !!u.banned;
-    html += '<tr><td><strong>' + esc(u.username||'—') + '</strong></td><td class="mono">' + esc(u.email||'—') + '</td><td>' + date + '</td>'
-      + '<td><span class="badge ' + (isBanned?'banned':'ok') + '">' + (isBanned?'Bannato':'Attivo') + '</span></td>'
-      + '<td>' + (isBanned ? '<button class="act-btn green" onclick="unbanUser(\'' + u.id + '\')">Sbanna</button>' : '<button class="act-btn yellow" onclick="banUser(\'' + u.id + '\')">Banna</button>')
-      + '<button class="act-btn red" onclick="openDelUser(\'' + u.id + '\',\'' + esc(u.username||'utente').replace(/'/g,"\\'") + '\')">Elimina</button></td></tr>';
+    const banned = !!u.banned;
+    html += '<tr>'
+      + '<td><strong>' + esc(u.username||'—') + '</strong></td>'
+      + '<td class="mono">' + esc(u.email||'—') + '</td>'
+      + '<td>' + date + '</td>'
+      + '<td><span class="badge ' + (banned?'banned':'ok') + '">' + (banned?'Bannato':'Attivo') + '</span></td>'
+      + '<td>'
+      + (banned
+        ? '<button class="act-btn green" onclick="unbanUser(\'' + u.id + '\')">Sbanna</button>'
+        : '<button class="act-btn yellow" onclick="banUser(\'' + u.id + '\')">Banna</button>')
+      + '<button class="act-btn red" onclick="openDelUser(\'' + u.id + '\',\'' + esc(u.username||'utente').replace(/'/g,"\\'") + '\')">Elimina</button>'
+      + '</td></tr>';
   }
-  html += '</tbody></table>';
-  document.getElementById('users-list').innerHTML = html;
+  document.getElementById('users-list').innerHTML = html + '</tbody></table>';
 }
 
 function filterUsers() {
@@ -322,14 +397,14 @@ function filterUsers() {
 
 async function banUser(id) {
   const { error } = await sb.from('profiles').update({ banned: true }).eq('id', id);
-  if (error) { toast('Errore: ' + error.message); return; }
-  allUsers = allUsers.map(u => u.id === id ? Object.assign({}, u, { banned: true }) : u);
+  if (error) { toast('Errore: ' + error.message, 'err'); return; }
+  allUsers = allUsers.map(u => u.id === id ? {...u, banned: true} : u);
   renderUsers(allUsers); toast('Utente bannato ✓'); loadDashboard();
 }
 async function unbanUser(id) {
   const { error } = await sb.from('profiles').update({ banned: false }).eq('id', id);
-  if (error) { toast('Errore: ' + error.message); return; }
-  allUsers = allUsers.map(u => u.id === id ? Object.assign({}, u, { banned: false }) : u);
+  if (error) { toast('Errore: ' + error.message, 'err'); return; }
+  allUsers = allUsers.map(u => u.id === id ? {...u, banned: false} : u);
   renderUsers(allUsers); toast('Ban rimosso ✓'); loadDashboard();
 }
 
@@ -338,16 +413,18 @@ function openDelUser(id, name) { delUserId = id; document.getElementById('del-us
 async function confirmDelUser() {
   if (!delUserId) return;
   const { error } = await sb.from('profiles').delete().eq('id', delUserId);
-  if (error) { toast('Errore: ' + error.message); return; }
+  if (error) { toast('Errore: ' + error.message, 'err'); return; }
   allUsers = allUsers.filter(u => u.id !== delUserId);
   closeModal('modal-del-user'); renderUsers(allUsers); toast('Utente eliminato ✓'); loadDashboard();
 }
 
-// ── CHAMPIONSHIPS ────────────────────────────────────
+// ── CHAMPIONSHIPS ─────────────────────────────────────
 let allChamps = [];
 async function loadChamps() {
   document.getElementById('champs-list').innerHTML = '<div class="loading">Caricamento...</div>';
-  const { data, error } = await sb.from('championships').select('id,name,season,owner_id,created_at,data').order('created_at', { ascending: false });
+  const { data, error } = await sb.from('championships')
+    .select('id,name,season,created_at,data')
+    .order('created_at', { ascending: false });
   if (error) { document.getElementById('champs-list').innerHTML = '<div class="loading" style="color:#e06060;">Errore: ' + esc(error.message) + '</div>'; return; }
   allChamps = data || [];
   renderChamps(allChamps);
@@ -356,18 +433,23 @@ async function loadChamps() {
 function renderChamps(champs) {
   if (!champs.length) { document.getElementById('champs-list').innerHTML = '<div class="loading">Nessun campionato trovato</div>'; return; }
   const fmtMap = { standard:'Standard', roundrobin:'Round Robin', elimination:'Eliminazione', timetrial:'Time Trial' };
-  let html = '<table class="data-table"><thead><tr><th>Nome / ID</th><th>Formato</th><th>Creato</th><th>Azioni</th></tr></thead><tbody>';
+  let html = '<table class="data-table"><thead><tr><th>Nome</th><th>Formato</th><th>Giocatori</th><th>Creato</th><th>Azioni</th></tr></thead><tbody>';
   for (const c of champs) {
     const date = c.created_at ? new Date(c.created_at).toLocaleDateString('it-IT') : '—';
     const fmt = fmtMap[(c.data||{}).format] || 'Standard';
-    html += '<tr><td><strong>' + esc(c.name||'—') + '</strong>' + (c.season ? '<span style="color:#555;font-size:11px;margin-left:6px;">' + esc(c.season) + '</span>' : '')
-      + '<br><span style="font-family:monospace;font-size:10px;color:#888;">' + c.id + '</span></td>'
-      + '<td>' + fmt + '</td><td>' + date + '</td>'
-      + '<td><button class="act-btn blue" onclick="openRename(\'' + c.id + '\',\'' + esc(c.name||'').replace(/'/g,"\\'") + '\')">Rinomina</button>'
-      + '<button class="act-btn red" onclick="openDelChamp(\'' + c.id + '\',\'' + esc(c.name||'').replace(/'/g,"\\'") + '\')">Elimina</button></td></tr>';
+    const players = ((c.data||{}).players||[]).length;
+    html += '<tr>'
+      + '<td><strong>' + esc(c.name||'—') + '</strong>' + (c.season ? ' <span style="color:#444;font-size:11px;">' + esc(c.season) + '</span>' : '')
+      + '<br><span class="mono">' + c.id + '</span></td>'
+      + '<td>' + fmt + '</td>'
+      + '<td>' + players + '</td>'
+      + '<td>' + date + '</td>'
+      + '<td>'
+      + '<button class="act-btn blue" onclick="openRename(\'' + c.id + '\',\'' + esc(c.name||'').replace(/'/g,"\\'") + '\')">Rinomina</button>'
+      + '<button class="act-btn red" onclick="openDelChamp(\'' + c.id + '\',\'' + esc(c.name||'').replace(/'/g,"\\'") + '\')">Elimina</button>'
+      + '</td></tr>';
   }
-  html += '</tbody></table>';
-  document.getElementById('champs-list').innerHTML = html;
+  document.getElementById('champs-list').innerHTML = html + '</tbody></table>';
 }
 
 function filterChamps() {
@@ -376,22 +458,31 @@ function filterChamps() {
 }
 
 let renameId = null;
-function openRename(id, name) { renameId = id; document.getElementById('rename-val').value = name; openModal('modal-rename'); setTimeout(() => document.getElementById('rename-val').focus(), 100); }
+function openRename(id, name) {
+  renameId = id;
+  document.getElementById('rename-val').value = name;
+  openModal('modal-rename');
+  setTimeout(() => document.getElementById('rename-val').focus(), 100);
+}
 async function confirmRename() {
   const name = document.getElementById('rename-val').value.trim();
   if (!name || !renameId) return;
   const { error } = await sb.from('championships').update({ name }).eq('id', renameId);
-  if (error) { toast('Errore: ' + error.message); return; }
-  allChamps = allChamps.map(c => c.id === renameId ? Object.assign({}, c, { name }) : c);
-  closeModal('modal-rename'); renderChamps(allChamps); toast('Campionato rinominato ✓');
+  if (error) { toast('Errore: ' + error.message, 'err'); return; }
+  allChamps = allChamps.map(c => c.id === renameId ? {...c, name} : c);
+  closeModal('modal-rename'); renderChamps(allChamps); toast('Rinominato ✓');
 }
 
 let delChampId = null;
-function openDelChamp(id, name) { delChampId = id; document.getElementById('del-champ-title').textContent = 'Elimina "' + name + '"'; openModal('modal-del-champ'); }
+function openDelChamp(id, name) {
+  delChampId = id;
+  document.getElementById('del-champ-title').textContent = 'Elimina "' + name + '"';
+  openModal('modal-del-champ');
+}
 async function confirmDelChamp() {
   if (!delChampId) return;
   const { error } = await sb.from('championships').delete().eq('id', delChampId);
-  if (error) { toast('Errore: ' + error.message); return; }
+  if (error) { toast('Errore: ' + error.message, 'err'); return; }
   allChamps = allChamps.filter(c => c.id !== delChampId);
   closeModal('modal-del-champ'); renderChamps(allChamps); toast('Campionato eliminato ✓'); loadDashboard();
 }
@@ -401,167 +492,123 @@ let blacklistWords = [];
 async function loadBlacklist() {
   document.getElementById('word-chips').innerHTML = '<span class="loading">Caricamento...</span>';
   const { data, error } = await sb.from('blacklist_words').select('id,word').order('word');
-  if (error) { toast('Errore blacklist: ' + error.message); return; }
+  if (error) { toast('Errore blacklist: ' + error.message, 'err'); return; }
   blacklistWords = data || [];
   renderBlacklist();
 }
 function renderBlacklist() {
   const el = document.getElementById('word-chips');
-  if (!blacklistWords.length) { el.innerHTML = '<span style="color:#555;font-size:13px;">Nessuna parola nella lista</span>'; return; }
-  el.innerHTML = blacklistWords.map(w => '<div class="word-chip">' + esc(w.word) + '<button onclick="removeWord(' + w.id + ')">×</button></div>').join('');
+  if (!blacklistWords.length) { el.innerHTML = '<span style="color:#444;font-size:13px;">Nessuna parola nella lista</span>'; return; }
+  el.innerHTML = blacklistWords.map(w =>
+    '<div class="word-chip">' + esc(w.word) + '<button onclick="removeWord(' + w.id + ')" title="Rimuovi">×</button></div>'
+  ).join('');
 }
 async function addWord() {
   const input = document.getElementById('new-word');
   const word = input.value.trim().toLowerCase();
   if (!word) return;
   const { data, error } = await sb.from('blacklist_words').insert({ word }).select().single();
-  if (error) { toast(error.code === '23505' ? 'Parola già presente' : 'Errore: ' + error.message); return; }
-  blacklistWords.push(data); blacklistWords.sort((a,b) => a.word.localeCompare(b.word));
+  if (error) { toast(error.code === '23505' ? 'Già presente' : 'Errore: ' + error.message, 'err'); return; }
+  blacklistWords.push(data);
+  blacklistWords.sort((a,b) => a.word.localeCompare(b.word));
   input.value = ''; renderBlacklist();
   document.getElementById('s-words').textContent = blacklistWords.length;
   toast('"' + word + '" aggiunto ✓');
 }
 async function removeWord(id) {
   const { error } = await sb.from('blacklist_words').delete().eq('id', id);
-  if (error) { toast('Errore: ' + error.message); return; }
+  if (error) { toast('Errore: ' + error.message, 'err'); return; }
   blacklistWords = blacklistWords.filter(w => w.id !== id);
-  renderBlacklist(); document.getElementById('s-words').textContent = blacklistWords.length; toast('Parola rimossa ✓');
+  renderBlacklist();
+  document.getElementById('s-words').textContent = blacklistWords.length;
+  toast('Parola rimossa ✓');
 }
 
-// ── TEMA ─────────────────────────────────────────────
-const THEME_VARS = [
-  { key: '--bg',      label: 'Sfondo pagina',        def: '#0d0d14' },
-  { key: '--card',    label: 'Sfondo card/pannelli', def: '#15151f' },
-  { key: '--border',  label: 'Bordi',                def: '#2a2a3a' },
-  { key: '--text',    label: 'Testo principale',     def: '#e8e8f0' },
-  { key: '--muted',   label: 'Testo secondario',     def: '#8888aa' },
-  { key: '--violet',  label: 'Colore primario',      def: '#8b5cf6' },
-  { key: '--violet2', label: 'Colore primario scuro',def: '#6d28d9' },
-  { key: '--accent',  label: 'Accento',              def: '#8b5cf6' },
-  { key: '--red',     label: 'Errore / Elimina',     def: '#e63946' },
-  { key: '--gold',    label: 'Oro / Premi',          def: '#d4a017' },
-  { key: '--green',   label: 'Verde / Successo',     def: '#2dc653' },
-  { key: '--blue',    label: 'Blu / Info',           def: '#1d7eda' },
-];
-let currentTheme = {};
-THEME_VARS.forEach(v => { currentTheme[v.key] = v.def; });
-
-async function loadTheme() {
-  THEME_VARS.forEach(v => { currentTheme[v.key] = v.def; });
-  try {
-    var { data } = await sb.from('site_settings').select('key,value');
-    (data||[]).forEach(row => {
-      if (!row.key.startsWith('theme-')) return;
-      var varName = '--' + row.key.slice(6);
-      if (currentTheme.hasOwnProperty(varName)) currentTheme[varName] = row.value;
-    });
-  } catch(e) { console.error('loadTheme:', e); }
-  renderThemeGrid();
-}
-function renderThemeGrid() {
-  var grid = document.getElementById('theme-grid');
-  if (!grid) return;
-  var html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;color:#e8e8e8;">';
-  THEME_VARS.forEach(v => {
-    var val = currentTheme[v.key] || v.def;
-    var hexVal = val.startsWith('#') ? val : v.def;
-    html += '<div style="background:#1e1e1e;border:1px solid #333;border-radius:10px;padding:14px;"><div style="display:flex;align-items:center;gap:12px;">'
-      + '<input type="color" id="cp-' + v.key.slice(2) + '" value="' + hexVal + '" style="width:44px;height:44px;border:none;border-radius:8px;cursor:pointer;padding:2px;background:#111;flex-shrink:0;" oninput="syncColor(\'' + v.key + '\',this.value)">'
-      + '<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;color:#e8e8e8;margin-bottom:4px;">' + v.label + '</div>'
-      + '<input type="text" id="hex-' + v.key.slice(2) + '" value="' + hexVal + '" style="width:100%;padding:5px 8px;background:#111;border:1px solid #444;border-radius:6px;color:#e8e8e8;font-size:12px;font-family:monospace;outline:none;" oninput="syncHex(\'' + v.key + '\',this.value)" maxlength="7">'
-      + '</div></div></div>';
-  });
-  html += '</div>';
-  grid.innerHTML = html;
-}
-function syncColor(varName, val) { currentTheme[varName] = val; var el = document.getElementById('hex-' + varName.slice(2)); if(el) el.value = val; }
-function syncHex(varName, val) { val = val.trim(); if(!/^#[0-9a-fA-F]{6}$/.test(val)) return; currentTheme[varName] = val; var el = document.getElementById('cp-' + varName.slice(2)); if(el) el.value = val; }
-async function saveTheme() {
-  var rows = THEME_VARS.map(v => ({ key: 'theme-' + v.key.slice(2), value: currentTheme[v.key] || v.def }));
-  try {
-    await sb.from('site_settings').delete().like('key', 'theme%');
-    var { error } = await sb.from('site_settings').insert(rows);
-    if (error) throw error;
-    toast('✓ Tema salvato!');
-  } catch(e) { toast('Errore: ' + (e.message||e)); }
-}
-async function resetTheme() {
-  if (!confirm('Ripristinare i colori di default?')) return;
-  THEME_VARS.forEach(v => { currentTheme[v.key] = v.def; });
-  try { await sb.from('site_settings').delete().like('key', 'theme%'); toast('✓ Default ripristinati'); } catch(e) { toast('Errore: ' + e.message); }
-  renderThemeGrid();
-}
-
-// ── BACKUP ───────────────────────────────────────────
+// ── BACKUP ────────────────────────────────────────────
 async function exportBackup() {
-  var statusEl = document.getElementById('export-status');
-  statusEl.textContent = '⏳ Raccolta dati in corso...';
-  // Ensure we have an auth session for RLS
-  var { data: sessionData } = await sb.auth.getSession();
-  if (!sessionData || !sessionData.session) {
-    statusEl.textContent = '⚠️ Sessione non trovata. Apri prima il sito principale (rankit), poi riapri questa pagina admin.';
-    statusEl.style.color = '#f59e0b';
-    return;
-  }
+  const statusEl = document.getElementById('export-status');
+  statusEl.style.color = '#888';
+  statusEl.textContent = '⏳ Raccolta dati...';
+
   try {
-    var { data: champs, error: ce } = await sb.from('championships').select('*').order('created_at', { ascending: true }).limit(1000);
-    if (ce) { console.error('champs error:', ce); throw new Error('Championships: ' + ce.message); }
-    if (!champs || champs.length === 0) {
-      statusEl.textContent = '⚠️ Nessun campionato trovato (controlla i permessi RLS)';
+    // Ensure we have a Supabase session (shared from main app via localStorage)
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) {
+      statusEl.textContent = '⚠️ Nessuna sessione attiva. Apri prima rankit.vercel.app, effettua il login, poi torna qui.';
       statusEl.style.color = '#f59e0b';
       return;
     }
-    if (ce) throw new Error('Championships: ' + ce.message);
-    var { data: members, error: me } = await sb.from('champ_members').select('*');
-    if (me) throw new Error('Members: ' + me.message);
-    var { data: archives } = await sb.from('user_archives').select('*');
-    var { data: favs } = await sb.from('user_favourites').select('*');
-    var backup = {
-      version: '1.0',
+
+    const [champsRes, membersRes, archivesRes, favsRes] = await Promise.all([
+      sb.from('championships').select('*').order('created_at', { ascending: true }),
+      sb.from('champ_members').select('*'),
+      sb.from('user_archives').select('*'),
+      sb.from('user_favourites').select('*'),
+    ]);
+
+    if (champsRes.error) throw new Error('championships: ' + champsRes.error.message);
+    if (membersRes.error) throw new Error('champ_members: ' + membersRes.error.message);
+
+    const backup = {
+      version: '1.1',
       exported_at: new Date().toISOString(),
-      counts: { championships: champs.length, members: members.length, archives: (archives||[]).length, favourites: (favs||[]).length },
-      championships: champs,
-      champ_members: members,
-      user_archives: archives || [],
-      user_favourites: favs || [],
+      exported_by: session.user.email,
+      counts: {
+        championships: champsRes.data.length,
+        champ_members: membersRes.data.length,
+        user_archives: (archivesRes.data||[]).length,
+        user_favourites: (favsRes.data||[]).length,
+      },
+      championships:   champsRes.data,
+      champ_members:   membersRes.data,
+      user_archives:   archivesRes.data  || [],
+      user_favourites: favsRes.data || [],
     };
-    var blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
-    var link = document.createElement('a');
+
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+    const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     link.download = 'rankit-backup-' + new Date().toISOString().slice(0,10) + '.json';
+    document.body.appendChild(link);
     link.click();
+    document.body.removeChild(link);
     URL.revokeObjectURL(link.href);
-    statusEl.textContent = '✓ Backup scaricato — ' + champs.length + ' campionati, ' + members.length + ' iscrizioni.';
-    statusEl.style.color = '#7a9e7e';
+
+    statusEl.textContent = '✓ Backup scaricato — ' + backup.counts.championships + ' campionati, ' + backup.counts.champ_members + ' iscrizioni.';
+    statusEl.style.color = '#80e080';
+
   } catch(e) {
+    console.error('exportBackup:', e);
     statusEl.textContent = '✗ Errore: ' + e.message;
-    statusEl.style.color = '#e06060';
+    statusEl.style.color = '#e08080';
   }
 }
 
-var backupData = null;
+let backupData = null;
 function previewBackup(input) {
-  var file = input.files[0]; if (!file) return;
+  const file = input.files[0];
+  if (!file) return;
   document.getElementById('backup-filename').textContent = file.name;
-  var reader = new FileReader();
+  const reader = new FileReader();
   reader.onload = function(e) {
     try {
       backupData = JSON.parse(e.target.result);
-      var preview = document.getElementById('backup-preview');
-      var btn = document.getElementById('backup-import-btn');
+      const preview = document.getElementById('backup-preview');
+      const btn = document.getElementById('backup-import-btn');
       if (!backupData.version || !backupData.championships) {
-        preview.innerHTML = '<span style="color:#e06060;">✗ File non valido.</span>';
-        preview.style.display = ''; btn.disabled = true; btn.style.opacity = '.5'; return;
+        preview.innerHTML = '<span style="color:#e06060;">✗ File non valido — non è un backup Rankit.</span>';
+        preview.style.display = 'block'; btn.disabled = true; return;
       }
-      preview.innerHTML = '📅 Esportato: <strong>' + new Date(backupData.exported_at).toLocaleString('it-IT') + '</strong><br>'
-        + '🏆 Campionati: <strong>' + backupData.championships.length + '</strong><br>'
-        + '👥 Iscrizioni: <strong>' + backupData.champ_members.length + '</strong>';
-      preview.style.display = '';
-      btn.disabled = false; btn.style.opacity = '1'; btn.style.cursor = 'pointer';
-      btn.style.background = '#4a2a00'; btn.style.color = '#f59e0b'; btn.style.borderColor = '#7a5a00';
+      preview.innerHTML =
+        '📅 Esportato: <strong>' + new Date(backupData.exported_at).toLocaleString('it-IT') + '</strong><br>'
+        + '👤 Da: <strong>' + (backupData.exported_by||'—') + '</strong><br>'
+        + '🏆 Campionati: <strong>' + (backupData.counts?.championships ?? backupData.championships.length) + '</strong><br>'
+        + '👥 Iscrizioni: <strong>' + (backupData.counts?.champ_members ?? backupData.champ_members?.length ?? 0) + '</strong>';
+      preview.style.display = 'block';
+      btn.disabled = false;
     } catch(err) {
       document.getElementById('backup-preview').innerHTML = '<span style="color:#e06060;">✗ File JSON non valido.</span>';
-      document.getElementById('backup-preview').style.display = '';
+      document.getElementById('backup-preview').style.display = 'block';
     }
   };
   reader.readAsText(file);
@@ -569,65 +616,73 @@ function previewBackup(input) {
 
 async function importBackup() {
   if (!backupData) return;
-  var status = document.getElementById('import-status');
-  if (!confirm('Ripristinare questo backup?\n\n' + backupData.championships.length + ' campionati verranno sovrascritti.\nOperazione irreversibile.')) return;
-  status.textContent = '⏳ Ripristino in corso...'; status.style.color = '#f59e0b';
+  const status = document.getElementById('import-status');
+  if (!confirm(
+    'Ripristinare questo backup?\n\n'
+    + backupData.championships.length + ' campionati verranno sovrascritti se già esistenti.\n'
+    + 'I campionati NON presenti nel backup non vengono toccati.\n\n'
+    + 'Operazione irreversibile senza un backup più recente.'
+  )) return;
+
+  status.style.color = '#f59e0b';
+  status.textContent = '⏳ Ripristino in corso...';
+  const errors = [];
+  let ok = 0;
+
   try {
-    var errors = []; var ok = 0;
-    for (var i = 0; i < backupData.championships.length; i++) {
-      var champ = backupData.championships[i];
-      var { error } = await sb.from('championships').upsert(champ, { onConflict: 'id' });
-      if (error) errors.push('champ ' + champ.id + ': ' + error.message); else ok++;
-      status.textContent = '⏳ ' + ok + '/' + backupData.championships.length + '...';
+    for (let i = 0; i < backupData.championships.length; i++) {
+      const champ = backupData.championships[i];
+      const { error } = await sb.from('championships').upsert(champ, { onConflict: 'id' });
+      if (error) errors.push('champ ' + champ.name + ': ' + error.message);
+      else ok++;
+      status.textContent = '⏳ Campionati: ' + ok + '/' + backupData.championships.length + '...';
     }
-    if (backupData.champ_members && backupData.champ_members.length) {
-      var { error: me } = await sb.from('champ_members').upsert(backupData.champ_members, { onConflict: 'champ_id,user_id' });
-      if (me) errors.push('members: ' + me.message);
+
+    if (backupData.champ_members?.length) {
+      const { error } = await sb.from('champ_members').upsert(backupData.champ_members, { onConflict: 'champ_id,user_id' });
+      if (error) errors.push('iscrizioni: ' + error.message);
     }
-    if (backupData.user_archives && backupData.user_archives.length) {
-      var { error: ae } = await sb.from('user_archives').upsert(backupData.user_archives, { onConflict: 'user_id,champ_id' });
-      if (ae) errors.push('archives: ' + ae.message);
+    if (backupData.user_archives?.length) {
+      const { error } = await sb.from('user_archives').upsert(backupData.user_archives, { onConflict: 'user_id,champ_id' });
+      if (error) errors.push('archivi: ' + error.message);
     }
-    if (backupData.user_favourites && backupData.user_favourites.length) {
-      var { error: fe } = await sb.from('user_favourites').upsert(backupData.user_favourites, { onConflict: 'user_id,champ_id' });
-      if (fe) errors.push('favourites: ' + fe.message);
+    if (backupData.user_favourites?.length) {
+      const { error } = await sb.from('user_favourites').upsert(backupData.user_favourites, { onConflict: 'user_id,champ_id' });
+      if (error) errors.push('preferiti: ' + error.message);
     }
+
     if (errors.length) {
-      status.innerHTML = '⚠️ Completato con errori:<br>' + errors.map(e => '• ' + e).join('<br>');
+      status.innerHTML = '⚠️ Completato con ' + errors.length + ' errori:<br>' + errors.map(e => '• ' + e).join('<br>');
       status.style.color = '#f59e0b';
     } else {
-      status.textContent = '✓ Ripristino completato — ' + ok + ' campionati.';
-      status.style.color = '#7a9e7e';
+      status.textContent = '✓ Ripristino completato — ' + ok + ' campionati importati.';
+      status.style.color = '#80e080';
     }
+
     backupData = null;
     document.getElementById('backup-file-input').value = '';
     document.getElementById('backup-filename').textContent = '';
     document.getElementById('backup-preview').style.display = 'none';
     document.getElementById('backup-import-btn').disabled = true;
-    document.getElementById('backup-import-btn').style.opacity = '.5';
     loadDashboard();
+
   } catch(e) {
     status.textContent = '✗ Errore critico: ' + e.message;
-    status.style.color = '#e06060';
+    status.style.color = '#e08080';
   }
 }
 
 // ── UTILS ─────────────────────────────────────────────
-function esc(str) { return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function esc(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 function openModal(id)  { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 document.querySelectorAll('.modal-overlay').forEach(el => {
   el.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('open'); });
 });
 
-// ── BOOT ─────────────────────────────────────────────
-// Try to restore Supabase session from main app (same browser)
-sb.auth.getSession().then(function(res) {
-  // Session available — RLS will work with this user's token
-  if (res.data && res.data.session) {
-    console.log('Supabase session restored:', res.data.session.user.email);
-  }
-});
+// ── BOOT ──────────────────────────────────────────────
 if (sessionStorage.getItem('rankit_admin_ok') === '1') enterAdmin();
 </script>
 </body>
