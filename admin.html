@@ -87,7 +87,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <input type="password" id="admin-pass" placeholder="Password admin" onkeydown="if(event.key==='Enter')tryLogin()"/>
     <button onclick="tryLogin()">Accedi</button>
     <div class="login-err" id="login-err"></div>
-    <p style="margin-top:18px;font-size:11px;color:#333;">Per ottenere l'hash della tua password, apri la console e digita:<br><code style="color:#555;">sha256('tuapassword').then(console.log)</code></p>
+    <p style="margin-top:18px;font-size:11px;color:#333;">Per generare l'hash: apri la console e digita:<br><code style="color:#555;">sha256('tuapassword').then(console.log)</code></p>
   </div>
 </div>
 
@@ -110,6 +110,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     </div>
     <div class="main-panel">
 
+      <!-- DASHBOARD -->
       <div class="panel active" id="panel-dashboard">
         <div class="panel-title">Dashboard</div>
         <div class="stat-cards">
@@ -121,6 +122,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <p style="font-size:12px;color:#555;">Aggiornato: <span id="dash-time">—</span></p>
       </div>
 
+      <!-- USERS -->
       <div class="panel" id="panel-users">
         <div class="panel-title">Gestione Utenti</div>
         <div class="search-bar">
@@ -130,6 +132,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div id="users-list"><div class="loading">Caricamento...</div></div>
       </div>
 
+      <!-- CHAMPIONSHIPS -->
       <div class="panel" id="panel-champs">
         <div class="panel-title">Gestione Campionati</div>
         <div class="search-bar">
@@ -139,59 +142,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div id="champs-list"><div class="loading">Caricamento...</div></div>
       </div>
 
+      <!-- BLACKLIST -->
       <div class="panel" id="panel-blacklist">
         <div class="panel-title">Blacklist Parole</div>
-        <p style="font-size:13px;color:#666;margin-bottom:16px;">Parole vietate in nomi utente e campionati. Salvate nel database — attive globalmente su tutti i dispositivi.</p>
+        <p style="font-size:13px;color:#666;margin-bottom:16px;">Parole vietate in nomi utente e campionati.</p>
         <div class="word-chips" id="word-chips"><span class="loading">Caricamento...</span></div>
         <div class="add-word-row">
           <input type="text" id="new-word" placeholder="Nuova parola da bloccare..." onkeydown="if(event.key==='Enter')addWord()"/>
           <button onclick="addWord()">+ Aggiungi</button>
-
-
-      <div class="panel" id="panel-backup">
-        <div class="panel-title" style="color:#e8e8e8;font-size:22px;">💾 Backup & Ripristino</div>
-
-        <!-- EXPORT -->
-        <div style="background:#1c2a1c;border:2px solid #3a6a3a;border-radius:12px;padding:24px;margin-bottom:20px;">
-          <div style="font-size:16px;font-weight:700;margin-bottom:8px;color:#e8e8e8;">📤 Esporta backup</div>
-          <div style="font-size:13px;color:#aaa;margin-bottom:16px;line-height:1.6;">
-            Esporta un file JSON completo con tutti i campionati, risultati e iscrizioni.<br>
-            Usalo come punto di ripristino prima di modifiche strutturali.
-          </div>
-          <button onclick="exportBackup()" style="padding:11px 28px;background:#4a7a4a;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:.3px;">
-            ⬇️ Scarica backup JSON
-          </button>
-          <div id="export-status" style="margin-top:12px;font-size:13px;color:#7a9e7e;min-height:18px;"></div>
-        </div>
-
-        <!-- IMPORT -->
-        <div style="background:#2a1c1c;border:2px solid #6a3a3a;border-radius:12px;padding:24px;">
-          <div style="font-size:16px;font-weight:700;margin-bottom:8px;color:#e8e8e8;">📥 Ripristina backup</div>
-          <div style="font-size:13px;color:#aaa;margin-bottom:8px;line-height:1.6;">
-            Carica un file JSON precedentemente esportato.<br>
-            <strong style="color:#e06060;">⚠️ Attenzione:</strong> il ripristino sovrascrive i campionati esistenti con lo stesso ID.
-            I campionati non presenti nel backup non vengono eliminati.
-          </div>
-          <div style="margin-bottom:14px;">
-            <label style="display:inline-block;padding:9px 20px;background:#2a2a2a;color:#ccc;border-radius:8px;font-size:13px;cursor:pointer;border:1px solid #333;">
-              📂 Scegli file JSON
-              <input type="file" id="backup-file-input" accept=".json" onchange="previewBackup(this)" style="display:none;">
-            </label>
-            <span id="backup-filename" style="margin-left:10px;font-size:12px;color:#666;"></span>
-          </div>
-          <div id="backup-preview" style="display:none;margin-bottom:14px;padding:14px;background:#111;border-radius:8px;font-size:12px;color:#888;line-height:1.8;"></div>
-          <button id="backup-import-btn" onclick="importBackup()" disabled style="padding:10px 24px;background:#5a1a1a;color:#e08080;border:1px solid #7a2a2a;border-radius:8px;font-size:13px;font-weight:700;cursor:not-allowed;opacity:.5;">
-            ♻️ Ripristina
-          </button>
-          <div id="import-status" style="margin-top:10px;font-size:12px;min-height:18px;"></div>
         </div>
       </div>
 
+      <!-- TEMA -->
       <div class="panel" id="panel-theme">
         <div class="panel-title">🎨 Gestione Tema</div>
-        <p style="font-size:13px;color:#aaa;margin-bottom:16px;">
-          Modifica i colori del sito. Salvati sul database, attivi al prossimo login degli utenti.
-        </p>
+        <p style="font-size:13px;color:#aaa;margin-bottom:16px;">Modifica i colori del sito. Salvati sul database, attivi al prossimo login degli utenti.</p>
         <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
           <button onclick="saveTheme()" style="padding:9px 20px;background:#4a7a4a;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">💾 Salva colori</button>
           <button onclick="resetTheme()" style="padding:9px 20px;background:#2a2a2a;color:#aaa;border:1px solid #333;border-radius:8px;font-size:13px;cursor:pointer;">↩ Default</button>
@@ -199,12 +164,36 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div id="theme-grid"></div>
       </div>
 
+      <!-- BACKUP -->
+      <div class="panel" id="panel-backup">
+        <div class="panel-title">💾 Backup & Ripristino</div>
+        <div style="background:#1c2a1c;border:2px solid #3a6a3a;border-radius:12px;padding:24px;margin-bottom:20px;">
+          <div style="font-size:15px;font-weight:700;margin-bottom:8px;color:#e8e8e8;">📤 Esporta backup</div>
+          <div style="font-size:13px;color:#aaa;margin-bottom:16px;line-height:1.6;">Esporta un file JSON completo con tutti i campionati, risultati e iscrizioni.<br>Usalo come punto di ripristino prima di modifiche strutturali.</div>
+          <button onclick="exportBackup()" style="padding:11px 28px;background:#4a7a4a;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;">⬇️ Scarica backup JSON</button>
+          <div id="export-status" style="margin-top:12px;font-size:13px;color:#7a9e7e;min-height:18px;"></div>
+        </div>
+        <div style="background:#2a1c1c;border:2px solid #6a3a3a;border-radius:12px;padding:24px;">
+          <div style="font-size:15px;font-weight:700;margin-bottom:8px;color:#e8e8e8;">📥 Ripristina backup</div>
+          <div style="font-size:13px;color:#aaa;margin-bottom:12px;line-height:1.6;">Carica un file JSON precedentemente esportato.<br><strong style="color:#e06060;">⚠️ Attenzione:</strong> il ripristino sovrascrive i campionati esistenti con lo stesso ID.</div>
+          <div style="margin-bottom:14px;">
+            <label style="display:inline-block;padding:9px 20px;background:#2a2a2a;color:#ccc;border-radius:8px;font-size:13px;cursor:pointer;border:1px solid #333;">
+              📂 Scegli file JSON
+              <input type="file" id="backup-file-input" accept=".json" onchange="previewBackup(this)" style="display:none;">
+            </label>
+            <span id="backup-filename" style="margin-left:10px;font-size:12px;color:#666;"></span>
+          </div>
+          <div id="backup-preview" style="display:none;margin-bottom:14px;padding:14px;background:#111;border-radius:8px;font-size:12px;color:#aaa;line-height:1.8;"></div>
+          <button id="backup-import-btn" onclick="importBackup()" disabled style="padding:10px 24px;background:#5a1a1a;color:#e08080;border:1px solid #7a2a2a;border-radius:8px;font-size:13px;font-weight:700;cursor:not-allowed;opacity:.5;">♻️ Ripristina</button>
+          <div id="import-status" style="margin-top:10px;font-size:13px;min-height:18px;"></div>
+        </div>
       </div>
 
-    </div>
-  </div>
-</div>
+    </div><!-- /main-panel -->
+  </div><!-- /admin-body -->
+</div><!-- /admin-screen -->
 
+<!-- MODALS -->
 <div class="modal-overlay" id="modal-rename">
   <div class="modal-box">
     <h3>Rinomina campionato</h3>
@@ -215,18 +204,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     </div>
   </div>
 </div>
-
 <div class="modal-overlay" id="modal-del-champ">
   <div class="modal-box">
     <h3 id="del-champ-title">Elimina campionato</h3>
-    <p>Questa azione è <strong style="color:#e08080;">irreversibile</strong>. Tutti i dati, i membri e i risultati verranno eliminati.</p>
+    <p>Questa azione è <strong style="color:#e08080;">irreversibile</strong>. Tutti i dati verranno eliminati.</p>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModal('modal-del-champ')">Annulla</button>
       <button class="btn-danger" onclick="confirmDelChamp()">Elimina definitivamente</button>
     </div>
   </div>
 </div>
-
 <div class="modal-overlay" id="modal-del-user">
   <div class="modal-box">
     <h3 id="del-user-title">Elimina utente</h3>
@@ -239,117 +226,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 </div>
 
 <div class="toast-admin" id="toast"></div>
-
 <script>
-// ── TEMA ──────────────────────────────────────────
-
-// ── TEMA COLORI ───────────────────────────────────
-const THEME_VARS = [
-  { key: '--bg',      label: 'Sfondo pagina',         def: '#0d0d14' },
-  { key: '--card',    label: 'Sfondo card/pannelli',  def: '#15151f' },
-  { key: '--border',  label: 'Bordi',                 def: '#2a2a3a' },
-  { key: '--text',    label: 'Testo principale',      def: '#e8e8f0' },
-  { key: '--muted',   label: 'Testo secondario',      def: '#8888aa' },
-  { key: '--violet',  label: 'Colore primario',       def: '#8b5cf6' },
-  { key: '--violet2', label: 'Colore primario scuro', def: '#6d28d9' },
-  { key: '--accent',  label: 'Accento',               def: '#8b5cf6' },
-  { key: '--red',     label: 'Errore / Elimina',      def: '#e63946' },
-  { key: '--gold',    label: 'Oro / Premi',           def: '#d4a017' },
-  { key: '--green',   label: 'Verde / Successo',      def: '#2dc653' },
-  { key: '--blue',    label: 'Blu / Info',            def: '#1d7eda' },
-];
-
-let currentTheme = {};
-THEME_VARS.forEach(function(v){ currentTheme[v.key] = v.def; });
-
-async function loadTheme() {
-  // Reset to defaults first
-  THEME_VARS.forEach(function(v){ currentTheme[v.key] = v.def; });
-  try {
-    var res = await sb.from('site_settings').select('key,value');
-    if (res.error) { console.error('DB error:', res.error.message); }
-    (res.data || []).forEach(function(row) {
-      if (!row.key.startsWith('theme-')) return;
-      var varName = '--' + row.key.slice(6);
-      if (Object.prototype.hasOwnProperty.call(currentTheme, varName)) {
-        currentTheme[varName] = row.value;
-      }
-    });
-  } catch(e) { console.error('loadTheme error:', e); }
-  renderThemeGrid();
-}
-
-function renderThemeGrid() {
-  var grid = document.getElementById('theme-grid');
-  if (!grid) { console.error('theme-grid not found'); return; }
-
-  var html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;color:#e8e8e8;">';
-  THEME_VARS.forEach(function(v) {
-    var val = currentTheme[v.key] || v.def;
-    // Ensure hex format for color input
-    var hexVal = val.startsWith('#') ? val : v.def;
-    html += '<div style="background:#1e1e1e;border:1px solid #333;border-radius:10px;padding:14px;">';
-    html += '<div style="display:flex;align-items:center;gap:12px;">';
-    html += '<input type="color" id="cp-' + v.key.slice(2) + '" value="' + hexVal + '"';
-    html += ' style="width:44px;height:44px;border:none;border-radius:8px;cursor:pointer;padding:2px;background:#111;flex-shrink:0;"';
-    html += ' oninput="syncColor(\'' + v.key + '\',this.value)">';
-    html += '<div style="flex:1;min-width:0;">';
-    html += '<div style="font-size:13px;font-weight:600;color:#e8e8e8;margin-bottom:4px;">' + v.label + '</div>';
-    html += '<input type="text" id="hex-' + v.key.slice(2) + '" value="' + hexVal + '"';
-    html += ' style="width:100%;padding:5px 8px;background:#111;border:1px solid #444;border-radius:6px;color:#e8e8e8;font-size:12px;font-family:monospace;outline:none;"';
-    html += ' oninput="syncHex(\'' + v.key + '\',this.value)" maxlength="7">';
-    html += '</div></div></div>';
-  });
-  html += '</div>';
-  grid.innerHTML = html;
-}
-
-function syncColor(varName, val) {
-  currentTheme[varName] = val;
-  var hexId = 'hex-' + varName.slice(2);
-  var hexEl = document.getElementById(hexId);
-  if (hexEl) hexEl.value = val;
-}
-
-function syncHex(varName, val) {
-  val = val.trim();
-  if (!/^#[0-9a-fA-F]{6}$/.test(val)) return;
-  currentTheme[varName] = val;
-  var cpId = 'cp-' + varName.slice(2);
-  var cpEl = document.getElementById(cpId);
-  if (cpEl) cpEl.value = val;
-}
-
-async function saveTheme() {
-  var rows = THEME_VARS.map(function(v) {
-    return { key: 'theme-' + v.key.slice(2), value: currentTheme[v.key] || v.def };
-  });
-  try {
-    await sb.from('site_settings').delete().like('key', 'theme%');
-    var { error } = await sb.from('site_settings').insert(rows);
-    if (error) throw error;
-    toast('✓ Tema salvato!');
-  } catch(e) { toast('Errore: ' + (e.message||e)); }
-}
-
-async function resetTheme() {
-  if (!confirm('Ripristinare i colori di default?')) return;
-  THEME_VARS.forEach(function(v){ currentTheme[v.key] = v.def; });
-  try {
-    await sb.from('site_settings').delete().like('key', 'theme%');
-    toast('✓ Colori di default ripristinati');
-  } catch(e) { toast('Errore: ' + e.message); }
-  renderThemeGrid();
-}
-
-// ─────────────────────────────────────────────────────
-// IMPORTANTE: cambia ADMIN_HASH con lo SHA-256 della tua password.
-// Per generarlo: apri questa pagina, apri la console del browser e digita:
-//   sha256('tuanuovapassword').then(h => console.log(h))
-// Poi incolla il risultato qui sotto.
 const ADMIN_HASH = '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918';
-// ─────────────────────────────────────────────────────
-
 const SUPA_URL = 'https://jhoruzazoqpqlytcbjev.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impob3J1emF6b3FwcWx5dGNiamV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyNjg2MjcsImV4cCI6MjA5MTg0NDYyN30.wcQgwe3KJwSugqPW57JR2Qn5q5RZXLxGMSL9xNsKYSk';
 const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
@@ -358,7 +236,7 @@ async function sha256(str) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
   return [...new Uint8Array(buf)].map(x => x.toString(16).padStart(2,'0')).join('');
 }
-window.sha256 = sha256; // expose for console use
+window.sha256 = sha256;
 
 async function tryLogin() {
   const pass = document.getElementById('admin-pass').value;
@@ -369,12 +247,12 @@ async function tryLogin() {
     setTimeout(() => document.getElementById('login-err').textContent = '', 3000);
     return;
   }
-  sessionStorage.setItem('duelia_admin_ok', '1');
+  sessionStorage.setItem('rankit_admin_ok', '1');
   enterAdmin();
 }
 
 function adminLogout() {
-  sessionStorage.removeItem('duelia_admin_ok');
+  sessionStorage.removeItem('rankit_admin_ok');
   location.reload();
 }
 
@@ -401,7 +279,7 @@ function showPanel(name, btn) {
   if (name === 'users')     loadUsers();
   if (name === 'champs')    loadChamps();
   if (name === 'blacklist') loadBlacklist();
-  if (name === 'theme') { loadTheme(); }
+  if (name === 'theme')     loadTheme();
 }
 
 function toast(msg) {
@@ -410,7 +288,7 @@ function toast(msg) {
   setTimeout(() => t.classList.remove('show'), 2800);
 }
 
-// ── DASHBOARD ─────────────────────────────────────────
+// ── DASHBOARD ──────────────────────────────────────
 async function loadDashboard() {
   const [r1, r2, r3, r4] = await Promise.all([
     sb.from('profiles').select('*', {count:'exact', head:true}),
@@ -425,42 +303,26 @@ async function loadDashboard() {
   document.getElementById('dash-time').textContent = new Date().toLocaleTimeString('it-IT');
 }
 
-// ── USERS ─────────────────────────────────────────────
+// ── USERS ───────────────────────────────────────────
 let allUsers = [];
-
 async function loadUsers() {
   document.getElementById('users-list').innerHTML = '<div class="loading">Caricamento...</div>';
-  const { data, error } = await sb.from('profiles')
-    .select('id,username,email,banned,created_at')
-    .order('created_at', { ascending: false });
-  if (error) {
-    document.getElementById('users-list').innerHTML = '<div class="loading" style="color:#e06060;">Errore: ' + esc(error.message) + '</div>';
-    return;
-  }
+  const { data, error } = await sb.from('profiles').select('id,username,email,banned,created_at').order('created_at', { ascending: false });
+  if (error) { document.getElementById('users-list').innerHTML = '<div class="loading" style="color:#e06060;">Errore: ' + esc(error.message) + '</div>'; return; }
   allUsers = data || [];
   renderUsers(allUsers);
 }
 
 function renderUsers(users) {
-  if (!users.length) {
-    document.getElementById('users-list').innerHTML = '<div class="loading">Nessun utente trovato</div>';
-    return;
-  }
+  if (!users.length) { document.getElementById('users-list').innerHTML = '<div class="loading">Nessun utente trovato</div>'; return; }
   let html = '<table class="data-table"><thead><tr><th>Username</th><th>Email</th><th>Registrato</th><th>Stato</th><th>Azioni</th></tr></thead><tbody>';
   for (const u of users) {
     const date = u.created_at ? new Date(u.created_at).toLocaleDateString('it-IT') : '—';
     const isBanned = !!u.banned;
-    html += '<tr>'
-      + '<td><strong>' + esc(u.username||'—') + '</strong></td>'
-      + '<td class="mono">' + esc(u.email||'—') + '</td>'
-      + '<td>' + date + '</td>'
+    html += '<tr><td><strong>' + esc(u.username||'—') + '</strong></td><td class="mono">' + esc(u.email||'—') + '</td><td>' + date + '</td>'
       + '<td><span class="badge ' + (isBanned?'banned':'ok') + '">' + (isBanned?'Bannato':'Attivo') + '</span></td>'
-      + '<td>'
-      + (isBanned
-        ? '<button class="act-btn green" onclick="unbanUser(\'' + u.id + '\')">Sbanna</button>'
-        : '<button class="act-btn yellow" onclick="banUser(\'' + u.id + '\')">Banna</button>')
-      + '<button class="act-btn red" onclick="openDelUser(\'' + u.id + '\',\'' + esc(u.username||'utente').replace(/'/g,"\\'") + '\')">Elimina</button>'
-      + '</td></tr>';
+      + '<td>' + (isBanned ? '<button class="act-btn green" onclick="unbanUser(\'' + u.id + '\')">Sbanna</button>' : '<button class="act-btn yellow" onclick="banUser(\'' + u.id + '\')">Banna</button>')
+      + '<button class="act-btn red" onclick="openDelUser(\'' + u.id + '\',\'' + esc(u.username||'utente').replace(/'/g,"\\'") + '\')">Elimina</button></td></tr>';
   }
   html += '</tbody></table>';
   document.getElementById('users-list').innerHTML = html;
@@ -468,84 +330,54 @@ function renderUsers(users) {
 
 function filterUsers() {
   const q = document.getElementById('user-q').value.toLowerCase();
-  renderUsers(allUsers.filter(u =>
-    (u.email||'').toLowerCase().includes(q) || (u.username||'').toLowerCase().includes(q)
-  ));
+  renderUsers(allUsers.filter(u => (u.email||'').toLowerCase().includes(q) || (u.username||'').toLowerCase().includes(q)));
 }
 
 async function banUser(id) {
   const { error } = await sb.from('profiles').update({ banned: true }).eq('id', id);
   if (error) { toast('Errore: ' + error.message); return; }
   allUsers = allUsers.map(u => u.id === id ? Object.assign({}, u, { banned: true }) : u);
-  renderUsers(allUsers);
-  toast('Utente bannato ✓');
-  loadDashboard();
+  renderUsers(allUsers); toast('Utente bannato ✓'); loadDashboard();
 }
-
 async function unbanUser(id) {
   const { error } = await sb.from('profiles').update({ banned: false }).eq('id', id);
   if (error) { toast('Errore: ' + error.message); return; }
   allUsers = allUsers.map(u => u.id === id ? Object.assign({}, u, { banned: false }) : u);
-  renderUsers(allUsers);
-  toast('Ban rimosso ✓');
-  loadDashboard();
+  renderUsers(allUsers); toast('Ban rimosso ✓'); loadDashboard();
 }
 
 let delUserId = null;
-function openDelUser(id, name) {
-  delUserId = id;
-  document.getElementById('del-user-title').textContent = 'Elimina "' + name + '"';
-  openModal('modal-del-user');
-}
+function openDelUser(id, name) { delUserId = id; document.getElementById('del-user-title').textContent = 'Elimina "' + name + '"'; openModal('modal-del-user'); }
 async function confirmDelUser() {
   if (!delUserId) return;
   const { error } = await sb.from('profiles').delete().eq('id', delUserId);
   if (error) { toast('Errore: ' + error.message); return; }
   allUsers = allUsers.filter(u => u.id !== delUserId);
-  closeModal('modal-del-user');
-  renderUsers(allUsers);
-  toast('Utente eliminato ✓');
-  loadDashboard();
+  closeModal('modal-del-user'); renderUsers(allUsers); toast('Utente eliminato ✓'); loadDashboard();
 }
 
-// ── CHAMPIONSHIPS ─────────────────────────────────────
+// ── CHAMPIONSHIPS ────────────────────────────────────
 let allChamps = [];
-
 async function loadChamps() {
   document.getElementById('champs-list').innerHTML = '<div class="loading">Caricamento...</div>';
-  const { data, error } = await sb.from('championships')
-    .select('id,name,season,owner_id,created_at,data')
-    .order('created_at', { ascending: false });
-  if (error) {
-    document.getElementById('champs-list').innerHTML = '<div class="loading" style="color:#e06060;">Errore: ' + esc(error.message) + '</div>';
-    return;
-  }
+  const { data, error } = await sb.from('championships').select('id,name,season,owner_id,created_at,data').order('created_at', { ascending: false });
+  if (error) { document.getElementById('champs-list').innerHTML = '<div class="loading" style="color:#e06060;">Errore: ' + esc(error.message) + '</div>'; return; }
   allChamps = data || [];
   renderChamps(allChamps);
 }
 
 function renderChamps(champs) {
-  if (!champs.length) {
-    document.getElementById('champs-list').innerHTML = '<div class="loading">Nessun campionato trovato</div>';
-    return;
-  }
-  const fmtMap = { standard:'Standard', roundrobin:'Round Robin', elimination:'Eliminazione' };
+  if (!champs.length) { document.getElementById('champs-list').innerHTML = '<div class="loading">Nessun campionato trovato</div>'; return; }
+  const fmtMap = { standard:'Standard', roundrobin:'Round Robin', elimination:'Eliminazione', timetrial:'Time Trial' };
   let html = '<table class="data-table"><thead><tr><th>Nome / ID</th><th>Formato</th><th>Creato</th><th>Azioni</th></tr></thead><tbody>';
   for (const c of champs) {
     const date = c.created_at ? new Date(c.created_at).toLocaleDateString('it-IT') : '—';
     const fmt = fmtMap[(c.data||{}).format] || 'Standard';
-    html += '<tr>'
-      + '<td>'
-      + '<strong>' + esc(c.name||'—') + '</strong>'
-      + (c.season ? '<span style="color:#555;font-size:11px;margin-left:6px;">' + esc(c.season) + '</span>' : '')
-      + '<br><span style="font-family:monospace;font-size:10px;color:#888;" title="' + c.id + '">' + c.id + '</span>'
-      + '</td>'
-      + '<td>' + fmt + '</td>'
-      + '<td>' + date + '</td>'
-      + '<td>'
-      + '<button class="act-btn blue" onclick="openRename(\'' + c.id + '\',\'' + esc(c.name||'').replace(/'/g,"\\'") + '\')">Rinomina</button>'
-      + '<button class="act-btn red" onclick="openDelChamp(\'' + c.id + '\',\'' + esc(c.name||'').replace(/'/g,"\\'") + '\')">Elimina</button>'
-      + '</td></tr>';
+    html += '<tr><td><strong>' + esc(c.name||'—') + '</strong>' + (c.season ? '<span style="color:#555;font-size:11px;margin-left:6px;">' + esc(c.season) + '</span>' : '')
+      + '<br><span style="font-family:monospace;font-size:10px;color:#888;">' + c.id + '</span></td>'
+      + '<td>' + fmt + '</td><td>' + date + '</td>'
+      + '<td><button class="act-btn blue" onclick="openRename(\'' + c.id + '\',\'' + esc(c.name||'').replace(/'/g,"\\'") + '\')">Rinomina</button>'
+      + '<button class="act-btn red" onclick="openDelChamp(\'' + c.id + '\',\'' + esc(c.name||'').replace(/'/g,"\\'") + '\')">Elimina</button></td></tr>';
   }
   html += '</tbody></table>';
   document.getElementById('champs-list').innerHTML = html;
@@ -553,52 +385,32 @@ function renderChamps(champs) {
 
 function filterChamps() {
   const q = document.getElementById('champ-q').value.toLowerCase();
-  renderChamps(allChamps.filter(c =>
-    (c.name||'').toLowerCase().includes(q) ||
-    (c.id||'').toLowerCase().includes(q)
-  ));
+  renderChamps(allChamps.filter(c => (c.name||'').toLowerCase().includes(q) || (c.id||'').toLowerCase().includes(q)));
 }
 
 let renameId = null;
-function openRename(id, name) {
-  renameId = id;
-  document.getElementById('rename-val').value = name;
-  openModal('modal-rename');
-  setTimeout(() => document.getElementById('rename-val').focus(), 100);
-}
+function openRename(id, name) { renameId = id; document.getElementById('rename-val').value = name; openModal('modal-rename'); setTimeout(() => document.getElementById('rename-val').focus(), 100); }
 async function confirmRename() {
   const name = document.getElementById('rename-val').value.trim();
   if (!name || !renameId) return;
-  const blacklisted = await containsBlacklisted(name);
-  if (blacklisted) { toast('Nome contiene parole non consentite'); return; }
   const { error } = await sb.from('championships').update({ name }).eq('id', renameId);
   if (error) { toast('Errore: ' + error.message); return; }
   allChamps = allChamps.map(c => c.id === renameId ? Object.assign({}, c, { name }) : c);
-  closeModal('modal-rename');
-  renderChamps(allChamps);
-  toast('Campionato rinominato ✓');
+  closeModal('modal-rename'); renderChamps(allChamps); toast('Campionato rinominato ✓');
 }
 
 let delChampId = null;
-function openDelChamp(id, name) {
-  delChampId = id;
-  document.getElementById('del-champ-title').textContent = 'Elimina "' + name + '"';
-  openModal('modal-del-champ');
-}
+function openDelChamp(id, name) { delChampId = id; document.getElementById('del-champ-title').textContent = 'Elimina "' + name + '"'; openModal('modal-del-champ'); }
 async function confirmDelChamp() {
   if (!delChampId) return;
   const { error } = await sb.from('championships').delete().eq('id', delChampId);
   if (error) { toast('Errore: ' + error.message); return; }
   allChamps = allChamps.filter(c => c.id !== delChampId);
-  closeModal('modal-del-champ');
-  renderChamps(allChamps);
-  toast('Campionato eliminato ✓');
-  loadDashboard();
+  closeModal('modal-del-champ'); renderChamps(allChamps); toast('Campionato eliminato ✓'); loadDashboard();
 }
 
 // ── BLACKLIST ─────────────────────────────────────────
 let blacklistWords = [];
-
 async function loadBlacklist() {
   document.getElementById('word-chips').innerHTML = '<span class="loading">Caricamento...</span>';
   const { data, error } = await sb.from('blacklist_words').select('id,word').order('word');
@@ -606,125 +418,121 @@ async function loadBlacklist() {
   blacklistWords = data || [];
   renderBlacklist();
 }
-
 function renderBlacklist() {
   const el = document.getElementById('word-chips');
-  if (!blacklistWords.length) {
-    el.innerHTML = '<span style="color:#555;font-size:13px;">Nessuna parola nella lista</span>';
-    return;
-  }
-  el.innerHTML = blacklistWords.map(w =>
-    '<div class="word-chip">' + esc(w.word) + '<button onclick="removeWord(' + w.id + ')">×</button></div>'
-  ).join('');
+  if (!blacklistWords.length) { el.innerHTML = '<span style="color:#555;font-size:13px;">Nessuna parola nella lista</span>'; return; }
+  el.innerHTML = blacklistWords.map(w => '<div class="word-chip">' + esc(w.word) + '<button onclick="removeWord(' + w.id + ')">×</button></div>').join('');
 }
-
 async function addWord() {
   const input = document.getElementById('new-word');
   const word = input.value.trim().toLowerCase();
   if (!word) return;
   const { data, error } = await sb.from('blacklist_words').insert({ word }).select().single();
-  if (error) {
-    toast(error.code === '23505' ? 'Parola già presente' : 'Errore: ' + error.message);
-    return;
-  }
-  blacklistWords.push(data);
-  blacklistWords.sort((a,b) => a.word.localeCompare(b.word));
-  input.value = '';
-  renderBlacklist();
+  if (error) { toast(error.code === '23505' ? 'Parola già presente' : 'Errore: ' + error.message); return; }
+  blacklistWords.push(data); blacklistWords.sort((a,b) => a.word.localeCompare(b.word));
+  input.value = ''; renderBlacklist();
   document.getElementById('s-words').textContent = blacklistWords.length;
   toast('"' + word + '" aggiunto ✓');
 }
-
 async function removeWord(id) {
   const { error } = await sb.from('blacklist_words').delete().eq('id', id);
   if (error) { toast('Errore: ' + error.message); return; }
   blacklistWords = blacklistWords.filter(w => w.id !== id);
-  renderBlacklist();
-  document.getElementById('s-words').textContent = blacklistWords.length;
-  toast('Parola rimossa ✓');
+  renderBlacklist(); document.getElementById('s-words').textContent = blacklistWords.length; toast('Parola rimossa ✓');
 }
 
-async function containsBlacklisted(text) {
-  const { data } = await sb.from('blacklist_words').select('word');
-  const words = (data||[]).map(w => w.word.toLowerCase());
-  return words.some(w => text.toLowerCase().includes(w));
+// ── TEMA ─────────────────────────────────────────────
+const THEME_VARS = [
+  { key: '--bg',      label: 'Sfondo pagina',        def: '#0d0d14' },
+  { key: '--card',    label: 'Sfondo card/pannelli', def: '#15151f' },
+  { key: '--border',  label: 'Bordi',                def: '#2a2a3a' },
+  { key: '--text',    label: 'Testo principale',     def: '#e8e8f0' },
+  { key: '--muted',   label: 'Testo secondario',     def: '#8888aa' },
+  { key: '--violet',  label: 'Colore primario',      def: '#8b5cf6' },
+  { key: '--violet2', label: 'Colore primario scuro',def: '#6d28d9' },
+  { key: '--accent',  label: 'Accento',              def: '#8b5cf6' },
+  { key: '--red',     label: 'Errore / Elimina',     def: '#e63946' },
+  { key: '--gold',    label: 'Oro / Premi',          def: '#d4a017' },
+  { key: '--green',   label: 'Verde / Successo',     def: '#2dc653' },
+  { key: '--blue',    label: 'Blu / Info',           def: '#1d7eda' },
+];
+let currentTheme = {};
+THEME_VARS.forEach(v => { currentTheme[v.key] = v.def; });
+
+async function loadTheme() {
+  THEME_VARS.forEach(v => { currentTheme[v.key] = v.def; });
+  try {
+    var { data } = await sb.from('site_settings').select('key,value');
+    (data||[]).forEach(row => {
+      if (!row.key.startsWith('theme-')) return;
+      var varName = '--' + row.key.slice(6);
+      if (currentTheme.hasOwnProperty(varName)) currentTheme[varName] = row.value;
+    });
+  } catch(e) { console.error('loadTheme:', e); }
+  renderThemeGrid();
+}
+function renderThemeGrid() {
+  var grid = document.getElementById('theme-grid');
+  if (!grid) return;
+  var html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;color:#e8e8e8;">';
+  THEME_VARS.forEach(v => {
+    var val = currentTheme[v.key] || v.def;
+    var hexVal = val.startsWith('#') ? val : v.def;
+    html += '<div style="background:#1e1e1e;border:1px solid #333;border-radius:10px;padding:14px;"><div style="display:flex;align-items:center;gap:12px;">'
+      + '<input type="color" id="cp-' + v.key.slice(2) + '" value="' + hexVal + '" style="width:44px;height:44px;border:none;border-radius:8px;cursor:pointer;padding:2px;background:#111;flex-shrink:0;" oninput="syncColor(\'' + v.key + '\',this.value)">'
+      + '<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;color:#e8e8e8;margin-bottom:4px;">' + v.label + '</div>'
+      + '<input type="text" id="hex-' + v.key.slice(2) + '" value="' + hexVal + '" style="width:100%;padding:5px 8px;background:#111;border:1px solid #444;border-radius:6px;color:#e8e8e8;font-size:12px;font-family:monospace;outline:none;" oninput="syncHex(\'' + v.key + '\',this.value)" maxlength="7">'
+      + '</div></div></div>';
+  });
+  html += '</div>';
+  grid.innerHTML = html;
+}
+function syncColor(varName, val) { currentTheme[varName] = val; var el = document.getElementById('hex-' + varName.slice(2)); if(el) el.value = val; }
+function syncHex(varName, val) { val = val.trim(); if(!/^#[0-9a-fA-F]{6}$/.test(val)) return; currentTheme[varName] = val; var el = document.getElementById('cp-' + varName.slice(2)); if(el) el.value = val; }
+async function saveTheme() {
+  var rows = THEME_VARS.map(v => ({ key: 'theme-' + v.key.slice(2), value: currentTheme[v.key] || v.def }));
+  try {
+    await sb.from('site_settings').delete().like('key', 'theme%');
+    var { error } = await sb.from('site_settings').insert(rows);
+    if (error) throw error;
+    toast('✓ Tema salvato!');
+  } catch(e) { toast('Errore: ' + (e.message||e)); }
+}
+async function resetTheme() {
+  if (!confirm('Ripristinare i colori di default?')) return;
+  THEME_VARS.forEach(v => { currentTheme[v.key] = v.def; });
+  try { await sb.from('site_settings').delete().like('key', 'theme%'); toast('✓ Default ripristinati'); } catch(e) { toast('Errore: ' + e.message); }
+  renderThemeGrid();
 }
 
-// ── UTILS ─────────────────────────────────────────────
-function esc(str) {
-  return String(str)
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-function openModal(id)  { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-
-document.querySelectorAll('.modal-overlay').forEach(el => {
-  el.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('open'); });
-});
-
-
-// ── BOOT ─────────────────────────────────────────────
-if (sessionStorage.getItem('duelia_admin_ok') === '1') enterAdmin();
-
-// ── BACKUP & RESTORE ──────────────────────────────
-
+// ── BACKUP ───────────────────────────────────────────
 async function exportBackup() {
   var statusEl = document.getElementById('export-status');
   statusEl.textContent = '⏳ Raccolta dati in corso...';
-
   try {
-    // 1. Load all championships
-    var { data: champs, error: ce } = await sb
-      .from('championships')
-      .select('*')
-      .order('created_at', { ascending: true });
+    var { data: champs, error: ce } = await sb.from('championships').select('*').order('created_at', { ascending: true });
     if (ce) throw new Error('Championships: ' + ce.message);
-
-    // 2. Load all champ_members
-    var { data: members, error: me } = await sb
-      .from('champ_members')
-      .select('*');
+    var { data: members, error: me } = await sb.from('champ_members').select('*');
     if (me) throw new Error('Members: ' + me.message);
-
-    // 3. Load user_archives
     var { data: archives } = await sb.from('user_archives').select('*');
-
-    // 4. Load user_favourites
     var { data: favs } = await sb.from('user_favourites').select('*');
-
-    // Build backup object
     var backup = {
       version: '1.0',
       exported_at: new Date().toISOString(),
-      exported_by: currentUser?.email || 'admin',
-      counts: {
-        championships: champs.length,
-        members: members.length,
-        archives: (archives||[]).length,
-        favourites: (favs||[]).length,
-      },
+      counts: { championships: champs.length, members: members.length, archives: (archives||[]).length, favourites: (favs||[]).length },
       championships: champs,
       champ_members: members,
       user_archives: archives || [],
       user_favourites: favs || [],
     };
-
-    // Download
-    var json = JSON.stringify(backup, null, 2);
-    var blob = new Blob([json], { type: 'application/json' });
+    var blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
     var link = document.createElement('a');
-    var date = new Date().toISOString().slice(0,10);
     link.href = URL.createObjectURL(blob);
-    link.download = 'rankit-backup-' + date + '.json';
+    link.download = 'rankit-backup-' + new Date().toISOString().slice(0,10) + '.json';
     link.click();
     URL.revokeObjectURL(link.href);
-
-    statusEl.textContent = '✓ Backup scaricato — '
-      + champs.length + ' campionati, '
-      + members.length + ' iscrizioni.';
+    statusEl.textContent = '✓ Backup scaricato — ' + champs.length + ' campionati, ' + members.length + ' iscrizioni.';
     statusEl.style.color = '#7a9e7e';
-
   } catch(e) {
     statusEl.textContent = '✗ Errore: ' + e.message;
     statusEl.style.color = '#e06060';
@@ -732,44 +540,27 @@ async function exportBackup() {
 }
 
 var backupData = null;
-
 function previewBackup(input) {
-  var file = input.files[0];
-  if (!file) return;
+  var file = input.files[0]; if (!file) return;
   document.getElementById('backup-filename').textContent = file.name;
-
   var reader = new FileReader();
   reader.onload = function(e) {
     try {
       backupData = JSON.parse(e.target.result);
       var preview = document.getElementById('backup-preview');
       var btn = document.getElementById('backup-import-btn');
-
       if (!backupData.version || !backupData.championships) {
-        preview.innerHTML = '<span style="color:#e06060;">✗ File non valido — non è un backup Rankit.</span>';
-        preview.style.display = '';
-        btn.disabled = true; btn.style.opacity = '.5'; btn.style.cursor = 'not-allowed';
-        return;
+        preview.innerHTML = '<span style="color:#e06060;">✗ File non valido.</span>';
+        preview.style.display = ''; btn.disabled = true; btn.style.opacity = '.5'; return;
       }
-
-      preview.innerHTML =
-        '📅 Esportato il: <strong>' + new Date(backupData.exported_at).toLocaleString('it-IT') + '</strong><br>'
+      preview.innerHTML = '📅 Esportato: <strong>' + new Date(backupData.exported_at).toLocaleString('it-IT') + '</strong><br>'
         + '🏆 Campionati: <strong>' + backupData.championships.length + '</strong><br>'
-        + '👥 Iscrizioni: <strong>' + backupData.champ_members.length + '</strong><br>'
-        + '📦 Archivi: <strong>' + (backupData.user_archives||[]).length + '</strong><br>'
-        + '⭐ Preferiti: <strong>' + (backupData.user_favourites||[]).length + '</strong>';
+        + '👥 Iscrizioni: <strong>' + backupData.champ_members.length + '</strong>';
       preview.style.display = '';
-
-      btn.disabled = false;
-      btn.style.opacity = '1';
-      btn.style.cursor = 'pointer';
-      btn.style.background = '#4a2a00';
-      btn.style.color = '#f59e0b';
-      btn.style.borderColor = '#7a5a00';
-
+      btn.disabled = false; btn.style.opacity = '1'; btn.style.cursor = 'pointer';
+      btn.style.background = '#4a2a00'; btn.style.color = '#f59e0b'; btn.style.borderColor = '#7a5a00';
     } catch(err) {
-      document.getElementById('backup-preview').innerHTML =
-        '<span style="color:#e06060;">✗ File JSON non valido.</span>';
+      document.getElementById('backup-preview').innerHTML = '<span style="color:#e06060;">✗ File JSON non valido.</span>';
       document.getElementById('backup-preview').style.display = '';
     }
   };
@@ -778,82 +569,59 @@ function previewBackup(input) {
 
 async function importBackup() {
   if (!backupData) return;
-
   var status = document.getElementById('import-status');
-
-  if (!confirm(
-    'Sei sicuro di voler ripristinare questo backup?\n\n'
-    + backupData.championships.length + ' campionati verranno sovrascritti se già esistenti.\n'
-    + 'I campionati non presenti nel backup NON verranno eliminati.\n\n'
-    + 'Questa operazione è irreversibile senza un backup aggiornato.'
-  )) return;
-
-  status.textContent = '⏳ Ripristino in corso...';
-  status.style.color = '#f59e0b';
-
+  if (!confirm('Ripristinare questo backup?\n\n' + backupData.championships.length + ' campionati verranno sovrascritti.\nOperazione irreversibile.')) return;
+  status.textContent = '⏳ Ripristino in corso...'; status.style.color = '#f59e0b';
   try {
-    var errors = [];
-    var ok = 0;
-
-    // ── Restore championships ──
+    var errors = []; var ok = 0;
     for (var i = 0; i < backupData.championships.length; i++) {
       var champ = backupData.championships[i];
-      var { error } = await sb.from('championships')
-        .upsert(champ, { onConflict: 'id' });
-      if (error) errors.push('champ ' + champ.id + ': ' + error.message);
-      else ok++;
-      status.textContent = '⏳ Campionati: ' + ok + '/' + backupData.championships.length + '...';
+      var { error } = await sb.from('championships').upsert(champ, { onConflict: 'id' });
+      if (error) errors.push('champ ' + champ.id + ': ' + error.message); else ok++;
+      status.textContent = '⏳ ' + ok + '/' + backupData.championships.length + '...';
     }
-
-    // ── Restore champ_members ──
     if (backupData.champ_members && backupData.champ_members.length) {
-      var { error: me } = await sb.from('champ_members')
-        .upsert(backupData.champ_members, { onConflict: 'champ_id,user_id' });
+      var { error: me } = await sb.from('champ_members').upsert(backupData.champ_members, { onConflict: 'champ_id,user_id' });
       if (me) errors.push('members: ' + me.message);
     }
-
-    // ── Restore user_archives ──
     if (backupData.user_archives && backupData.user_archives.length) {
-      var { error: ae } = await sb.from('user_archives')
-        .upsert(backupData.user_archives, { onConflict: 'user_id,champ_id' });
+      var { error: ae } = await sb.from('user_archives').upsert(backupData.user_archives, { onConflict: 'user_id,champ_id' });
       if (ae) errors.push('archives: ' + ae.message);
     }
-
-    // ── Restore user_favourites ──
     if (backupData.user_favourites && backupData.user_favourites.length) {
-      var { error: fe } = await sb.from('user_favourites')
-        .upsert(backupData.user_favourites, { onConflict: 'user_id,champ_id' });
+      var { error: fe } = await sb.from('user_favourites').upsert(backupData.user_favourites, { onConflict: 'user_id,champ_id' });
       if (fe) errors.push('favourites: ' + fe.message);
     }
-
     if (errors.length) {
-      status.innerHTML = '⚠️ Completato con ' + errors.length + ' errori:<br>'
-        + errors.map(function(e){ return '• ' + e; }).join('<br>');
+      status.innerHTML = '⚠️ Completato con errori:<br>' + errors.map(e => '• ' + e).join('<br>');
       status.style.color = '#f59e0b';
     } else {
-      status.textContent = '✓ Ripristino completato — '
-        + ok + ' campionati, '
-        + backupData.champ_members.length + ' iscrizioni.';
+      status.textContent = '✓ Ripristino completato — ' + ok + ' campionati.';
       status.style.color = '#7a9e7e';
     }
-
-    // Reset
     backupData = null;
     document.getElementById('backup-file-input').value = '';
     document.getElementById('backup-filename').textContent = '';
     document.getElementById('backup-preview').style.display = 'none';
     document.getElementById('backup-import-btn').disabled = true;
     document.getElementById('backup-import-btn').style.opacity = '.5';
-
     loadDashboard();
-
   } catch(e) {
     status.textContent = '✗ Errore critico: ' + e.message;
     status.style.color = '#e06060';
   }
 }
 
+// ── UTILS ─────────────────────────────────────────────
+function esc(str) { return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('open'); });
+});
+
+// ── BOOT ─────────────────────────────────────────────
+if (sessionStorage.getItem('rankit_admin_ok') === '1') enterAdmin();
 </script>
 </body>
 </html>
-
