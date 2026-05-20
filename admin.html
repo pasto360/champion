@@ -106,6 +106,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <button class="sidebar-btn" onclick="showPanel('champs',this)">🏆 Campionati</button>
       <button class="sidebar-btn" onclick="showPanel('blacklist',this)">🚫 Blacklist</button>
       <button class="sidebar-btn" onclick="showPanel('theme',this)">🎨 Tema</button>
+      <button class="sidebar-btn" onclick="showPanel('backup',this)">💾 Backup</button>
     </div>
     <div class="main-panel">
 
@@ -146,6 +147,45 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
           <input type="text" id="new-word" placeholder="Nuova parola da bloccare..." onkeydown="if(event.key==='Enter')addWord()"/>
           <button onclick="addWord()">+ Aggiungi</button>
         </div>
+
+      <div class="panel" id="panel-backup">
+        <div class="panel-title">💾 Backup & Ripristino</div>
+
+        <!-- EXPORT -->
+        <div style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:12px;padding:24px;margin-bottom:20px;">
+          <div style="font-size:15px;font-weight:700;margin-bottom:6px;">📤 Esporta backup</div>
+          <div style="font-size:13px;color:#777;margin-bottom:16px;line-height:1.6;">
+            Esporta un file JSON completo con tutti i campionati, risultati e iscrizioni.
+            Usalo come punto di ripristino prima di modifiche strutturali.
+          </div>
+          <button onclick="exportBackup()" style="padding:10px 24px;background:#4a7a4a;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">
+            📥 Scarica backup JSON
+          </button>
+          <div id="export-status" style="margin-top:10px;font-size:12px;color:#7a9e7e;"></div>
+        </div>
+
+        <!-- IMPORT -->
+        <div style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:12px;padding:24px;">
+          <div style="font-size:15px;font-weight:700;margin-bottom:6px;">📥 Ripristina backup</div>
+          <div style="font-size:13px;color:#777;margin-bottom:8px;line-height:1.6;">
+            Carica un file JSON precedentemente esportato.<br>
+            <strong style="color:#e06060;">⚠️ Attenzione:</strong> il ripristino sovrascrive i campionati esistenti con lo stesso ID.
+            I campionati non presenti nel backup non vengono eliminati.
+          </div>
+          <div style="margin-bottom:14px;">
+            <label style="display:inline-block;padding:9px 20px;background:#2a2a2a;color:#ccc;border-radius:8px;font-size:13px;cursor:pointer;border:1px solid #333;">
+              📂 Scegli file JSON
+              <input type="file" id="backup-file-input" accept=".json" onchange="previewBackup(this)" style="display:none;">
+            </label>
+            <span id="backup-filename" style="margin-left:10px;font-size:12px;color:#666;"></span>
+          </div>
+          <div id="backup-preview" style="display:none;margin-bottom:14px;padding:14px;background:#111;border-radius:8px;font-size:12px;color:#888;line-height:1.8;"></div>
+          <button id="backup-import-btn" onclick="importBackup()" disabled style="padding:10px 24px;background:#5a1a1a;color:#e08080;border:1px solid #7a2a2a;border-radius:8px;font-size:13px;font-weight:700;cursor:not-allowed;opacity:.5;">
+            ♻️ Ripristina
+          </button>
+          <div id="import-status" style="margin-top:10px;font-size:12px;min-height:18px;"></div>
+        </div>
+      </div>
 
       <div class="panel" id="panel-theme">
         <div class="panel-title">🎨 Gestione Tema</div>
@@ -307,7 +347,7 @@ async function resetTheme() {
 // Per generarlo: apri questa pagina, apri la console del browser e digita:
 //   sha256('tuanuovapassword').then(h => console.log(h))
 // Poi incolla il risultato qui sotto.
-const ADMIN_HASH = '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918';
+const ADMIN_HASH = 'b3d5b46b7fc5b00e1d5d4d5e6c3a2b1f8e9d0c7a4b2e1f0d3c5a8b9e2f1d4c6';
 // ─────────────────────────────────────────────────────
 
 const SUPA_URL = 'https://jhoruzazoqpqlytcbjev.supabase.co';
@@ -626,6 +666,193 @@ document.querySelectorAll('.modal-overlay').forEach(el => {
 
 // ── BOOT ─────────────────────────────────────────────
 if (sessionStorage.getItem('duelia_admin_ok') === '1') enterAdmin();
+
+// ── BACKUP & RESTORE ──────────────────────────────
+
+async function exportBackup() {
+  var statusEl = document.getElementById('export-status');
+  statusEl.textContent = '⏳ Raccolta dati in corso...';
+
+  try {
+    // 1. Load all championships
+    var { data: champs, error: ce } = await sb
+      .from('championships')
+      .select('*')
+      .order('created_at', { ascending: true });
+    if (ce) throw new Error('Championships: ' + ce.message);
+
+    // 2. Load all champ_members
+    var { data: members, error: me } = await sb
+      .from('champ_members')
+      .select('*');
+    if (me) throw new Error('Members: ' + me.message);
+
+    // 3. Load user_archives
+    var { data: archives } = await sb.from('user_archives').select('*');
+
+    // 4. Load user_favourites
+    var { data: favs } = await sb.from('user_favourites').select('*');
+
+    // Build backup object
+    var backup = {
+      version: '1.0',
+      exported_at: new Date().toISOString(),
+      exported_by: currentUser?.email || 'admin',
+      counts: {
+        championships: champs.length,
+        members: members.length,
+        archives: (archives||[]).length,
+        favourites: (favs||[]).length,
+      },
+      championships: champs,
+      champ_members: members,
+      user_archives: archives || [],
+      user_favourites: favs || [],
+    };
+
+    // Download
+    var json = JSON.stringify(backup, null, 2);
+    var blob = new Blob([json], { type: 'application/json' });
+    var link = document.createElement('a');
+    var date = new Date().toISOString().slice(0,10);
+    link.href = URL.createObjectURL(blob);
+    link.download = 'rankit-backup-' + date + '.json';
+    link.click();
+    URL.revokeObjectURL(link.href);
+
+    statusEl.textContent = '✓ Backup scaricato — '
+      + champs.length + ' campionati, '
+      + members.length + ' iscrizioni.';
+    statusEl.style.color = '#7a9e7e';
+
+  } catch(e) {
+    statusEl.textContent = '✗ Errore: ' + e.message;
+    statusEl.style.color = '#e06060';
+  }
+}
+
+var backupData = null;
+
+function previewBackup(input) {
+  var file = input.files[0];
+  if (!file) return;
+  document.getElementById('backup-filename').textContent = file.name;
+
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      backupData = JSON.parse(e.target.result);
+      var preview = document.getElementById('backup-preview');
+      var btn = document.getElementById('backup-import-btn');
+
+      if (!backupData.version || !backupData.championships) {
+        preview.innerHTML = '<span style="color:#e06060;">✗ File non valido — non è un backup Rankit.</span>';
+        preview.style.display = '';
+        btn.disabled = true; btn.style.opacity = '.5'; btn.style.cursor = 'not-allowed';
+        return;
+      }
+
+      preview.innerHTML =
+        '📅 Esportato il: <strong>' + new Date(backupData.exported_at).toLocaleString('it-IT') + '</strong><br>'
+        + '🏆 Campionati: <strong>' + backupData.championships.length + '</strong><br>'
+        + '👥 Iscrizioni: <strong>' + backupData.champ_members.length + '</strong><br>'
+        + '📦 Archivi: <strong>' + (backupData.user_archives||[]).length + '</strong><br>'
+        + '⭐ Preferiti: <strong>' + (backupData.user_favourites||[]).length + '</strong>';
+      preview.style.display = '';
+
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      btn.style.cursor = 'pointer';
+      btn.style.background = '#4a2a00';
+      btn.style.color = '#f59e0b';
+      btn.style.borderColor = '#7a5a00';
+
+    } catch(err) {
+      document.getElementById('backup-preview').innerHTML =
+        '<span style="color:#e06060;">✗ File JSON non valido.</span>';
+      document.getElementById('backup-preview').style.display = '';
+    }
+  };
+  reader.readAsText(file);
+}
+
+async function importBackup() {
+  if (!backupData) return;
+
+  var status = document.getElementById('import-status');
+
+  if (!confirm(
+    'Sei sicuro di voler ripristinare questo backup?\n\n'
+    + backupData.championships.length + ' campionati verranno sovrascritti se già esistenti.\n'
+    + 'I campionati non presenti nel backup NON verranno eliminati.\n\n'
+    + 'Questa operazione è irreversibile senza un backup aggiornato.'
+  )) return;
+
+  status.textContent = '⏳ Ripristino in corso...';
+  status.style.color = '#f59e0b';
+
+  try {
+    var errors = [];
+    var ok = 0;
+
+    // ── Restore championships ──
+    for (var i = 0; i < backupData.championships.length; i++) {
+      var champ = backupData.championships[i];
+      var { error } = await sb.from('championships')
+        .upsert(champ, { onConflict: 'id' });
+      if (error) errors.push('champ ' + champ.id + ': ' + error.message);
+      else ok++;
+      status.textContent = '⏳ Campionati: ' + ok + '/' + backupData.championships.length + '...';
+    }
+
+    // ── Restore champ_members ──
+    if (backupData.champ_members && backupData.champ_members.length) {
+      var { error: me } = await sb.from('champ_members')
+        .upsert(backupData.champ_members, { onConflict: 'champ_id,user_id' });
+      if (me) errors.push('members: ' + me.message);
+    }
+
+    // ── Restore user_archives ──
+    if (backupData.user_archives && backupData.user_archives.length) {
+      var { error: ae } = await sb.from('user_archives')
+        .upsert(backupData.user_archives, { onConflict: 'user_id,champ_id' });
+      if (ae) errors.push('archives: ' + ae.message);
+    }
+
+    // ── Restore user_favourites ──
+    if (backupData.user_favourites && backupData.user_favourites.length) {
+      var { error: fe } = await sb.from('user_favourites')
+        .upsert(backupData.user_favourites, { onConflict: 'user_id,champ_id' });
+      if (fe) errors.push('favourites: ' + fe.message);
+    }
+
+    if (errors.length) {
+      status.innerHTML = '⚠️ Completato con ' + errors.length + ' errori:<br>'
+        + errors.map(function(e){ return '• ' + e; }).join('<br>');
+      status.style.color = '#f59e0b';
+    } else {
+      status.textContent = '✓ Ripristino completato — '
+        + ok + ' campionati, '
+        + backupData.champ_members.length + ' iscrizioni.';
+      status.style.color = '#7a9e7e';
+    }
+
+    // Reset
+    backupData = null;
+    document.getElementById('backup-file-input').value = '';
+    document.getElementById('backup-filename').textContent = '';
+    document.getElementById('backup-preview').style.display = 'none';
+    document.getElementById('backup-import-btn').disabled = true;
+    document.getElementById('backup-import-btn').style.opacity = '.5';
+
+    loadDashboardStats();
+
+  } catch(e) {
+    status.textContent = '✗ Errore critico: ' + e.message;
+    status.style.color = '#e06060';
+  }
+}
+
 </script>
 </body>
 </html>
