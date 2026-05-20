@@ -146,9 +146,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div class="add-word-row">
           <input type="text" id="new-word" placeholder="Nuova parola da bloccare..." onkeydown="if(event.key==='Enter')addWord()"/>
           <button onclick="addWord()">+ Aggiungi</button>
-        </div>
 
-      </div><!-- close panel-blacklist -->
 
       <div class="panel" id="panel-backup">
         <div class="panel-title" style="color:#e8e8e8;font-size:22px;">💾 Backup & Ripristino</div>
@@ -847,7 +845,7 @@ async function importBackup() {
     document.getElementById('backup-import-btn').disabled = true;
     document.getElementById('backup-import-btn').style.opacity = '.5';
 
-    loadDashboardStats();
+    loadDashboard();
 
   } catch(e) {
     status.textContent = '✗ Errore critico: ' + e.message;
