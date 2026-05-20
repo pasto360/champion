@@ -1988,7 +1988,9 @@ async function saveChampSettings(){
   currentChamp.category = champData.category;
   const idx = allChamps.findIndex(c=>c.id===currentChamp.id);
   if(idx!==-1){allChamps[idx].name=newName;allChamps[idx].season=newSeason;allChamps[idx].access=currentChamp.access;allChamps[idx].closed=closed;}
-  showToast('Impostazioni salvate!');
+  // Aggiorna classifica immediatamente dopo salvataggio
+  renderChamp();
+  showToast('Impostazioni salvate! Classifica aggiornata.');
 }
 
 // ── SORT LIST ─────────────────────────────────────
