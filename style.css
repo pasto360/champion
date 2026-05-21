@@ -1257,3 +1257,77 @@ select:focus{border-color:var(--text);}
     .tab-btn i{font-size:16px;}
   }
 }
+
+/* ── MOBILE HEADER: due righe ───────────────────── */
+@media(max-width:767px){
+
+  /* Header diventa alto due righe */
+  .app-header{
+    height:auto;
+    flex-wrap:wrap;
+    padding:8px 12px;
+    gap:6px;
+  }
+
+  /* Prima riga: logo + online */
+  .app-header > div:first-child{
+    flex:1;
+    min-width:0;
+  }
+
+  /* Seconda riga: tutti i pulsanti a destra */
+  .app-header .right{
+    width:100%;
+    justify-content:flex-end;
+    flex-wrap:nowrap;
+    gap:5px;
+    padding-top:0;
+  }
+
+  /* Nascondi username nel chip — mostra solo avatar */
+  .user-chip-name{display:none!important;}
+
+  /* Riduci pulsanti */
+  .hbtn{font-size:11px;padding:4px 8px;}
+  .hbtn-icon{width:26px;height:26px;}
+  .hbtn-icon i{font-size:13px;}
+
+  /* Nascondi separatore */
+  .nav-vsep{display:none!important;}
+
+  /* Online badge: compatto */
+  .app-header > div:first-child > div:last-child{
+    font-size:10px;
+    padding:2px 7px;
+  }
+
+  /* body padding-top per header doppio */
+  body{padding-top:0;}
+  .page{padding-top:0;}
+}
+
+/* ── Prevent horizontal scroll ── */
+@media(max-width:767px){
+  html, body{
+    overflow-x:hidden;
+    max-width:100vw;
+  }
+  .app-header, .champ-page-header, .share-strip, .tab-bar{
+    max-width:100vw;
+    overflow-x:hidden;
+  }
+  /* Main content */
+  .home-container, .dash-container{
+    padding:0 10px;
+    max-width:100vw;
+    overflow-x:hidden;
+  }
+  /* Grids */
+  .champ-grid, .champ-grid.list-grid{
+    padding:0 10px!important;
+  }
+  /* Section headers */
+  .sec-header{padding:.8rem 10px .5rem;}
+  .search-bar{padding:.4rem 10px .5rem;}
+  #search-filters{padding:0 10px .5rem;flex-wrap:wrap;}
+}
