@@ -830,6 +830,26 @@ select:focus{border-color:var(--text);}
   -webkit-overflow-scrolling:touch;
   scrollbar-width:none;
 }
+@media(max-width:767px){
+  .tab-bar-inner{
+    padding:0;
+    overflow-x:visible;
+  }
+  .tab-btn{
+    flex:1;
+    padding:10px 6px;
+    font-size:10px;
+    letter-spacing:0;
+    gap:2px;
+    min-width:0;
+  }
+  .tab-btn span{
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    max-width:100%;
+  }
+}
 .tab-bar-inner::-webkit-scrollbar{display:none;}
 .tab-btn{
   font-size:11px;letter-spacing:.5px;
@@ -1195,4 +1215,45 @@ select:focus{border-color:var(--text);}
   .sec-header{padding:.8rem 12px .5rem;}
   .champ-grid{padding:0 12px!important;}
   .search-bar{padding:.4rem 12px .5rem;}
+}
+
+/* ── CHAMP TAB BAR MOBILE ───────────────────────── */
+@media(max-width:767px){
+  /* Champ page top tab bar */
+  .tab-bar{
+    /* Override: on mobile champ page, tab bar stays horizontal but scrollable */
+    display:block;
+    position:static;
+    height:auto;
+    border-top:none;
+    border-bottom:1px solid var(--border);
+    padding-bottom:0;
+  }
+  .tab-bar-inner{
+    padding:0 4px;
+    gap:0;
+  }
+  .tab-btn{
+    /* Distribute tabs evenly — no scrolling needed */
+    flex:1;
+    padding:8px 4px;
+    font-size:9px;
+    letter-spacing:0;
+    gap:3px;
+    justify-content:center;
+    min-width:0;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .tab-btn i{
+    font-size:13px;
+    flex-shrink:0;
+  }
+  /* Hide icon text labels on very small screens, keep icons */
+  @media(max-width:380px){
+    .tab-btn span{display:none;}
+    .tab-btn{padding:10px 6px;}
+    .tab-btn i{font-size:16px;}
+  }
 }
