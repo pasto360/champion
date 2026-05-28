@@ -1331,3 +1331,50 @@ select:focus{border-color:var(--text);}
   .search-bar{padding:.4rem 10px .5rem;}
   #search-filters{padding:0 10px .5rem;flex-wrap:wrap;}
 }
+
+/* ── CHAMP CARD COMPACT LAYOUT ───────────────────── */
+.champ-card-row1{
+  display:flex;align-items:center;gap:8px;margin-bottom:5px;
+}
+.champ-card-row1 .champ-card-cat{font-size:18px;flex-shrink:0;}
+.champ-card-row1 .champ-card-name{
+  flex:1;font-size:14px;font-weight:600;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  margin-bottom:0;
+}
+.champ-card-row1 .champ-card-pos{
+  font-family:Georgia,serif;font-size:11px;font-style:italic;
+  color:var(--gold);flex-shrink:0;margin-left:auto;
+}
+.champ-card-row2{
+  display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap;
+}
+.champ-card-row2 .champ-card-meta{font-size:11px;color:var(--muted);}
+.champ-card-row2 .badge-access{margin-top:0;}
+
+/* ── NUOVO CAMPIONATO BUTTON GOLD ─────────────────── */
+.btn-new-champ-gold{
+  background:var(--gold) !important;
+  color:#fff !important;
+  border-color:var(--gold) !important;
+  font-weight:600 !important;
+}
+.btn-new-champ-gold:hover{
+  background:var(--gold2) !important;
+  border-color:var(--gold2) !important;
+}
+
+/* ── CHAMP CARD OPEN BUTTON GOLD ──────────────────── */
+.champ-card-open{
+  font-size:10px;letter-spacing:.5px;
+  padding:4px 12px;
+  border-radius:2px;
+  background:var(--gold) !important;
+  color:#fff !important;
+  border:1px solid var(--gold) !important;
+  cursor:pointer;font-weight:600;
+}
+.champ-card-open:hover{
+  background:var(--gold2) !important;
+  border-color:var(--gold2) !important;
+}
