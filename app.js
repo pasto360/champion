@@ -795,7 +795,7 @@ async function openChampionship(id) {
   showChampLoading(true);
   try {
   const {data:champ, error} = await sb.from('championships').select('*').eq('id', id).single();
-  if (error || !champ) { showToast('Campionato non trovato'); return; }
+  if (error || !champ) { showChampLoading(false); showToast('Campionato non trovato'); return; }
 
   const isOwnerCheck = champ.owner_id === currentUser.id;
 
@@ -809,6 +809,7 @@ async function openChampionship(id) {
 
   // Campionato CHIUSO: solo membri accedono (gli altri non dovrebbero nemmeno vedere la card)
   if (isClosed && !isOwnerCheck && !isMember) {
+    showChampLoading(false);
     showToast("Campionato su invito — contatta l'organizzatore");
     return;
   }
@@ -818,6 +819,7 @@ async function openChampionship(id) {
       await loadChampPage(champ);
     } else {
       pendingAccessChamp = champ;
+      showChampLoading(false);
       document.getElementById('access-title').textContent = champ.name;
       document.getElementById('access-sub').textContent = 'Inserisci la password per accedere a "' + champ.name + '"';
       document.getElementById('access-pass').value = '';
