@@ -428,7 +428,7 @@ body::before {
   color: #f0f0f0 !important;
 }
 
-} /* end @media (max-width: 767px) */
+
 
   /* ── SEARCH BAR MOBILE ─────────────────────────── */
   .search-bar {
@@ -517,3 +517,5 @@ body::before {
   #mobile-search-backdrop.open {
     display: block;
   }
+
+} /* end @media (max-width: 767px) */
