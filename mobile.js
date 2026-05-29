@@ -38,6 +38,55 @@
   }
 
   // ── NAVIGATION ─────────────────────────────────
+
+  // ── SEARCH OVERLAY ─────────────────────────────
+  function openMobileSearch() {
+    var bar = document.querySelector('.search-bar');
+    var filters = document.getElementById('search-filters');
+    var backdrop = document.getElementById('mobile-search-backdrop');
+
+    // Add close button if not present
+    if (bar && !document.getElementById('mobile-search-close')) {
+      var closeBtn = document.createElement('button');
+      closeBtn.id = 'mobile-search-close';
+      closeBtn.innerHTML = '✕';
+      closeBtn.onclick = closeMobileSearch;
+      bar.appendChild(closeBtn);
+    }
+
+    // Create backdrop if not present
+    if (!backdrop) {
+      backdrop = document.createElement('div');
+      backdrop.id = 'mobile-search-backdrop';
+      backdrop.onclick = closeMobileSearch;
+      document.body.appendChild(backdrop);
+    }
+
+    if (bar) bar.classList.add('mobile-open');
+    if (filters) filters.classList.add('mobile-open');
+    backdrop.classList.add('open');
+
+    // Focus input
+    setTimeout(function() {
+      var inp = document.getElementById('champ-search');
+      if (inp) inp.focus();
+    }, 100);
+  }
+
+  function closeMobileSearch() {
+    var bar = document.querySelector('.search-bar');
+    var filters = document.getElementById('search-filters');
+    var backdrop = document.getElementById('mobile-search-backdrop');
+    if (bar) bar.classList.remove('mobile-open');
+    if (filters) filters.classList.remove('mobile-open');
+    if (backdrop) backdrop.classList.remove('open');
+    // Reset active bottom bar item back to home
+    ['home','explore','dash','profile'].forEach(function(id) {
+      var el = document.getElementById('mbb-' + id);
+      if (el) el.classList.toggle('active', id === 'home');
+    });
+  }
+
   window.mbbGo = function(dest) {
     // Update active state
     ['home','explore','dash','profile'].forEach(function(id) {
@@ -49,14 +98,8 @@
       if (typeof goHome === 'function') goHome();
       else if (typeof showPage === 'function') showPage('page-home');
     } else if (dest === 'explore') {
-      if (typeof showPage === 'function') {
-        showPage('page-home');
-        // Focus search input
-        setTimeout(function() {
-          var inp = document.getElementById('search-input');
-          if (inp) inp.focus();
-        }, 200);
-      }
+      if (typeof showPage === 'function') showPage('page-home');
+      setTimeout(openMobileSearch, 150);
     } else if (dest === 'dash') {
       if (typeof showPage === 'function') showPage('page-dashboard');
       if (typeof loadDashboard === 'function') loadDashboard();
