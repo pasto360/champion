@@ -1380,284 +1380,128 @@ select:focus{border-color:var(--text);}
 }
 
 /* ══════════════════════════════════════════════════
-   DARK MODE FIXES — additional overrides
-   Added to fix text visibility issues
+   DARK MODE — FORCE CARD BACKGROUNDS (high specificity)
+   These rules use !important to override any later
+   low-specificity rules that might reset card colors
 ══════════════════════════════════════════════════ */
 
-/* ── Form labels ── */
-[data-theme="dark"] .field label {
-  color: var(--muted);
+[data-theme="dark"] .champ-card,
+[data-theme="dark"] .champ-card.champ-card-mine {
+  background: #15151f !important;
+  border-color: #2a2a3a !important;
+  color: #f0f2ff !important;
 }
 
-/* ── Section labels ── */
-[data-theme="dark"] .sec-lbl {
-  color: var(--muted);
+[data-theme="dark"] .champ-card .champ-card-name,
+[data-theme="dark"] .champ-card-name {
+  color: #f0f2ff !important;
 }
 
-/* ── Sort items ── */
-[data-theme="dark"] .sort-item {
-  background: var(--card);
-  border-color: var(--border);
-  color: var(--text);
-}
-[data-theme="dark"] .sort-item.drag-over-sort {
-  background: var(--bg2);
+[data-theme="dark"] .champ-card .champ-card-meta,
+[data-theme="dark"] .champ-card-meta {
+  color: #8888aa !important;
 }
 
-/* ── Delete buttons ── */
-[data-theme="dark"] .sort-del,
-[data-theme="dark"] .del-btn {
-  background: rgba(220, 38, 38, 0.15);
-  color: #f87171;
-  border-color: rgba(220, 38, 38, 0.3);
+[data-theme="dark"] .champ-card .champ-card-footer,
+[data-theme="dark"] .champ-card-footer {
+  border-color: #2a2a3a !important;
 }
 
-/* ── Race banner done ── */
-[data-theme="dark"] .race-banner.done {
-  background: rgba(16, 185, 129, 0.12);
-  color: var(--text);
-}
-[data-theme="dark"] .race-banner.pending {
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--text);
+[data-theme="dark"] .champ-card-open {
+  background: #f59e0b !important;
+  color: #0d0d14 !important;
+  border-color: #f59e0b !important;
 }
 
-/* ── Replay chip ── */
-[data-theme="dark"] .replay-chip {
-  background: rgba(99, 102, 241, 0.15);
-  color: #818cf8;
-  border-color: rgba(99, 102, 241, 0.3);
-}
-[data-theme="dark"] .race-banner.pending .replay-chip {
-  background: rgba(59, 130, 246, 0.12);
-  color: #93c5fd;
-  border-color: rgba(59, 130, 246, 0.2);
+[data-theme="dark"] .champ-card-mine {
+  border-left-color: #818cf8 !important;
 }
 
-/* ── Sort handles ── */
-[data-theme="dark"] .sort-handle,
-[data-theme="dark"] .manage-drag {
-  color: var(--muted);
+[data-theme="dark"] .champ-card:hover {
+  border-color: #3a3a50 !important;
 }
 
-/* ── Img picker ── */
-[data-theme="dark"] .img-picker-item .ipl {
-  color: var(--muted);
+/* Cards in dashboard and all sections */
+[data-theme="dark"] .dash-champ-card,
+[data-theme="dark"] .dash-champ-card * {
+  background: #15151f;
+  border-color: #2a2a3a;
 }
 
-/* ── Badge pub/priv ── */
-[data-theme="dark"] .badge-pub {
-  background: rgba(16, 185, 129, 0.12);
-  color: #10b981;
-}
-
-/* ── Prog bar ── */
-[data-theme="dark"] .prog-bar {
-  background: var(--border);
-}
-[data-theme="dark"] .prog-fill {
-  background: var(--accent);
-}
-
-/* ── Type cards (new champ modal) ── */
-[data-theme="dark"] .type-card {
-  background: var(--card);
-  border-color: var(--border);
-  color: var(--text);
-}
-[data-theme="dark"] .type-card-name {
-  color: var(--text);
-}
-[data-theme="dark"] .type-card-desc {
-  color: var(--muted);
-}
-
-/* ── Bracket ── */
-[data-theme="dark"] .bracket-match {
-  background: var(--card);
-  border-color: var(--border);
-}
-[data-theme="dark"] .bracket-slot {
-  background: var(--bg2);
-  color: var(--text);
-  border-color: var(--border);
-}
-[data-theme="dark"] .bracket-slot.winner {
-  background: rgba(16, 185, 129, 0.15);
-  color: #10b981;
-}
-
-/* ── Elim slot buttons ── */
-[data-theme="dark"] .elim-slot-btn {
-  background: var(--card);
-  color: var(--text);
-  border-color: var(--border);
-}
-[data-theme="dark"] .elim-slot-btn.filled {
-  background: rgba(129, 140, 248, 0.15);
-  color: var(--accent);
-}
-
-/* ── Friends book ── */
-[data-theme="dark"] .friends-book-avatar {
-  background: var(--muted);
-  color: var(--bg);
-}
-[data-theme="dark"] .badge-closed-card {
-  background: rgba(220, 38, 38, 0.1);
-  color: #f87171;
-  border-color: rgba(220, 38, 38, 0.2);
-}
-
-/* ── Invite from book btn ── */
-[data-theme="dark"] .invite-from-book-btn {
-  background: var(--accent);
-  color: var(--bg);
-}
-
-/* ── Search friend input ── */
-[data-theme="dark"] .search-friend-row input {
-  background: var(--bg2);
-  border-color: var(--border);
-  color: var(--text);
-}
-[data-theme="dark"] .search-friend-row button {
-  background: var(--accent);
-  color: var(--bg);
-  border-color: var(--accent);
-}
-
-/* ── Hbtn (text nav buttons) ── */
-[data-theme="dark"] .hbtn {
-  background: transparent;
-  color: var(--muted);
-  border-color: transparent;
-}
-[data-theme="dark"] .hbtn:hover {
-  color: var(--text);
-  background: rgba(255,255,255,.06);
-}
-[data-theme="dark"] .hbtn.red {
-  color: var(--red);
-}
-
-/* ── Select options ── */
-[data-theme="dark"] select option {
-  background: var(--card);
-  color: var(--text);
-}
-[data-theme="dark"] select {
-  background: var(--bg2);
-  color: var(--text);
-  border-color: var(--border);
-}
-
-/* ── Inline race result rows ── */
-[data-theme="dark"] #races-grid > div {
-  background: var(--card);
-  border-color: var(--border);
-}
-
-/* ── Player items ── */
-[data-theme="dark"] .player-item {
-  background: var(--bg2);
-  border-color: var(--border);
-  color: var(--text);
-}
-[data-theme="dark"] .name-input {
-  background: var(--bg2);
-  color: var(--text);
-  border-color: var(--border);
-}
-
-/* ── Prize fields ── */
-[data-theme="dark"] .prize-field {
-  background: var(--bg2);
-  color: var(--text);
-  border-color: var(--border);
-}
-
-/* ── Manage panel tabs ── */
-[data-theme="dark"] .manage-tab {
-  color: var(--muted);
-  border-color: var(--border);
-}
-[data-theme="dark"] .manage-tab.active {
-  background: var(--accent);
-  color: var(--bg);
-  border-color: var(--accent);
-}
-
-/* ── Dashboard champ cards ── */
-[data-theme="dark"] .dash-champ-card {
-  background: var(--card);
-  border-color: var(--border);
-}
-[data-theme="dark"] .dash-champ-name {
-  color: var(--text);
-}
-
-/* ── RR table ── */
-[data-theme="dark"] .rr-table th {
-  color: var(--muted);
-  border-color: var(--border);
-}
-[data-theme="dark"] .rr-table td {
-  border-color: var(--border);
-  color: var(--text);
-}
-
-/* ── Profile champ rows ── */
+/* Profile champ rows */
 [data-theme="dark"] .profile-champ-row {
-  background: var(--card);
-  border-color: var(--border);
+  background: #15151f !important;
+  border-color: #2a2a3a !important;
 }
 [data-theme="dark"] .profile-champ-name {
-  color: var(--text);
+  color: #f0f2ff !important;
 }
 
-/* ── Champ card compact rows ── */
-[data-theme="dark"] .champ-card-row1 .champ-card-name,
-[data-theme="dark"] .champ-card-name {
-  color: var(--text);
+/* Section headers */
+[data-theme="dark"] .sec-header {
+  background: transparent !important;
 }
-[data-theme="dark"] .champ-card-row2 .champ-card-meta,
-[data-theme="dark"] .champ-card-meta {
-  color: var(--muted);
+[data-theme="dark"] .sec-title {
+  color: #8888aa !important;
 }
-
-/* ── Result selects in race modal ── */
-[data-theme="dark"] #result-selects select {
-  background: var(--bg2);
-  color: var(--text);
-  border-color: var(--border);
+[data-theme="dark"] .sec-eyebrow {
+  color: #f59e0b !important;
 }
 
-/* ── Scoring grid inputs ── */
-[data-theme="dark"] #scoring-grid input {
-  background: var(--bg2);
-  color: var(--text);
-  border-color: var(--border);
+/* Welcome area */
+[data-theme="dark"] .welcome-greet {
+  color: #8888aa !important;
+}
+[data-theme="dark"] .welcome-greet em,
+[data-theme="dark"] .welcome-name {
+  color: #f0f2ff !important;
 }
 
-/* ── Overlay / modal inputs ── */
-[data-theme="dark"] .overlay-box input,
-[data-theme="dark"] .overlay-box select,
-[data-theme="dark"] .overlay-box textarea {
-  background: var(--bg2);
-  color: var(--text);
-  border-color: var(--border);
+/* Search bar */
+[data-theme="dark"] .search-inner-wrap {
+  background: #15151f !important;
+  border-color: #2a2a3a !important;
 }
-[data-theme="dark"] .overlay-box {
-  background: var(--card);
-  color: var(--text);
+[data-theme="dark"] .search-input {
+  background: #15151f !important;
+  color: #f0f2ff !important;
+  border-color: #2a2a3a !important;
 }
-[data-theme="dark"] .overlay-box h2,
-[data-theme="dark"] .overlay-box h3,
-[data-theme="dark"] .overlay-box label {
-  color: var(--text);
+[data-theme="dark"] .search-input::placeholder {
+  color: #8888aa !important;
 }
-[data-theme="dark"] .overlay-box p,
-[data-theme="dark"] .overlay-box .hint {
-  color: var(--muted);
+[data-theme="dark"] .search-icon-wrap {
+  color: #8888aa !important;
+}
+
+/* Filter pills */
+[data-theme="dark"] .filter-pill {
+  background: #15151f !important;
+  border-color: #2a2a3a !important;
+  color: #8888aa !important;
+}
+[data-theme="dark"] .filter-pill.active {
+  background: #818cf8 !important;
+  border-color: #818cf8 !important;
+  color: #fff !important;
+}
+
+/* Badge access */
+[data-theme="dark"] .badge-pub {
+  background: rgba(16,185,129,.12) !important;
+  color: #10b981 !important;
+  border-color: rgba(16,185,129,.25) !important;
+}
+[data-theme="dark"] .badge-priv {
+  background: rgba(129,140,248,.12) !important;
+  color: #a78bfa !important;
+  border-color: rgba(129,140,248,.25) !important;
+}
+
+/* New champ button */
+[data-theme="dark"] .btn-new-champ-gold,
+[data-theme="dark"] #btn-new-champ {
+  background: #f59e0b !important;
+  color: #0d0d14 !important;
+  border-color: #f59e0b !important;
 }
