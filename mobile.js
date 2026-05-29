@@ -124,20 +124,8 @@
   };
 
   // ── SYNC WITH showPage ─────────────────────────
-  // Intercept showPage to keep bottom bar in sync
-  var _origShowPage = null;
-  function hookShowPage() {
-    if (typeof window.showPage !== 'function') return false;
-    if (window._mbbHooked) return true;
-    _origShowPage = window.showPage;
-    window.showPage = function(pageId) {
-      _origShowPage.apply(this, arguments);
-      syncBottomBar(pageId);
-    };
-    window._mbbHooked = true;
-    return true;
-  }
-
+  // Use MutationObserver on .page.active instead of hooking showPage
+  // to avoid any risk of loops
   function syncBottomBar(pageId) {
     var map = {
       'page-home':      'home',
@@ -151,18 +139,29 @@
     });
   }
 
+  function hookShowPage() {
+    // Watch for .page elements becoming active via class changes
+    var observer = new MutationObserver(function(mutations) {
+      mutations.forEach(function(m) {
+        if (m.type === 'attributes' && m.attributeName === 'class') {
+          var el = m.target;
+          if (el.classList.contains('active') && el.classList.contains('page')) {
+            syncBottomBar(el.id);
+          }
+        }
+      });
+    });
+    document.querySelectorAll('.page').forEach(function(page) {
+      observer.observe(page, { attributes: true });
+    });
+    return true;
+  }
+
   // ── INIT ───────────────────────────────────────
   function init() {
     injectBottomBar();
-
-    // Try to hook showPage immediately, or wait for it
-    if (!hookShowPage()) {
-      var attempts = 0;
-      var interval = setInterval(function() {
-        attempts++;
-        if (hookShowPage() || attempts > 20) clearInterval(interval);
-      }, 200);
-    }
+    // Wait for DOM to be fully ready before observing pages
+    setTimeout(hookShowPage, 500);
   }
 
   if (document.readyState === 'loading') {
