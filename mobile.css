@@ -518,4 +518,23 @@ body::before {
     display: block;
   }
 
+
+  /* ── SEARCH SUBMIT BUTTON ───────────────────────── */
+  #mobile-search-submit {
+    width: 38px;
+    height: 38px;
+    background: #ffe600;
+    border: none;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  #mobile-search-submit i {
+    font-size: 18px;
+    color: #1e1e24;
+  }
+
 } /* end @media (max-width: 767px) */

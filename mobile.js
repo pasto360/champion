@@ -47,6 +47,18 @@
 
     // Add close button if not present
     if (bar && !document.getElementById('mobile-search-close')) {
+      // Submit button (yellow, with search icon)
+      var submitBtn = document.createElement('button');
+      submitBtn.id = 'mobile-search-submit';
+      submitBtn.innerHTML = '<i class="ti ti-arrow-right" aria-hidden="true"></i>';
+      submitBtn.setAttribute('aria-label', 'Cerca');
+      submitBtn.onclick = function() {
+        if (typeof onSearchInput === 'function') onSearchInput();
+        var inp = document.getElementById('champ-search');
+        if (inp) inp.blur();
+      };
+      bar.appendChild(submitBtn);
+      // Close button
       var closeBtn = document.createElement('button');
       closeBtn.id = 'mobile-search-close';
       closeBtn.innerHTML = '✕';
@@ -66,10 +78,27 @@
     if (filters) filters.classList.add('mobile-open');
     backdrop.classList.add('open');
 
-    // Focus input
+    // Focus input and wire Enter/Go key
     setTimeout(function() {
       var inp = document.getElementById('champ-search');
-      if (inp) inp.focus();
+      if (inp) {
+        inp.focus();
+        // Fire search on Enter / mobile Go button
+        if (!inp._mbbSearchHooked) {
+          inp._mbbSearchHooked = true;
+          inp.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.keyCode === 13) {
+              e.preventDefault();
+              if (typeof onSearchInput === 'function') onSearchInput();
+              inp.blur(); // hide keyboard after search
+            }
+          });
+          // Also ensure oninput fires on mobile (some keyboards use compositionend)
+          inp.addEventListener('compositionend', function() {
+            if (typeof onSearchInput === 'function') onSearchInput();
+          });
+        }
+      }
     }, 100);
   }
 
