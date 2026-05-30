@@ -219,14 +219,16 @@ async function updateLastSeen() {
 }
 
 async function loadOnlineCount() {
-  // Conta utenti online (usato solo dall'admin panel)
+  // Considera online solo chi ha aggiornato last_seen negli ultimi 16 minuti
+  // e la cui last_seen NON è null (utenti vecchi senza tracking vanno esclusi)
   var since = new Date(Date.now() - 16 * 60 * 1000).toISOString();
   var { count } = await sb.from('profiles')
     .select('*', { count: 'exact', head: true })
     .not('last_seen', 'is', null)
     .gte('last_seen', since);
-  // Non aggiorna più il badge nell'header — visibile solo nell'admin panel
-  return count || 0;
+  document.querySelectorAll('.online-count').forEach(function(el) {
+    el.textContent = (count !== null && count > 0) ? count : '0';
+  });
 }
 
 function startOnlineTracking() {
@@ -3953,6 +3955,13 @@ const NOTIF_ICONS = {
 
 async function loadNotifications() {
   if (!currentUser) return;
+  // ── Elimina notifiche più vecchie di 7 giorni ──
+  var cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  await sb.from('notifications')
+    .delete()
+    .eq('user_id', currentUser.id)
+    .lt('created_at', cutoff);
+  // ── Carica notifiche recenti ──
   const { data } = await sb.from('notifications')
     .select('*')
     .eq('user_id', currentUser.id)
