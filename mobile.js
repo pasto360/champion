@@ -39,81 +39,34 @@
 
   // ── NAVIGATION ─────────────────────────────────
 
-  // ── SEARCH OVERLAY ─────────────────────────────
+  // ── SEARCH ─────────────────────────────────────
+  // La search bar è sempre visibile nel flusso della pagina.
+  // Il pulsante Esplora fa solo scroll + focus sull'input.
   function openMobileSearch() {
-    var bar = document.querySelector('.search-bar');
-    var filters = document.getElementById('search-filters');
-    var backdrop = document.getElementById('mobile-search-backdrop');
+    var inp = document.getElementById('champ-search');
+    if (!inp) return;
 
-    // Add close button if not present
-    if (bar && !document.getElementById('mobile-search-close')) {
-      // Submit button (yellow, with search icon)
-      var submitBtn = document.createElement('button');
-      submitBtn.id = 'mobile-search-submit';
-      submitBtn.innerHTML = '<i class="ti ti-arrow-right" aria-hidden="true"></i>';
-      submitBtn.setAttribute('aria-label', 'Cerca');
-      submitBtn.onclick = function() {
-        if (typeof onSearchInput === 'function') onSearchInput();
-        var inp = document.getElementById('champ-search');
-        if (inp) inp.blur();
-      };
-      bar.appendChild(submitBtn);
-      // Close button
-      var closeBtn = document.createElement('button');
-      closeBtn.id = 'mobile-search-close';
-      closeBtn.innerHTML = '✕';
-      closeBtn.onclick = closeMobileSearch;
-      bar.appendChild(closeBtn);
-    }
+    // Scroll to search input
+    inp.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-    // Create backdrop if not present
-    if (!backdrop) {
-      backdrop = document.createElement('div');
-      backdrop.id = 'mobile-search-backdrop';
-      backdrop.onclick = closeMobileSearch;
-      document.body.appendChild(backdrop);
-    }
-
-    if (bar) bar.classList.add('mobile-open');
-    if (filters) filters.classList.add('mobile-open');
-    backdrop.classList.add('open');
-
-    // Focus input and wire Enter/Go key
+    // Focus after scroll
     setTimeout(function() {
-      var inp = document.getElementById('champ-search');
-      if (inp) {
-        inp.focus();
-        // Fire search on Enter / mobile Go button
-        if (!inp._mbbSearchHooked) {
-          inp._mbbSearchHooked = true;
-          inp.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' || e.keyCode === 13) {
-              e.preventDefault();
-              if (typeof onSearchInput === 'function') onSearchInput();
-              inp.blur(); // hide keyboard after search
-            }
-          });
-          // Also ensure oninput fires on mobile (some keyboards use compositionend)
-          inp.addEventListener('compositionend', function() {
+      inp.focus();
+      // Wire Enter key once
+      if (!inp._mbbHooked) {
+        inp._mbbHooked = true;
+        inp.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter' || e.keyCode === 13) {
+            e.preventDefault();
             if (typeof onSearchInput === 'function') onSearchInput();
-          });
-        }
+            inp.blur();
+          }
+        });
+        inp.addEventListener('compositionend', function() {
+          if (typeof onSearchInput === 'function') onSearchInput();
+        });
       }
-    }, 100);
-  }
-
-  function closeMobileSearch() {
-    var bar = document.querySelector('.search-bar');
-    var filters = document.getElementById('search-filters');
-    var backdrop = document.getElementById('mobile-search-backdrop');
-    if (bar) bar.classList.remove('mobile-open');
-    if (filters) filters.classList.remove('mobile-open');
-    if (backdrop) backdrop.classList.remove('open');
-    // Reset active bottom bar item back to home
-    ['home','explore','dash','profile'].forEach(function(id) {
-      var el = document.getElementById('mbb-' + id);
-      if (el) el.classList.toggle('active', id === 'home');
-    });
+    }, 350);
   }
 
   window.mbbGo = function(dest) {

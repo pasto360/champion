@@ -431,33 +431,27 @@ body::before {
 
 
   /* ── SEARCH BAR MOBILE ─────────────────────────── */
+  /* Search bar sempre visibile nel flusso della pagina */
   .search-bar {
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    z-index: 400;
-    background: #26262e;
-    border-bottom: 1px solid #3a3a46;
-    padding: 10px 12px;
-    display: none !important;
-    align-items: center;
-    gap: 8px;
-    transform: translateY(-100%);
-    transition: transform .25s ease;
-  }
-  .search-bar.mobile-open {
+    padding: 10px 14px !important;
     display: flex !important;
-    transform: translateY(0);
+    position: static !important;
+    transform: none !important;
+    background: transparent !important;
+    border-bottom: none !important;
+    gap: 8px !important;
   }
   .search-inner-wrap {
     flex: 1;
-    background: #2e2e38 !important;
+    background: #26262e !important;
     border-color: #3a3a46 !important;
-    border-radius: 8px !important;
+    border-radius: 10px !important;
   }
   .search-input {
-    background: #2e2e38 !important;
+    background: #26262e !important;
     color: #f0f0f0 !important;
     border: none !important;
+    border-radius: 10px !important;
     font-size: 14px !important;
     padding: 10px 12px !important;
   }
@@ -468,54 +462,32 @@ body::before {
     padding: 0 10px !important;
     color: #7a7a8a !important;
   }
-  /* Close button for search overlay */
-  #mobile-search-close {
-    background: none;
-    border: none;
-    color: #7a7a8a;
-    font-size: 20px;
-    cursor: pointer;
-    padding: 4px 8px;
-    flex-shrink: 0;
-  }
-  /* Filters: show below search when open */
+  /* Filtri: sempre visibili, scroll orizzontale */
   #search-filters {
-    position: fixed;
-    top: 52px; left: 0; right: 0;
-    z-index: 399;
-    background: #26262e;
-    border-bottom: 1px solid #3a3a46;
-    padding: 8px 12px;
-    display: none !important;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    gap: 6px;
-  }
-  #search-filters.mobile-open {
+    position: static !important;
     display: flex !important;
+    padding: 0 14px 10px !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    gap: 6px !important;
+    background: transparent !important;
+    border-bottom: none !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
   }
+  #search-filters::-webkit-scrollbar { display: none; }
   .filter-pill {
-    background: #2e2e38 !important;
+    background: #26262e !important;
     border-color: #3a3a46 !important;
     color: #7a7a8a !important;
-    white-space: nowrap;
+    white-space: nowrap !important;
     font-size: 11px !important;
+    flex-shrink: 0;
   }
   .filter-pill.active {
     background: #ffe600 !important;
     border-color: #ffe600 !important;
     color: #1e1e24 !important;
-  }
-  /* Overlay backdrop when search is open */
-  #mobile-search-backdrop {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,.5);
-    z-index: 398;
-  }
-  #mobile-search-backdrop.open {
-    display: block;
   }
 
 
