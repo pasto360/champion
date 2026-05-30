@@ -219,16 +219,14 @@ async function updateLastSeen() {
 }
 
 async function loadOnlineCount() {
-  // Considera online solo chi ha aggiornato last_seen negli ultimi 16 minuti
-  // e la cui last_seen NON è null (utenti vecchi senza tracking vanno esclusi)
+  // Conta utenti online (usato solo dall'admin panel)
   var since = new Date(Date.now() - 16 * 60 * 1000).toISOString();
   var { count } = await sb.from('profiles')
     .select('*', { count: 'exact', head: true })
     .not('last_seen', 'is', null)
     .gte('last_seen', since);
-  document.querySelectorAll('.online-count').forEach(function(el) {
-    el.textContent = (count !== null && count > 0) ? count : '0';
-  });
+  // Non aggiorna più il badge nell'header — visibile solo nell'admin panel
+  return count || 0;
 }
 
 function startOnlineTracking() {
@@ -651,18 +649,16 @@ function champCard(c, inFavSection=false) {
 
   var cid = c.id;
   var fmt = (c.data && c.data.format) || 'standard';
-  // Compact layout: icon + name on same row, format + access on second row
-  return '<div class="champ-card ' + (mine?'champ-card-mine':'') + '" data-cid="' + cid + '" role="button" tabindex="0">'
-    + '<div class="champ-card-row1">'
+  return '<div class="champ-card ' + (mine?'champ-card-mine':'') + '" " data-cid="' + cid + '" role="button" tabindex="0">'
+    + '<div class="champ-card-top">'
     + '<span class="champ-card-cat">' + champCategoryIcon(c) + '</span>'
-    + '<span class="champ-card-name">' + c.name + '</span>'
-    + (mine ? '<span class="champ-card-pos">Admin</span>' : favStar + favStarFav)
+    + (mine ? '<span class="champ-card-pos" style="font-family:Georgia,serif;font-size:11px;font-style:italic;color:var(--gold);">Admin</span>' : '')
     + '</div>'
-    + '<div class="champ-card-row2">'
-    + '<span class="champ-card-meta">' + fmtLabel(fmt) + (c.season?' · '+c.season:'') + '</span>'
+    + '<div class="champ-card-name">' + c.name + '</div>'
+    + '<div class="champ-card-meta">' + (c.season||'') + (c.season?' · ':'') + fmtLabel(fmt) + '</div>'
     + badge
-    + '</div>'
     + '<div class="champ-card-footer">'
+    + '<span class="champ-card-status"></span>'
     + '<button class="champ-card-open" onclick="event.stopPropagation();openChampionship(\'' + cid + '\')">Apri →</button>'
     + '</div>'
     + '</div>';

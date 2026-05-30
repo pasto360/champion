@@ -164,6 +164,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
           <div class="stat-card"><div class="stat-num" id="s-champs">—</div><div class="stat-lbl">Campionati</div></div>
           <div class="stat-card"><div class="stat-num" id="s-members">—</div><div class="stat-lbl">Iscrizioni</div></div>
           <div class="stat-card"><div class="stat-num" id="s-words">—</div><div class="stat-lbl">Parole bloccate</div></div>
+          <div class="stat-card" style="border-color:#2a4a2a;"><div class="stat-num" id="s-online" style="color:#4ade80;">—</div><div class="stat-lbl">Online ora</div></div>
         </div>
         <p style="font-size:12px;color:#444;">Aggiornato alle <span id="dash-time">—</span> · <a href="#" onclick="loadDashboard();return false;" style="color:#7a9e7e;text-decoration:none;">↻ aggiorna</a></p>
         <div id="conn-status" style="margin-top:16px;padding:14px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:8px;font-size:13px;color:#888;line-height:1.8;"></div>
@@ -343,18 +344,21 @@ function toast(msg, type) {
 // ── DASHBOARD ─────────────────────────────────────────
 async function loadDashboard() {
   try {
-    const [r1, r2, r3, r4, r5] = await Promise.all([
+    var since16 = new Date(Date.now() - 16 * 60 * 1000).toISOString();
+    const [r1, r2, r3, r4, r5, r6] = await Promise.all([
       sb.from('profiles').select('*', {count:'exact', head:true}),
       sb.from('profiles').select('*', {count:'exact', head:true}).eq('banned', true),
       sb.from('championships').select('*', {count:'exact', head:true}),
       sb.from('champ_members').select('*', {count:'exact', head:true}),
       sb.from('blacklist_words').select('*', {count:'exact', head:true}),
+      sb.from('profiles').select('*', {count:'exact', head:true}).not('last_seen','is',null).gte('last_seen', since16),
     ]);
     document.getElementById('s-users').textContent   = r1.count ?? '?';
     document.getElementById('s-banned').textContent  = r2.count ?? '?';
     document.getElementById('s-champs').textContent  = r3.count ?? '?';
     document.getElementById('s-members').textContent = r4.count ?? '?';
     document.getElementById('s-words').textContent   = r5.count ?? '?';
+    document.getElementById('s-online').textContent  = r6.count ?? '0';
     document.getElementById('dash-time').textContent = new Date().toLocaleTimeString('it-IT');
   } catch(e) { console.error('loadDashboard:', e); }
 }

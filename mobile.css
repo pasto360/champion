@@ -537,4 +537,8 @@ body::before {
     color: #1e1e24;
   }
 
+
+  /* Online count nascosto su mobile */
+  .online-count { display: none !important; }
+
 } /* end @media (max-width: 767px) */
