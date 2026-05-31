@@ -1,5 +1,20 @@
 @media (max-width: 767px) {
 
+  /* ── RIDEFINIZIONE VARIABILI CSS PER MOBILE ─────
+     Questo sovrascrive var(--text), var(--muted) ecc.
+     usate negli stili inline generati da app.js      */
+  :root {
+    --text:    #e3e3e3 !important;
+    --text2:   #e3e3e3 !important;
+    --muted:   #b9b9c1 !important;
+    --faint:   #7a7a8a !important;
+    --bg:      #1e1e24 !important;
+    --bg2:     #2e2e38 !important;
+    --card:    #4c4c5d !important;
+    --border:  #cfc126 !important;
+    --border2: #cfc126 !important;
+  }
+
   html, body { overflow-x: hidden; max-width: 100vw; background: #1e1e24 !important; }
 
   body::before {
