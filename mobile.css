@@ -181,4 +181,20 @@
   .live-stream-wrap { background: #4c4c5d !important; border-color: #cfc126 !important; }
   .sync-badge { background: #2e2e38 !important; border-color: #cfc126 !important; color: #b9b9c1 !important; }
 
+
+  /* ── STATUS GARE ───────────────────────────────── */
+  .race-status-done {
+    color: #a8f000 !important; /* lime */
+  }
+  .race-status-todo {
+    color: #ff2d78 !important; /* fucsia */
+  }
+  /* Dot di stato */
+  #races-grid > div div[style*="background:#276749"] {
+    background: #a8f000 !important;
+  }
+  #races-grid > div div[style*="background:var(--faint)"] {
+    background: #ff2d78 !important;
+  }
+
 } /* end @media (max-width: 767px) */
