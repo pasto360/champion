@@ -1090,7 +1090,7 @@ function renderManageRRMatches() {
     + '<input type="checkbox" id="rr-double-legs" ' + (double ? 'checked' : '') + ' onchange="toggleDoubleLegs(this.checked)" style="width:18px;height:18px;cursor:pointer;accent-color:var(--violet);"/>'
     + '<div>'
     + '<div style="font-size:13px;font-weight:700;">Andata e ritorno</div>'
-    + '<div style="font-size:11px;color:#aaa;margin-top:1px;">Ogni coppia si affronta due volte (casa e trasferta)</div>'
+    + '<div style="font-size:11px;color:var(--muted);margin-top:1px;">Ogni coppia si affronta due volte (casa e trasferta)</div>'
     + '</div>'
     + '</div>';
   html += '<p class="manage-hint">Gestisci giocatori e riordina gli scontri per giornata.</p>';
@@ -1140,8 +1140,8 @@ function renderManageRRMatches() {
     var retLabel = m.returnLeg ? '<span style="font-size:10px;background:#f0ede6;border-radius:4px;padding:1px 5px;color:#888;margin-left:4px;">ritorno</span>' : '';
     html += '<div class="player-item" style="' + (done ? 'opacity:.7;' : '') + '">'
          + '<span style="font-size:15px;color:#ccc;margin-right:4px;cursor:grab;">⠿</span>'
-         + '<span style="flex:1;font-size:13px;font-weight:600;">' + m.p1 + ' <span style="color:#bbb;font-weight:400;">vs</span> ' + m.p2 + retLabel + '</span>'
-         + '<span style="font-size:11px;color:' + (done ? '#2dc653' : '#bbb') + ';margin-right:6px;">' + (done ? s1 + '–' + s2 : '') + '</span>'
+         + '<span style="flex:1;font-size:13px;font-weight:600;">' + m.p1 + ' <span style="color:var(--muted);font-weight:400;">vs</span> ' + m.p2 + retLabel + '</span>'
+         + '<span style="font-size:11px;color:' + (done ? '#2dc653' : 'var(--muted)') + ';margin-right:6px;">' + (done ? s1 + '–' + s2 : '') + '</span>'
          + (mi > 0 ? '<button onclick="moveRRMatch(' + mi + ',-1)" style="background:none;border:none;cursor:pointer;color:#888;font-size:16px;padding:0 3px;line-height:1;" title="Sposta su">↑</button>' : '<span style="width:22px;display:inline-block;"></span>')
          + (mi < matches.length-1 ? '<button onclick="moveRRMatch(' + mi + ',1)" style="background:none;border:none;cursor:pointer;color:#888;font-size:16px;padding:0 3px;line-height:1;" title="Sposta giù">↓</button>' : '<span style="width:22px;display:inline-block;"></span>')
          + '</div>';
@@ -1241,7 +1241,7 @@ function renderChamp() {
   var createdDate = currentChamp.created_at ? new Date(currentChamp.created_at).toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'}) : '';
   var champId = currentChamp.id || '';
   document.getElementById('champ-hdr-title').innerHTML =
-    champTitle + (createdDate ? '<span style="font-size:11px;font-weight:500;color:rgba(0,0,0,0.45);margin-left:8px;">' + createdDate + '</span>' : '');
+    champTitle + (createdDate ? '<span style="font-size:11px;font-weight:500;color:var(--muted);margin-left:8px;">' + createdDate + '</span>' : '');
   const fmt = champData.format || 'standard';
 
   // Mobile tabs visibility
@@ -1366,7 +1366,7 @@ function renderStandings() {
     const color=PLAYER_COLORS[(champData.players||[]).indexOf(p.name)%PLAYER_COLORS.length];
     return `<div class="s-row">
       <div class="s-pos ${posCls[i]||''}">${i===0?'🏆':i+1}</div>
-      <div><div class="s-name" style="color:${color};cursor:pointer;" onclick="openProfile(\'${p.name}\')">${p.name}</div>
+      <div><div class="s-name" style="cursor:pointer;" onclick="openProfile(\'${p.name}\')">${p.name}</div>
         <div class="s-sub">${p.pts} pt</div></div>
       <div class="s-pts">${p.pts}<br><span>pt</span></div>
     </div>`;
@@ -1781,7 +1781,7 @@ function renderManagePlayers(){
 
   // Rejected (only owner)
   if (isOwner && rejected.length) {
-    html += '<div class="sec-hdr" style="margin-top:16px;"><span class="sec-lbl" style="color:#bbb;">Rifiutati</span></div>';
+    html += '<div class="sec-hdr" style="margin-top:16px;"><span class="sec-lbl" style="color:var(--muted);">Rifiutati</span></div>';
     for (var ri2 = 0; ri2 < rejected.length; ri2++) {
       var rm = rejected[ri2];
       html += '<div class="player-item" style="opacity:.5;">'
@@ -3065,7 +3065,7 @@ function renderElimBracketInline() {
     html += '<div style="text-align:center;margin-top:14px;padding:14px;background:linear-gradient(135deg,#fffbf0,#fff8e0);border-radius:12px;border:1px solid #f0e080;">'
          + '<div style="font-size:26px;">🏆</div>'
          + '<div style="font-size:16px;font-weight:700;color:' + color + ';margin-top:3px;">' + final.winner + '</div>'
-         + '<div style="font-size:11px;color:#aaa;margin-top:1px;">Campione</div>'
+         + '<div style="font-size:11px;color:var(--muted);margin-top:1px;">Campione</div>'
          + '</div>';
   }
   if (isOwner) {
