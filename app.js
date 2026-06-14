@@ -882,6 +882,7 @@ async function loadChampPage(champ) {
   if (fmt === 'roundrobin')    switchTab('races');
   else if (fmt === 'elimination') switchTab('elim');
   else switchTab('races');
+  repositionChart();
 
   showPage('page-champ');
   showChampLoading(false);
@@ -1043,6 +1044,7 @@ function renderJoinBanner() {
         + '<div style="font-size:13px;color:var(--muted);margin-bottom:10px;">Vuoi partecipare a questo campionato?</div>'
         + '<button onclick="requestJoin()" style="background:var(--violet);color:#fff;border:none;border-radius:10px;padding:9px 24px;font-size:14px;font-weight:700;cursor:pointer;">Richiedi iscrizione</button>'
         + '</div>';
+      if (el2) el2.innerHTML = el.innerHTML;
     }
     return;
   }
@@ -1081,9 +1083,7 @@ function startPendingPoll() {
   }, 15000);
 }
 function stopPendingPoll() {
-  if (typeof pendingPollTimer !== 'undefined' && pendingPollTimer) {
-    clearInterval(pendingPollTimer); pendingPollTimer = null;
-  }
+  if (pendingPollTimer) { clearInterval(pendingPollTimer); pendingPollTimer = null; }
 }
 
 
@@ -1350,13 +1350,12 @@ function renderChamp() {
   if(racesBtn)racesBtn.style.display= fmt==='standard' ? '' : 'none';
 
   // Desktop layout: swap col-left content per format
-  const colLeft  = document.getElementById('c-page-races');
-  const chartSec = document.getElementById('chart-section');
-  if (!colLeft) { console.error('c-page-races not found'); return; }
-  if (!chartSec) { console.error('chart-section not found'); return; }
+  const colLeft    = document.getElementById('c-page-races');
+  const chartSec   = document.getElementById('chart-section');
+  if (!colLeft || !chartSec) { console.warn('layout elements missing'); return; }
   if (fmt === 'roundrobin') {
     colLeft.style.display = '';
-    if(chartSec) if(chartSec) chartSec.style.display = '';
+    chartSec.style.display = '';
     // Show RR matches in left col, standings+chart on right
     renderRRMatchesInline(); // renders into #races-grid with RR layout
     document.getElementById('races-count').textContent = '';
@@ -1365,7 +1364,7 @@ function renderChamp() {
     renderRRChart();
   } else if (fmt === 'elimination') {
     colLeft.style.display = '';
-    if(chartSec) chartSec.style.display = 'none';
+    chartSec.style.display = 'none';
     document.querySelector('#c-page-races .sec-lbl').textContent = 'Tabellone';
     document.getElementById('races-count').textContent = '';
     document.getElementById('races-grid').className = 'races-grid rr-grid';
@@ -1374,7 +1373,7 @@ function renderChamp() {
     renderElimStandings();
   } else if (fmt === 'timetrial') {
     colLeft.style.display = '';
-    if(chartSec) chartSec.style.display = 'none';
+    chartSec.style.display = 'none';
     document.querySelector('#c-page-races .sec-lbl').textContent = 'Prove';
     document.getElementById('races-count').textContent = '';
     document.getElementById('races-grid').className = 'races-grid rr-grid';
@@ -1382,7 +1381,7 @@ function renderChamp() {
     renderTTStandings();
   } else {
     colLeft.style.display = '';
-    if(chartSec) chartSec.style.display = '';
+    chartSec.style.display = '';
     document.querySelector('#c-page-races .sec-lbl').textContent = 'Gare';
     document.getElementById('races-grid').className = 'races-grid';
     renderStandings();
@@ -2714,13 +2713,10 @@ function switchTab(tab){
   document.getElementById('tab-'+tab+'-btn').classList.add('active');
 }
 function repositionChart(){
-  // Don't move elements in DOM - just ensure chart-section is visible
-  // Moving DOM elements causes getElementById to fail in renderChamp
-  const chart = document.getElementById('chart-section');
-  if (!chart) return;
-  // On mobile, chart is handled by CSS (tab system)
+  // No-op: chart section stays in its HTML position
+  // Layout is handled by CSS tab system on mobile
 }
-// repositionChart removed - handled by CSS
+window.addEventListener('resize',repositionChart);
 
 // ── OVERLAY UTILS ─────────────────────────────────
 function openOverlay(id){document.getElementById(id).classList.add('open');}
