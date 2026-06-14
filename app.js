@@ -1023,6 +1023,7 @@ function renderJoinBanner() {
         + '</div>'
         + rows
         + '</div>';
+      if (el2) el2.innerHTML = el.innerHTML;
     } else {
       el.innerHTML = '';
       if (el2) el2.innerHTML = el.innerHTML;
@@ -1052,12 +1053,14 @@ function renderJoinBanner() {
     el.innerHTML = '<div style="margin:12px 0;background:#fffbf0;border:1px solid #f0d080;border-radius:12px;padding:12px 14px;text-align:center;font-size:13px;color:#b07000;">'
       + "&#9203; Richiesta inviata &mdash; attendi l'approvazione dell'admin"
       + '</div>';
+    if (el2) el2.innerHTML = el.innerHTML;
     return;
   }
   if (status === 'rejected') {
     el.innerHTML = '<div style="margin:12px 0;background:rgba(230,57,70,0.15);border:1px solid #e0b0b0;border-radius:12px;padding:12px 14px;text-align:center;font-size:13px;color:#a03030;">'
       + '&#10007; La tua richiesta è stata rifiutata'
       + '</div>';
+    if (el2) el2.innerHTML = el.innerHTML;
     return;
   }
   // player or owner: hide banner
@@ -1352,7 +1355,6 @@ function renderChamp() {
   // Desktop layout: swap col-left content per format
   const colLeft    = document.getElementById('c-page-races');
   const chartSec   = document.getElementById('chart-section');
-  if (!colLeft || !chartSec) { console.warn('layout elements missing'); return; }
   if (fmt === 'roundrobin') {
     colLeft.style.display = '';
     chartSec.style.display = '';
@@ -2713,8 +2715,10 @@ function switchTab(tab){
   document.getElementById('tab-'+tab+'-btn').classList.add('active');
 }
 function repositionChart(){
-  // No-op: chart section stays in its HTML position
-  // Layout is handled by CSS tab system on mobile
+  const isMobile=window.innerWidth<768;
+  const chart=document.getElementById('chart-section');
+  if(isMobile) document.getElementById('c-page-standings').appendChild(chart);
+  else document.querySelector('.champ-layout').appendChild(chart);
 }
 window.addEventListener('resize',repositionChart);
 
