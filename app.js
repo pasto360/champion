@@ -1351,8 +1351,9 @@ function renderChamp() {
   if(racesBtn)racesBtn.style.display= fmt==='standard' ? '' : 'none';
 
   // Desktop layout: swap col-left content per format
-  const colLeft    = document.getElementById('c-page-races');
-  const chartSec   = document.getElementById('chart-section');
+  const colLeft  = document.getElementById('c-page-races');
+  const chartSec = document.getElementById('chart-section');
+  if (!colLeft) { console.error('c-page-races not found'); return; }
   if (fmt === 'roundrobin') {
     colLeft.style.display = '';
     chartSec.style.display = '';
@@ -2713,16 +2714,11 @@ function switchTab(tab){
   document.getElementById('tab-'+tab+'-btn').classList.add('active');
 }
 function repositionChart(){
-  const isMobile = window.innerWidth < 768;
+  // Don't move elements in DOM - just ensure chart-section is visible
+  // Moving DOM elements causes getElementById to fail in renderChamp
   const chart = document.getElementById('chart-section');
   if (!chart) return;
-  if (isMobile) {
-    const target = document.getElementById('c-page-standings');
-    if (target) target.appendChild(chart);
-  } else {
-    const target = document.querySelector('.champ-layout');
-    if (target) target.appendChild(chart);
-  }
+  // On mobile, chart is handled by CSS (tab system)
 }
 window.addEventListener('resize',repositionChart);
 
