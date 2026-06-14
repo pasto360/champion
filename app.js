@@ -1023,7 +1023,6 @@ function renderJoinBanner() {
         + '</div>'
         + rows
         + '</div>';
-      if (el2) el2.innerHTML = el.innerHTML;
     } else {
       el.innerHTML = '';
       if (el2) el2.innerHTML = el.innerHTML;
@@ -1033,6 +1032,7 @@ function renderJoinBanner() {
 
   // Non-member
   if (!status) {
+    if (!currentChamp) return;
     var isClosed   = currentChamp.access === 'closed' || !!currentChamp.closed;
     var isPassword = currentChamp.access === 'password' && !isClosed;
 
@@ -1053,14 +1053,12 @@ function renderJoinBanner() {
     el.innerHTML = '<div style="margin:12px 0;background:#fffbf0;border:1px solid #f0d080;border-radius:12px;padding:12px 14px;text-align:center;font-size:13px;color:#b07000;">'
       + "&#9203; Richiesta inviata &mdash; attendi l'approvazione dell'admin"
       + '</div>';
-    if (el2) el2.innerHTML = el.innerHTML;
     return;
   }
   if (status === 'rejected') {
     el.innerHTML = '<div style="margin:12px 0;background:rgba(230,57,70,0.15);border:1px solid #e0b0b0;border-radius:12px;padding:12px 14px;text-align:center;font-size:13px;color:#a03030;">'
       + '&#10007; La tua richiesta è stata rifiutata'
       + '</div>';
-    if (el2) el2.innerHTML = el.innerHTML;
     return;
   }
   // player or owner: hide banner
