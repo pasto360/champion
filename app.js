@@ -917,9 +917,21 @@ async function requestJoin() {
   const username = currentUser.user_metadata?.username || currentUser.email?.split('@')[0] || 'Utente';
   const existing = champMembers.find(m => m.user_id === currentUser.id);
   if (existing) {
-    if (existing.role === 'pending') showToast("Richiesta già inviata, attendi l'approvazione");
-    else if (existing.role === 'player') showToast('Sei già un giocatore!');
-    else if (existing.role === 'rejected') showToast('La tua richiesta è stata rifiutata');
+    if (existing.role === 'pending') { showToast("Richiesta già inviata, attendi l'approvazione"); return; }
+    if (existing.role === 'player') { showToast('Sei già un giocatore!'); return; }
+    if (existing.role === 'rejected') { showToast('La tua richiesta è stata rifiutata'); return; }
+    if (existing.role === 'owner') { showToast('Sei il proprietario!'); return; }
+    // 'invited' o altri: aggiorna a pending
+    const { error: updErr } = await sb.from('champ_members')
+      .update({ role: 'pending' })
+      .eq('id', existing.id);
+    if (updErr) { showToast('Errore: ' + updErr.message); return; }
+    var champName2 = champData.championship || currentChamp.name || 'il campionato';
+    await createNotif(currentChamp.owner_id, 'join_request', 'Nuova richiesta di iscrizione',
+      username + ' vuole iscriversi a "' + champName2 + '"', currentChamp.id);
+    await loadChampMembers();
+    renderChamp();
+    showToast("Richiesta inviata! Attendi l'approvazione dell'admin");
     return;
   }
   const { error } = await sb.from('champ_members').insert({
@@ -992,7 +1004,6 @@ async function scheduleSaveImmediate() {
 function myMemberStatus() {
   const m = champMembers.find(m => m.user_id === currentUser?.id);
   if (!m) return null;
-  // 'invited' senza notifica attiva = trattato come non-membro
   if (m.role === 'invited') return null;
   return m.role;
 }
