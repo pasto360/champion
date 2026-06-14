@@ -882,7 +882,6 @@ async function loadChampPage(champ) {
   if (fmt === 'roundrobin')    switchTab('races');
   else if (fmt === 'elimination') switchTab('elim');
   else switchTab('races');
-  repositionChart();
 
   showPage('page-champ');
   showChampLoading(false);
@@ -2721,7 +2720,7 @@ function repositionChart(){
   if (!chart) return;
   // On mobile, chart is handled by CSS (tab system)
 }
-window.addEventListener('resize',repositionChart);
+// repositionChart removed - handled by CSS
 
 // ── OVERLAY UTILS ─────────────────────────────────
 function openOverlay(id){document.getElementById(id).classList.add('open');}
