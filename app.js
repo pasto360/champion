@@ -991,7 +991,10 @@ async function scheduleSaveImmediate() {
 
 function myMemberStatus() {
   const m = champMembers.find(m => m.user_id === currentUser?.id);
-  return m ? m.role : null;
+  if (!m) return null;
+  // 'invited' senza notifica attiva = trattato come non-membro
+  if (m.role === 'invited') return null;
+  return m.role;
 }
 
 
@@ -1044,18 +1047,10 @@ function renderJoinBanner() {
         + '<div style="font-size:13px;color:var(--muted);margin-bottom:10px;">Vuoi partecipare a questo campionato?</div>'
         + '<button onclick="requestJoin()" style="background:var(--violet);color:#fff;border:none;border-radius:10px;padding:9px 24px;font-size:14px;font-weight:700;cursor:pointer;">Richiedi iscrizione</button>'
         + '</div>';
+      if (el2) el2.innerHTML = el.innerHTML;
     }
     return;
   }
-  if (status === 'invited') {
-    var invMsg = '<div style="margin:12px 0;background:rgba(201,168,76,.1);border:1px solid var(--gold);border-radius:3px;padding:12px 14px;text-align:center;font-size:13px;color:var(--gold);">'
-      + '📨 Hai un invito in attesa — controlla le notifiche 🔔'
-      + '</div>';
-    el.innerHTML = invMsg;
-    if (el2) el2.innerHTML = invMsg;
-    return;
-  }
-
   if (status === 'pending') {
     el.innerHTML = '<div style="margin:12px 0;background:#fffbf0;border:1px solid #f0d080;border-radius:12px;padding:12px 14px;text-align:center;font-size:13px;color:#b07000;">'
       + "&#9203; Richiesta inviata &mdash; attendi l'approvazione dell'admin"
