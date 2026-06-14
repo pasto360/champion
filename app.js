@@ -1354,9 +1354,10 @@ function renderChamp() {
   const colLeft  = document.getElementById('c-page-races');
   const chartSec = document.getElementById('chart-section');
   if (!colLeft) { console.error('c-page-races not found'); return; }
+  if (!chartSec) { console.error('chart-section not found'); return; }
   if (fmt === 'roundrobin') {
     colLeft.style.display = '';
-    chartSec.style.display = '';
+    if(chartSec) if(chartSec) chartSec.style.display = '';
     // Show RR matches in left col, standings+chart on right
     renderRRMatchesInline(); // renders into #races-grid with RR layout
     document.getElementById('races-count').textContent = '';
@@ -1365,7 +1366,7 @@ function renderChamp() {
     renderRRChart();
   } else if (fmt === 'elimination') {
     colLeft.style.display = '';
-    chartSec.style.display = 'none';
+    if(chartSec) chartSec.style.display = 'none';
     document.querySelector('#c-page-races .sec-lbl').textContent = 'Tabellone';
     document.getElementById('races-count').textContent = '';
     document.getElementById('races-grid').className = 'races-grid rr-grid';
@@ -1374,7 +1375,7 @@ function renderChamp() {
     renderElimStandings();
   } else if (fmt === 'timetrial') {
     colLeft.style.display = '';
-    chartSec.style.display = 'none';
+    if(chartSec) chartSec.style.display = 'none';
     document.querySelector('#c-page-races .sec-lbl').textContent = 'Prove';
     document.getElementById('races-count').textContent = '';
     document.getElementById('races-grid').className = 'races-grid rr-grid';
@@ -1382,7 +1383,7 @@ function renderChamp() {
     renderTTStandings();
   } else {
     colLeft.style.display = '';
-    chartSec.style.display = '';
+    if(chartSec) chartSec.style.display = '';
     document.querySelector('#c-page-races .sec-lbl').textContent = 'Gare';
     document.getElementById('races-grid').className = 'races-grid';
     renderStandings();
