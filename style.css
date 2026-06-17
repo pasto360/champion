@@ -1379,7 +1379,8 @@ select:focus{border-color:var(--text);}
   border-color:var(--gold2) !important;
 }
 
-/* ── DICE WIDGET ─────────────────────────────────── */
+
+/* ── DICE WIDGET — OVERRIDE FINALE ─────────────────── */
 .dice-widget {
   background: var(--card);
   border: 1px solid var(--border);
@@ -1406,7 +1407,6 @@ select:focus{border-color:var(--text);}
 .dice-title i { color: var(--gold); font-size: 14px; }
 .dice-sub { font-size: 10px; color: var(--muted); font-style: italic; }
 
-/* Roll button */
 .dice-roll-btn {
   width: 100%;
   display: flex;
@@ -1417,12 +1417,10 @@ select:focus{border-color:var(--text);}
   background: none;
   border: none;
   cursor: pointer;
-  position: relative;
 }
 .dice-roll-btn:active { transform: scale(.97); }
 .dice-roll-btn.rolling #dice-face { animation: dice-spin .5s ease; }
 
-/* Big number display */
 .dice-result-display {
   width: 100%;
   background: linear-gradient(145deg, #1a1a2e, #16213e);
@@ -1449,7 +1447,6 @@ select:focus{border-color:var(--text);}
   line-height: 1;
   display: block;
   filter: drop-shadow(0 4px 8px rgba(0,0,0,.4));
-  transition: transform .1s;
 }
 #dice-label {
   font-size: 11px;
@@ -1460,7 +1457,6 @@ select:focus{border-color:var(--text);}
   margin-top: 6px;
 }
 
-/* Pull trigger button */
 .dice-trigger {
   width: 100%;
   padding: 10px;
@@ -1472,10 +1468,8 @@ select:focus{border-color:var(--text);}
   font-weight: 700;
   cursor: pointer;
   letter-spacing: .5px;
-  transition: background .15s, transform .1s;
 }
 .dice-trigger:hover { background: var(--gold2); }
-.dice-trigger:active { transform: scale(.98); }
 
 @keyframes dice-spin {
   0%   { transform: rotate(0deg) scale(1); }
@@ -1485,7 +1479,6 @@ select:focus{border-color:var(--text);}
   100% { transform: rotate(0deg) scale(1); }
 }
 
-/* Log */
 .dice-log {
   margin-top: 10px;
   display: flex;
@@ -1507,22 +1500,24 @@ select:focus{border-color:var(--text);}
   border-bottom: 1px solid var(--bg2);
 }
 .dice-log-row:last-child { border-bottom: none; }
+
+/* Numero del tiro: sfondo BIANCO per massimo contrasto */
 .dice-log-num {
   width: 36px;
   height: 36px;
   border-radius: 8px;
-  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  background: #ffffff;
   border: 1px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a1a2e;
   flex-shrink: 0;
 }
-.dice-log-info {
-  flex: 1;
-  min-width: 0;
-}
+
+.dice-log-info { flex: 1; min-width: 0; }
 .dice-log-player {
   font-size: 13px;
   font-weight: 600;
