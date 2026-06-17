@@ -917,18 +917,9 @@ async function requestJoin() {
   const username = currentUser.user_metadata?.username || currentUser.email?.split('@')[0] || 'Utente';
   const existing = champMembers.find(m => m.user_id === currentUser.id);
   if (existing) {
-    if (existing.role === 'pending') { showToast("Richiesta già inviata, attendi l'approvazione"); return; }
-    if (existing.role === 'player') { showToast('Sei già un giocatore!'); return; }
-    if (existing.role === 'rejected') { showToast('La tua richiesta è stata rifiutata'); return; }
-    if (existing.role === 'owner') { showToast('Sei il proprietario!'); return; }
-    const { error: updErr } = await sb.from('champ_members').update({ role: 'pending' }).eq('id', existing.id);
-    if (updErr) { showToast('Errore: ' + updErr.message); return; }
-    var champName2 = champData.championship || currentChamp.name || 'il campionato';
-    await createNotif(currentChamp.owner_id, 'join_request', 'Nuova richiesta di iscrizione',
-      username + ' vuole iscriversi a "' + champName2 + '"', currentChamp.id);
-    await loadChampMembers();
-    renderChamp();
-    showToast("Richiesta inviata! Attendi l'approvazione dell'admin");
+    if (existing.role === 'pending') showToast("Richiesta già inviata, attendi l'approvazione");
+    else if (existing.role === 'player') showToast('Sei già un giocatore!');
+    else if (existing.role === 'rejected') showToast('La tua richiesta è stata rifiutata');
     return;
   }
   const { error } = await sb.from('champ_members').insert({
@@ -1000,9 +991,7 @@ async function scheduleSaveImmediate() {
 
 function myMemberStatus() {
   const m = champMembers.find(m => m.user_id === currentUser?.id);
-  if (!m) return null;
-  if (m.role === 'invited') return null;
-  return m.role;
+  return m ? m.role : null;
 }
 
 
@@ -1055,7 +1044,6 @@ function renderJoinBanner() {
         + '<div style="font-size:13px;color:var(--muted);margin-bottom:10px;">Vuoi partecipare a questo campionato?</div>'
         + '<button onclick="requestJoin()" style="background:var(--violet);color:#fff;border:none;border-radius:10px;padding:9px 24px;font-size:14px;font-weight:700;cursor:pointer;">Richiedi iscrizione</button>'
         + '</div>';
-      if (el2) el2.innerHTML = el.innerHTML;
     }
     return;
   }
@@ -1273,7 +1261,7 @@ function renderDiceLog() {
     return;
   }
   log.innerHTML = rolls.slice(0,3).map(function(r) {
-    var face = ['⚀','⚁','⚂','⚃','⚄','⚅'][r.value - 1] || r.value;
+    var face = ['⚀','⚁','⚂','⚃','⚄','⚅'][r.value - 1] || '🎲';
     var dt = new Date(r.at);
     var timeStr = dt.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'})
       + ' · ' + dt.toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'2-digit'});

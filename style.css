@@ -1380,7 +1380,165 @@ select:focus{border-color:var(--text);}
 }
 
 
-/* ── DICE RESULT DISPLAY — sfondo chiaro (override finale) ── */
+/* ══════════════════════════════════════════════════
+   DICE WIDGET — design pulito, sfondo bianco
+══════════════════════════════════════════════════ */
+.dice-widget {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 14px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.04);
+}
+
+.dice-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.dice-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.dice-title i { color: var(--gold); font-size: 14px; }
+.dice-sub {
+  font-size: 10px;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.dice-roll-btn {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.dice-roll-btn:active { transform: scale(.98); }
+
 .dice-result-display {
-  background: #ffffff !important;
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px 16px 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.06);
+}
+#dice-face {
+  font-size: 60px;
+  line-height: 1;
+  display: block;
+}
+.dice-roll-btn.rolling #dice-face {
+  animation: dice-spin .5s ease;
+}
+#dice-label {
+  font-size: 11px;
+  letter-spacing: .8px;
+  text-transform: uppercase;
+  color: var(--gold);
+  font-weight: 700;
+}
+
+.dice-trigger {
+  width: 100%;
+  padding: 11px;
+  background: var(--gold);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .3px;
+  transition: background .15s;
+}
+.dice-trigger:hover { background: var(--gold2); }
+
+@keyframes dice-spin {
+  0%   { transform: rotate(0deg)    scale(1); }
+  25%  { transform: rotate(-14deg)  scale(1.15); }
+  50%  { transform: rotate(12deg)   scale(1.12); }
+  75%  { transform: rotate(-8deg)   scale(1.06); }
+  100% { transform: rotate(0deg)    scale(1); }
+}
+
+.dice-log {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.dice-log-empty {
+  font-size: 11px;
+  color: var(--muted);
+  text-align: center;
+  padding: 8px 0;
+  font-style: italic;
+}
+.dice-log-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 4px;
+  border-bottom: 1px solid var(--bg2);
+}
+.dice-log-row:last-child { border-bottom: none; }
+
+.dice-log-num {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.dice-log-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.dice-log-player {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dice-log-time {
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 1px;
+}
+
+.dice-log-val {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--gold);
+  flex-shrink: 0;
+  width: 30px;
+  text-align: center;
 }
