@@ -410,17 +410,18 @@
         </div>
       </div>
       <!-- dado -->
-      <div class="dice-widget" id="dice-widget" style="display:none;margin-bottom:14px;">
+      <div class="dice-widget" id="dice-widget" style="display:none;">
         <div class="dice-header">
-          <span class="dice-title"><i class="ti ti-dice-6" aria-hidden="true"></i> Dado</span>
-          <span class="dice-sub">Tira per tutti</span>
+          <span class="dice-title"><i class="ti ti-dice-6" aria-hidden="true"></i> Dado del campionato</span>
+          <span class="dice-sub">Solo partecipanti</span>
         </div>
-        <div class="dice-body">
-          <button class="dice-roll-btn" id="dice-roll-btn" onclick="rollDice()">
+        <button class="dice-roll-btn" id="dice-roll-btn" onclick="rollDice()">
+          <div class="dice-result-display">
             <span id="dice-face">🎲</span>
-            <span id="dice-label">Tira il dado</span>
-          </button>
-        </div>
+            <span id="dice-label">Premi per tirare</span>
+          </div>
+          <div class="dice-trigger">🎯 Tira il dado</div>
+        </button>
         <div class="dice-log" id="dice-log"></div>
       </div>
 

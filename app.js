@@ -921,10 +921,7 @@ async function requestJoin() {
     if (existing.role === 'player') { showToast('Sei già un giocatore!'); return; }
     if (existing.role === 'rejected') { showToast('La tua richiesta è stata rifiutata'); return; }
     if (existing.role === 'owner') { showToast('Sei il proprietario!'); return; }
-    // 'invited' o altri: aggiorna a pending
-    const { error: updErr } = await sb.from('champ_members')
-      .update({ role: 'pending' })
-      .eq('id', existing.id);
+    const { error: updErr } = await sb.from('champ_members').update({ role: 'pending' }).eq('id', existing.id);
     if (updErr) { showToast('Errore: ' + updErr.message); return; }
     var champName2 = champData.championship || currentChamp.name || 'il campionato';
     await createNotif(currentChamp.owner_id, 'join_request', 'Nuova richiesta di iscrizione',
@@ -1279,11 +1276,14 @@ function renderDiceLog() {
     var face = ['⚀','⚁','⚂','⚃','⚄','⚅'][r.value - 1] || r.value;
     var dt = new Date(r.at);
     var timeStr = dt.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'})
-      + ' ' + dt.toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'2-digit'});
+      + ' · ' + dt.toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'2-digit'});
     return '<div class="dice-log-row">'
-      + '<div class="dice-log-num">' + r.value + '</div>'
-      + '<span class="dice-log-player">' + esc(r.player) + '</span>'
-      + '<span class="dice-log-time">' + face + ' ' + timeStr + '</span>'
+      + '<div class="dice-log-num">' + face + '</div>'
+      + '<div class="dice-log-info">'
+      +   '<span class="dice-log-player">' + esc(r.player) + '</span>'
+      +   '<span class="dice-log-time">' + timeStr + '</span>'
+      + '</div>'
+      + '<div class="dice-log-val">' + r.value + '</div>'
       + '</div>';
   }).join('');
 }

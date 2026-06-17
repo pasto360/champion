@@ -1379,129 +1379,170 @@ select:focus{border-color:var(--text);}
   border-color:var(--gold2) !important;
 }
 
-/* ══════════════════════════════════════════════════
-   DARK MODE — FORCE CARD BACKGROUNDS (high specificity)
-   These rules use !important to override any later
-   low-specificity rules that might reset card colors
-══════════════════════════════════════════════════ */
+/* ── DICE WIDGET ─────────────────────────────────── */
+.dice-widget {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 16px;
+  margin-bottom: 14px;
+}
+.dice-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.dice-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.dice-title i { color: var(--gold); font-size: 14px; }
+.dice-sub { font-size: 10px; color: var(--muted); font-style: italic; }
 
-[data-theme="dark"] .champ-card,
-[data-theme="dark"] .champ-card.champ-card-mine {
-  background: #15151f !important;
-  border-color: #2a2a3a !important;
-  color: #f0f2ff !important;
+/* Roll button */
+.dice-roll-btn {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  position: relative;
 }
+.dice-roll-btn:active { transform: scale(.97); }
+.dice-roll-btn.rolling #dice-face { animation: dice-spin .5s ease; }
 
-[data-theme="dark"] .champ-card .champ-card-name,
-[data-theme="dark"] .champ-card-name {
-  color: #f0f2ff !important;
+/* Big number display */
+.dice-result-display {
+  width: 100%;
+  background: linear-gradient(145deg, #1a1a2e, #16213e);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 16px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 10px;
+  position: relative;
+  overflow: hidden;
 }
-
-[data-theme="dark"] .champ-card .champ-card-meta,
-[data-theme="dark"] .champ-card-meta {
-  color: #8888aa !important;
+.dice-result-display::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--gold), var(--gold2));
 }
-
-[data-theme="dark"] .champ-card .champ-card-footer,
-[data-theme="dark"] .champ-card-footer {
-  border-color: #2a2a3a !important;
+#dice-face {
+  font-size: 64px;
+  line-height: 1;
+  display: block;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,.4));
+  transition: transform .1s;
 }
-
-[data-theme="dark"] .champ-card-open {
-  background: #f59e0b !important;
-  color: #0d0d14 !important;
-  border-color: #f59e0b !important;
-}
-
-[data-theme="dark"] .champ-card-mine {
-  border-left-color: #818cf8 !important;
-}
-
-[data-theme="dark"] .champ-card:hover {
-  border-color: #3a3a50 !important;
-}
-
-/* Cards in dashboard and all sections */
-[data-theme="dark"] .dash-champ-card,
-[data-theme="dark"] .dash-champ-card * {
-  background: #15151f;
-  border-color: #2a2a3a;
-}
-
-/* Profile champ rows */
-[data-theme="dark"] .profile-champ-row {
-  background: #15151f !important;
-  border-color: #2a2a3a !important;
-}
-[data-theme="dark"] .profile-champ-name {
-  color: #f0f2ff !important;
-}
-
-/* Section headers */
-[data-theme="dark"] .sec-header {
-  background: transparent !important;
-}
-[data-theme="dark"] .sec-title {
-  color: #8888aa !important;
-}
-[data-theme="dark"] .sec-eyebrow {
-  color: #f59e0b !important;
-}
-
-/* Welcome area */
-[data-theme="dark"] .welcome-greet {
-  color: #8888aa !important;
-}
-[data-theme="dark"] .welcome-greet em,
-[data-theme="dark"] .welcome-name {
-  color: #f0f2ff !important;
-}
-
-/* Search bar */
-[data-theme="dark"] .search-inner-wrap {
-  background: #15151f !important;
-  border-color: #2a2a3a !important;
-}
-[data-theme="dark"] .search-input {
-  background: #15151f !important;
-  color: #f0f2ff !important;
-  border-color: #2a2a3a !important;
-}
-[data-theme="dark"] .search-input::placeholder {
-  color: #8888aa !important;
-}
-[data-theme="dark"] .search-icon-wrap {
-  color: #8888aa !important;
+#dice-label {
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--gold);
+  font-weight: 600;
+  margin-top: 6px;
 }
 
-/* Filter pills */
-[data-theme="dark"] .filter-pill {
-  background: #15151f !important;
-  border-color: #2a2a3a !important;
-  color: #8888aa !important;
+/* Pull trigger button */
+.dice-trigger {
+  width: 100%;
+  padding: 10px;
+  background: var(--gold);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: .5px;
+  transition: background .15s, transform .1s;
 }
-[data-theme="dark"] .filter-pill.active {
-  background: #818cf8 !important;
-  border-color: #818cf8 !important;
-  color: #fff !important;
+.dice-trigger:hover { background: var(--gold2); }
+.dice-trigger:active { transform: scale(.98); }
+
+@keyframes dice-spin {
+  0%   { transform: rotate(0deg) scale(1); }
+  25%  { transform: rotate(-15deg) scale(1.2); }
+  50%  { transform: rotate(12deg) scale(1.15); }
+  75%  { transform: rotate(-8deg) scale(1.1); }
+  100% { transform: rotate(0deg) scale(1); }
 }
 
-/* Badge access */
-[data-theme="dark"] .badge-pub {
-  background: rgba(16,185,129,.12) !important;
-  color: #10b981 !important;
-  border-color: rgba(16,185,129,.25) !important;
+/* Log */
+.dice-log {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
-[data-theme="dark"] .badge-priv {
-  background: rgba(129,140,248,.12) !important;
-  color: #a78bfa !important;
-  border-color: rgba(129,140,248,.25) !important;
+.dice-log-empty {
+  font-size: 11px;
+  color: var(--muted);
+  text-align: center;
+  padding: 6px 0;
+  font-style: italic;
 }
-
-/* New champ button */
-[data-theme="dark"] .btn-new-champ-gold,
-[data-theme="dark"] #btn-new-champ {
-  background: #f59e0b !important;
-  color: #0d0d14 !important;
-  border-color: #f59e0b !important;
+.dice-log-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--bg2);
+}
+.dice-log-row:last-child { border-bottom: none; }
+.dice-log-num {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+.dice-log-info {
+  flex: 1;
+  min-width: 0;
+}
+.dice-log-player {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dice-log-time {
+  font-size: 10px;
+  color: var(--muted);
+  display: block;
+  margin-top: 1px;
+}
+.dice-log-val {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--gold);
+  flex-shrink: 0;
+  width: 32px;
+  text-align: center;
 }
