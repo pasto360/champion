@@ -138,39 +138,19 @@ window.addEventListener('DOMContentLoaded', async () => {
       setTimeout(function(){ document.getElementById('auth-err').textContent = "Account sospeso. Contatta l'amministratore."; }, 100);
     } else {
       currentUser = session.user;
-      // Pagine standalone: init leggero, niente showHome
-      if (window.IS_CHAMP_PAGE) {
-        var champParams = new URLSearchParams(window.location.search);
-        await initChampPage(champParams.get('champ'));
-      } else if (window.IS_PROFILE_PAGE) {
-        var profParams = new URLSearchParams(window.location.search);
-        await initProfilePage(profParams.get('u'));
-      } else if (window.IS_DASHBOARD_PAGE) {
-        await initDashboardPage();
+      // Check if URL has ?champ= param — open directly
+      var urlParams = new URLSearchParams(window.location.search);
+      var champParam = urlParams.get('champ');
+      if (champParam) {
+        // Clean URL first to avoid re-opening on next showHome
+        history.replaceState(null, '', window.location.pathname);
+        await showHome();
+        await openChampionship(champParam);
       } else {
-        // Check if URL has ?champ= param — open directly (index.html)
-        var urlParams = new URLSearchParams(window.location.search);
-        var champParam = urlParams.get('champ');
-        if (champParam) {
-          history.replaceState(null, '', window.location.pathname);
-          await showHome();
-          await openChampionship(champParam);
-        } else {
-          await showHome();
-        }
+        await showHome();
       }
     }
   } else {
-    if (window.IS_CHAMP_PAGE) {
-      var backParams = new URLSearchParams(window.location.search);
-      var backChampId = backParams.get('champ') || '';
-      window.location.href = 'index.html?champ=' + encodeURIComponent(backChampId);
-      return;
-    }
-    if (window.IS_PROFILE_PAGE || window.IS_DASHBOARD_PAGE) {
-      window.location.href = 'index.html';
-      return;
-    }
     showPage('page-auth');
   }
   hideGlobalLoading();
@@ -197,11 +177,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 
 // ── PAGE ROUTING ──────────────────────────────────
 async function goHome() {
-  if (window.IS_CHAMP_PAGE || window.IS_PROFILE_PAGE) {
-    window.location.href = 'index.html';
-  } else {
-    window.location.href = window.location.pathname;
-  }
+  window.location.href = window.location.pathname;
 }
 
 function showPage(id) {
@@ -362,10 +338,7 @@ async function acceptInvite(champId, notifId) {
   await sb.from('notifications').update({ read: true }).eq('id', notifId);
   showToast('Iscrizione confermata!');
   checkBadges('join');
-  // Ricarica la lista campionati solo se siamo su index.html
-  if (!window.IS_CHAMP_PAGE && !window.IS_PROFILE_PAGE && !window.IS_DASHBOARD_PAGE) {
-    await loadChampionshipsHome();
-  }
+  await loadChampionshipsHome();
   closeNotifPanel();
   openChampionship(champId);
 }
@@ -379,53 +352,6 @@ async function declineInvite(champId, notifId) {
   showToast('Invito rifiutato');
   closeNotifPanel();
 }
-
-
-// ── INIT PAGINA CAMPIONATO STANDALONE (champ.html) ──
-async function initChampPage(champId) {
-  applyTheme(getTheme());
-  startOnlineTracking();
-  await loadSiteTheme();
-  startNotifPolling();
-  loadFriendships().then(cacheFriendProfiles);
-  if (!champId) {
-    window.location.href = 'index.html';
-    return;
-  }
-  await openChampionship(champId);
-}
-
-// ── INIT PAGINA PROFILO STANDALONE (profile.html) ──
-async function initProfilePage(username) {
-  applyTheme(getTheme());
-  startOnlineTracking();
-  await loadSiteTheme();
-  startNotifPolling();
-  loadFriendships().then(cacheFriendProfiles);
-  var target = username || currentUser?.user_metadata?.username || currentUser?.email?.split('@')[0] || '';
-  if (!target) {
-    window.location.href = 'index.html';
-    return;
-  }
-  await openProfile(target);
-}
-
-// ── INIT PAGINA DASHBOARD STANDALONE (dashboard.html) ──
-async function initDashboardPage() {
-  applyTheme(getTheme());
-  startOnlineTracking();
-  await loadSiteTheme();
-  startNotifPolling();
-  loadFriendships().then(cacheFriendProfiles);
-  var username = currentUser?.user_metadata?.username || currentUser?.email?.split('@')[0] || 'Utente';
-  var navU = document.getElementById('dash-username');
-  if (navU) navU.textContent = username;
-  var navAv = document.getElementById('dash-username-av');
-  if (navAv) navAv.textContent = username.substring(0,2).toUpperCase();
-  await loadDashboard();
-}
-
-
 
 async function showHome() {
   applyTheme(getTheme());
@@ -444,14 +370,6 @@ async function showHome() {
   showPage('page-home');
   await loadChampionshipsHome();
   await loadDashboard();
-  // Apertura automatica modale nuovo campionato (da FAB mobile su altre pagine)
-  var npParams = new URLSearchParams(window.location.search);
-  if (npParams.get('newchamp') === '1') {
-    history.replaceState(null, '', window.location.pathname);
-    setTimeout(function() {
-      if (typeof openNewChampModal === 'function') openNewChampModal();
-    }, 200);
-  }
 }
 
 // ── HOME ──────────────────────────────────────────
@@ -576,9 +494,7 @@ async function loadChampionshipsHome() {
   const mine = allChampsRaw.filter(c=>c.owner_id===currentUser.id);
 
   const myGrid = document.getElementById('my-champs-grid');
-  if (!myGrid) return; // elemento non presente (pagina diversa da index.html)
-  var myTitleEl = document.getElementById('my-champs-title');
-  if (myTitleEl) myTitleEl.style.display = mine.length?'block':'none';
+  document.getElementById('my-champs-title').style.display = mine.length?'block':'none';
   myGrid.style.display = mine.length?'':'none';
   myGrid.innerHTML = mine.map(c=>champCard(c)).join('');
   setTimeout(attachChampCardListeners, 0);
@@ -878,12 +794,7 @@ function showChampLoading(show) {
 
 async function openChampionship(id) {
   if (!id) { showToast('ID campionato non valido'); return; }
-  // Da index.html (o dashboard/profilo): naviga alla pagina dedicata champ.html
-  if (!window.IS_CHAMP_PAGE) {
-    window.location.href = 'champ.html?champ=' + encodeURIComponent(id);
-    return;
-  }
-  if (!currentUser) { showToast('Sessione scaduta, effettua di nuovo il login'); return; }
+  if (!currentUser) { showToast('Sessione scaduta, effettua di nuovo il login'); showPage('page-auth'); return; }
   // Show immediate feedback so user knows click was registered
   showChampLoading(true);
   try {
@@ -2199,12 +2110,8 @@ var profileViewingUser = null; // username being viewed
 
 async function openProfile(username) {
   if (!username) return;
-  // Da qualsiasi pagina che non sia profile.html: naviga alla pagina dedicata
-  if (!window.IS_PROFILE_PAGE) {
-    window.location.href = 'profile.html?u=' + encodeURIComponent(username);
-    return;
-  }
   profileViewingUser = username;
+  showPage('page-profile');
 
   var myUsername = currentUser?.user_metadata?.username || currentUser?.email?.split('@')[0] || '';
   var isMe = (username === myUsername);
@@ -2804,12 +2711,19 @@ function switchTab(tab){
   document.getElementById('tab-'+tab+'-btn').classList.add('active');
 }
 function repositionChart(){
-  const isMobile=window.innerWidth<768;
-  const chart=document.getElementById('chart-section');
-  if(isMobile) document.getElementById('c-page-standings').appendChild(chart);
-  else document.querySelector('.champ-layout').appendChild(chart);
+  if (!window.IS_CHAMP_PAGE) return;
+  const chart = document.getElementById('chart-section');
+  if (!chart) return;
+  const isMobile = window.innerWidth < 768;
+  if (isMobile) {
+    const target = document.getElementById('c-page-standings');
+    if (target) target.appendChild(chart);
+  } else {
+    const target = document.querySelector('.champ-layout');
+    if (target) target.appendChild(chart);
+  }
 }
-window.addEventListener('resize',repositionChart);
+window.addEventListener('resize', repositionChart);
 
 // ── OVERLAY UTILS ─────────────────────────────────
 function openOverlay(id){document.getElementById(id).classList.add('open');}
@@ -2818,10 +2732,10 @@ function closeOverlay(id){document.getElementById(id).classList.remove('open');}
   const el=document.getElementById(id);
   if(el) el.addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');});
 });
-document.getElementById('manage-panel').addEventListener('click',function(e){if(e.target===this)closeManagePanel();});
+(function(){ var mp = document.getElementById('manage-panel'); if (mp) mp.addEventListener('click',function(e){if(e.target===this)closeManagePanel();}); })();
 
 // ── MISC UTILS ────────────────────────────────────
-function hideGlobalLoading(){document.getElementById('global-loading').classList.remove('open');}
+function hideGlobalLoading(){ var el = document.getElementById('global-loading'); if (el) el.classList.remove('open'); }
 function setSyncStatus(type,label){
   const badge=document.getElementById('sync-badge');
   if(!badge) return;
