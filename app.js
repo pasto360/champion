@@ -362,7 +362,10 @@ async function acceptInvite(champId, notifId) {
   await sb.from('notifications').update({ read: true }).eq('id', notifId);
   showToast('Iscrizione confermata!');
   checkBadges('join');
-  await loadChampionshipsHome();
+  // Ricarica la lista campionati solo se siamo su index.html
+  if (!window.IS_CHAMP_PAGE && !window.IS_PROFILE_PAGE && !window.IS_DASHBOARD_PAGE) {
+    await loadChampionshipsHome();
+  }
   closeNotifPanel();
   openChampionship(champId);
 }
@@ -441,6 +444,14 @@ async function showHome() {
   showPage('page-home');
   await loadChampionshipsHome();
   await loadDashboard();
+  // Apertura automatica modale nuovo campionato (da FAB mobile su altre pagine)
+  var npParams = new URLSearchParams(window.location.search);
+  if (npParams.get('newchamp') === '1') {
+    history.replaceState(null, '', window.location.pathname);
+    setTimeout(function() {
+      if (typeof openNewChampModal === 'function') openNewChampModal();
+    }, 200);
+  }
 }
 
 // ── HOME ──────────────────────────────────────────
@@ -565,7 +576,9 @@ async function loadChampionshipsHome() {
   const mine = allChampsRaw.filter(c=>c.owner_id===currentUser.id);
 
   const myGrid = document.getElementById('my-champs-grid');
-  document.getElementById('my-champs-title').style.display = mine.length?'block':'none';
+  if (!myGrid) return; // elemento non presente (pagina diversa da index.html)
+  var myTitleEl = document.getElementById('my-champs-title');
+  if (myTitleEl) myTitleEl.style.display = mine.length?'block':'none';
   myGrid.style.display = mine.length?'':'none';
   myGrid.innerHTML = mine.map(c=>champCard(c)).join('');
   setTimeout(attachChampCardListeners, 0);

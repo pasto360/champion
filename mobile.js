@@ -39,34 +39,81 @@
 
   // ── NAVIGATION ─────────────────────────────────
 
-  // ── SEARCH ─────────────────────────────────────
-  // La search bar è sempre visibile nel flusso della pagina.
-  // Il pulsante Esplora fa solo scroll + focus sull'input.
+  // ── SEARCH OVERLAY ─────────────────────────────
   function openMobileSearch() {
-    var inp = document.getElementById('champ-search');
-    if (!inp) return;
+    var bar = document.querySelector('.search-bar');
+    var filters = document.getElementById('search-filters');
+    var backdrop = document.getElementById('mobile-search-backdrop');
 
-    // Scroll to search input
-    inp.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // Add close button if not present
+    if (bar && !document.getElementById('mobile-search-close')) {
+      // Submit button (yellow, with search icon)
+      var submitBtn = document.createElement('button');
+      submitBtn.id = 'mobile-search-submit';
+      submitBtn.innerHTML = '<i class="ti ti-arrow-right" aria-hidden="true"></i>';
+      submitBtn.setAttribute('aria-label', 'Cerca');
+      submitBtn.onclick = function() {
+        if (typeof onSearchInput === 'function') onSearchInput();
+        var inp = document.getElementById('champ-search');
+        if (inp) inp.blur();
+      };
+      bar.appendChild(submitBtn);
+      // Close button
+      var closeBtn = document.createElement('button');
+      closeBtn.id = 'mobile-search-close';
+      closeBtn.innerHTML = '✕';
+      closeBtn.onclick = closeMobileSearch;
+      bar.appendChild(closeBtn);
+    }
 
-    // Focus after scroll
+    // Create backdrop if not present
+    if (!backdrop) {
+      backdrop = document.createElement('div');
+      backdrop.id = 'mobile-search-backdrop';
+      backdrop.onclick = closeMobileSearch;
+      document.body.appendChild(backdrop);
+    }
+
+    if (bar) bar.classList.add('mobile-open');
+    if (filters) filters.classList.add('mobile-open');
+    backdrop.classList.add('open');
+
+    // Focus input and wire Enter/Go key
     setTimeout(function() {
-      inp.focus();
-      // Wire Enter key once
-      if (!inp._mbbHooked) {
-        inp._mbbHooked = true;
-        inp.addEventListener('keydown', function(e) {
-          if (e.key === 'Enter' || e.keyCode === 13) {
-            e.preventDefault();
+      var inp = document.getElementById('champ-search');
+      if (inp) {
+        inp.focus();
+        // Fire search on Enter / mobile Go button
+        if (!inp._mbbSearchHooked) {
+          inp._mbbSearchHooked = true;
+          inp.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.keyCode === 13) {
+              e.preventDefault();
+              if (typeof onSearchInput === 'function') onSearchInput();
+              inp.blur(); // hide keyboard after search
+            }
+          });
+          // Also ensure oninput fires on mobile (some keyboards use compositionend)
+          inp.addEventListener('compositionend', function() {
             if (typeof onSearchInput === 'function') onSearchInput();
-            inp.blur();
-          }
-        });
-        inp.addEventListener('compositionend', function() {
-          if (typeof onSearchInput === 'function') onSearchInput();
-        });
+          });
+        }
       }
-    }, 350);
+    }, 100);
+  }
+
+  function closeMobileSearch() {
+    var bar = document.querySelector('.search-bar');
+    var filters = document.getElementById('search-filters');
+    var backdrop = document.getElementById('mobile-search-backdrop');
+    if (bar) bar.classList.remove('mobile-open');
+    if (filters) filters.classList.remove('mobile-open');
+    if (backdrop) backdrop.classList.remove('open');
+    // Reset active bottom bar item back to home
+    ['home','explore','dash','profile'].forEach(function(id) {
+      var el = document.getElementById('mbb-' + id);
+      if (el) el.classList.toggle('active', id === 'home');
+    });
   }
 
   window.mbbGo = function(dest) {
@@ -76,28 +123,39 @@
       if (el) el.classList.toggle('active', id === dest);
     });
 
+    var onIndex = !window.IS_CHAMP_PAGE && !window.IS_PROFILE_PAGE && !window.IS_DASHBOARD_PAGE;
+
     if (dest === 'home') {
       if (typeof goHome === 'function') goHome();
-      else if (typeof showPage === 'function') showPage('page-home');
+      else window.location.href = 'index.html';
     } else if (dest === 'explore') {
-      if (typeof showPage === 'function') showPage('page-home');
-      setTimeout(openMobileSearch, 150);
+      if (onIndex) {
+        if (typeof showPage === 'function') showPage('page-home');
+        setTimeout(openMobileSearch, 150);
+      } else {
+        window.location.href = 'index.html';
+      }
     } else if (dest === 'dash') {
-      if (typeof showPage === 'function') showPage('page-dashboard');
-      if (typeof loadDashboard === 'function') loadDashboard();
+      if (window.IS_DASHBOARD_PAGE) return; // già qui
+      window.location.href = 'dashboard.html';
     } else if (dest === 'profile') {
       if (typeof openMyProfile === 'function') openMyProfile();
+      else window.location.href = 'profile.html';
     }
   };
 
   // FAB → apri modale nuovo campionato
   window.mbbNew = function() {
+    // Se non siamo su index.html, naviga lì con un flag per apertura automatica del modal
+    var onIndex = !window.IS_CHAMP_PAGE && !window.IS_PROFILE_PAGE && !window.IS_DASHBOARD_PAGE;
+    if (!onIndex) {
+      window.location.href = 'index.html?newchamp=1';
+      return;
+    }
     var btn = document.querySelector('[onclick*="openNewChampModal"], [onclick*="newChamp"], [onclick*="openChampModal"]');
     if (btn) { btn.click(); return; }
-    // Fallback: cerca il pulsante "+" nella pagina
     var fab = document.querySelector('.btn-new-champ, #btn-new-champ, [id*="new-champ"]');
     if (fab) { fab.click(); return; }
-    // Ultimo fallback: mostra la pagina home e cerca il pulsante
     if (typeof showPage === 'function') showPage('page-home');
     setTimeout(function() {
       var anyNewBtn = document.querySelector('[onclick*="Champ"][onclick*="open"], [onclick*="champ"][onclick*="Modal"]');
@@ -142,8 +200,22 @@
   // ── INIT ───────────────────────────────────────
   function init() {
     injectBottomBar();
-    // Wait for DOM to be fully ready before observing pages
-    setTimeout(hookShowPage, 500);
+    // Imposta la tab attiva in base alla pagina standalone corrente
+    if (window.IS_DASHBOARD_PAGE) {
+      syncBottomBar('page-dashboard');
+    } else if (window.IS_PROFILE_PAGE) {
+      syncBottomBar('page-profile');
+    } else if (window.IS_CHAMP_PAGE) {
+      // Nessuna icona attiva specifica per il campionato
+      ['home','explore','dash','profile'].forEach(function(id) {
+        var el = document.getElementById('mbb-' + id);
+        if (el) el.classList.remove('active');
+      });
+    } else {
+      syncBottomBar('page-home');
+      // Wait for DOM to be fully ready before observing pages (solo su index.html)
+      setTimeout(hookShowPage, 500);
+    }
   }
 
   if (document.readyState === 'loading') {
