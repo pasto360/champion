@@ -2199,13 +2199,12 @@ var profileViewingUser = null; // username being viewed
 
 async function openProfile(username) {
   if (!username) return;
-  // Da pagine diverse da profile.html: naviga alla pagina dedicata
-  if (window.IS_CHAMP_PAGE || window.IS_DASHBOARD_PAGE) {
+  // Da qualsiasi pagina che non sia profile.html: naviga alla pagina dedicata
+  if (!window.IS_PROFILE_PAGE) {
     window.location.href = 'profile.html?u=' + encodeURIComponent(username);
     return;
   }
   profileViewingUser = username;
-  if (!window.IS_PROFILE_PAGE) showPage('page-profile');
 
   var myUsername = currentUser?.user_metadata?.username || currentUser?.email?.split('@')[0] || '';
   var isMe = (username === myUsername);
