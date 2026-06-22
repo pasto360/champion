@@ -135,7 +135,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (banCheck) {
       await sb.auth.signOut();
       showPage('page-auth');
-      setTimeout(function(){ document.getElementById('auth-err').textContent = "Account sospeso. Contatta l'amministratore."; }, 100);
+      setTimeout(function(){ var ae = document.getElementById('auth-err'); if (ae) ae.textContent = "Account sospeso. Contatta l'amministratore."; }, 100);
     } else {
       currentUser = session.user;
       // Check if URL has ?champ= param — open directly
@@ -182,7 +182,9 @@ async function goHome() {
 
 function showPage(id) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
+  var target = document.getElementById(id);
+  if (!target) return; // pagina non presente in questo file standalone
+  target.classList.add('active');
   window.scrollTo(0,0);
   if (id !== 'page-champ') stopPendingPoll();
   var ft = document.getElementById('site-footer');
@@ -361,7 +363,7 @@ async function showHome() {
   checkUrlChampParam();
   const {data:profile} = await sb.auth.getUser();
   const username = profile?.user?.user_metadata?.username || currentUser?.email?.split('@')[0] || 'Utente';
-  document.getElementById('home-username').textContent = username;
+  var huEl = document.getElementById('home-username'); if (huEl) huEl.textContent = username;
   var avEl = document.getElementById('home-username-av');
   if (avEl) avEl.textContent = username.substring(0,2).toUpperCase();
   var greetEl = document.getElementById('home-username-greet');
@@ -4237,7 +4239,7 @@ async function loadDashboard() {
   var champIds = (memberships||[]).map(function(m){ return m.champ_id; });
   if (!champIds.length) {
     var _dsr=document.getElementById('dash-stats-row'); if(_dsr) _dsr.innerHTML='';
-    document.getElementById('dash-champs-list').innerHTML =
+    if (document.getElementById('dash-champs-list')) document.getElementById('dash-champs-list').innerHTML =
       '<div style="color:var(--muted);font-size:13px;padding:20px 0;">Non sei ancora iscritto a nessun campionato.</div>';
     return;
   }
@@ -4268,7 +4270,7 @@ async function loadDashboard() {
   for (var i = 0; i < champs.length; i++) {
     html += renderDashChampCard(champs[i], memberships);
   }
-  document.getElementById('dash-champs-list').innerHTML = html ||
+  if (document.getElementById('dash-champs-list')) document.getElementById('dash-champs-list').innerHTML = html ||
     '<div style="color:var(--muted);font-size:13px;padding:16px 0;">Non sei iscritto a nessun campionato attivo.</div>';
 
   // Render archivio
