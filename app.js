@@ -189,10 +189,13 @@ window.addEventListener('DOMContentLoaded', async () => {
   });
 
   // access select toggle
-  document.getElementById('nc-access').addEventListener('change', e => {
-    document.getElementById('nc-pass-field').style.display =
-      e.target.value === 'password' ? 'block' : 'none';
-  });
+  var ncAccessEl = document.getElementById('nc-access');
+  if (ncAccessEl) {
+    ncAccessEl.addEventListener('change', e => {
+      var passField = document.getElementById('nc-pass-field');
+      if (passField) passField.style.display = e.target.value === 'password' ? 'block' : 'none';
+    });
+  }
 });
 
 // ── PAGE ROUTING ──────────────────────────────────
@@ -960,7 +963,8 @@ async function loadChampPage(champ) {
   await loadChampMembers();
 
   // Show/hide manage button
-  document.getElementById('btn-manage-champ').style.display = isOwner ? 'inline-flex' : 'none';
+  var btnManageEl = document.getElementById('btn-manage-champ');
+  if (btnManageEl) btnManageEl.style.display = isOwner ? 'inline-flex' : 'none';
 
   // Reset chart
   if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
@@ -2799,8 +2803,10 @@ function saveNewRace(){
 function switchTab(tab){
   document.querySelectorAll('.c-page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById('c-page-'+tab).classList.add('active');
-  document.getElementById('tab-'+tab+'-btn').classList.add('active');
+  var pageEl = document.getElementById('c-page-'+tab);
+  if (pageEl) pageEl.classList.add('active');
+  var btnEl = document.getElementById('tab-'+tab+'-btn');
+  if (btnEl) btnEl.classList.add('active');
 }
 function repositionChart(){
   if (!window.IS_CHAMP_PAGE) return;
