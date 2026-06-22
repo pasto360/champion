@@ -138,19 +138,39 @@ window.addEventListener('DOMContentLoaded', async () => {
       setTimeout(function(){ document.getElementById('auth-err').textContent = "Account sospeso. Contatta l'amministratore."; }, 100);
     } else {
       currentUser = session.user;
-      // Check if URL has ?champ= param — open directly
-      var urlParams = new URLSearchParams(window.location.search);
-      var champParam = urlParams.get('champ');
-      if (champParam) {
-        // Clean URL first to avoid re-opening on next showHome
-        history.replaceState(null, '', window.location.pathname);
-        await showHome();
-        await openChampionship(champParam);
+      // Pagine standalone: init leggero, niente showHome
+      if (window.IS_CHAMP_PAGE) {
+        var champParams = new URLSearchParams(window.location.search);
+        await initChampPage(champParams.get('champ'));
+      } else if (window.IS_PROFILE_PAGE) {
+        var profParams = new URLSearchParams(window.location.search);
+        await initProfilePage(profParams.get('u'));
+      } else if (window.IS_DASHBOARD_PAGE) {
+        await initDashboardPage();
       } else {
-        await showHome();
+        // Check if URL has ?champ= param — open directly (index.html)
+        var urlParams = new URLSearchParams(window.location.search);
+        var champParam = urlParams.get('champ');
+        if (champParam) {
+          history.replaceState(null, '', window.location.pathname);
+          await showHome();
+          await openChampionship(champParam);
+        } else {
+          await showHome();
+        }
       }
     }
   } else {
+    if (window.IS_CHAMP_PAGE) {
+      var backParams = new URLSearchParams(window.location.search);
+      var backChampId = backParams.get('champ') || '';
+      window.location.href = 'index.html?champ=' + encodeURIComponent(backChampId);
+      return;
+    }
+    if (window.IS_PROFILE_PAGE || window.IS_DASHBOARD_PAGE) {
+      window.location.href = 'index.html';
+      return;
+    }
     showPage('page-auth');
   }
   hideGlobalLoading();
@@ -177,7 +197,11 @@ window.addEventListener('DOMContentLoaded', async () => {
 
 // ── PAGE ROUTING ──────────────────────────────────
 async function goHome() {
-  window.location.href = window.location.pathname;
+  if (window.IS_CHAMP_PAGE || window.IS_PROFILE_PAGE) {
+    window.location.href = 'index.html';
+  } else {
+    window.location.href = window.location.pathname;
+  }
 }
 
 function showPage(id) {
@@ -352,6 +376,53 @@ async function declineInvite(champId, notifId) {
   showToast('Invito rifiutato');
   closeNotifPanel();
 }
+
+
+// ── INIT PAGINA CAMPIONATO STANDALONE (champ.html) ──
+async function initChampPage(champId) {
+  applyTheme(getTheme());
+  startOnlineTracking();
+  await loadSiteTheme();
+  startNotifPolling();
+  loadFriendships().then(cacheFriendProfiles);
+  if (!champId) {
+    window.location.href = 'index.html';
+    return;
+  }
+  await openChampionship(champId);
+}
+
+// ── INIT PAGINA PROFILO STANDALONE (profile.html) ──
+async function initProfilePage(username) {
+  applyTheme(getTheme());
+  startOnlineTracking();
+  await loadSiteTheme();
+  startNotifPolling();
+  loadFriendships().then(cacheFriendProfiles);
+  var target = username || currentUser?.user_metadata?.username || currentUser?.email?.split('@')[0] || '';
+  if (!target) {
+    window.location.href = 'index.html';
+    return;
+  }
+  await openProfile(target);
+}
+
+// ── INIT PAGINA DASHBOARD STANDALONE (dashboard.html) ──
+async function initDashboardPage() {
+  applyTheme(getTheme());
+  startOnlineTracking();
+  await loadSiteTheme();
+  startNotifPolling();
+  loadFriendships().then(cacheFriendProfiles);
+  var username = currentUser?.user_metadata?.username || currentUser?.email?.split('@')[0] || 'Utente';
+  var navU = document.getElementById('dash-username');
+  if (navU) navU.textContent = username;
+  var navAv = document.getElementById('dash-username-av');
+  if (navAv) navAv.textContent = username.substring(0,2).toUpperCase();
+  await loadDashboard();
+}
+
+
 
 async function showHome() {
   applyTheme(getTheme());
@@ -794,7 +865,12 @@ function showChampLoading(show) {
 
 async function openChampionship(id) {
   if (!id) { showToast('ID campionato non valido'); return; }
-  if (!currentUser) { showToast('Sessione scaduta, effettua di nuovo il login'); showPage('page-auth'); return; }
+  // Da index.html (o dashboard/profilo): naviga alla pagina dedicata champ.html
+  if (!window.IS_CHAMP_PAGE) {
+    window.location.href = 'champ.html?champ=' + encodeURIComponent(id);
+    return;
+  }
+  if (!currentUser) { showToast('Sessione scaduta, effettua di nuovo il login'); return; }
   // Show immediate feedback so user knows click was registered
   showChampLoading(true);
   try {
@@ -1261,17 +1337,14 @@ function renderDiceLog() {
     return;
   }
   log.innerHTML = rolls.slice(0,3).map(function(r) {
-    var face = ['⚀','⚁','⚂','⚃','⚄','⚅'][r.value - 1] || '🎲';
+    var face = ['⚀','⚁','⚂','⚃','⚄','⚅'][r.value - 1] || r.value;
     var dt = new Date(r.at);
     var timeStr = dt.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'})
-      + ' · ' + dt.toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'2-digit'});
+      + ' ' + dt.toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'2-digit'});
     return '<div class="dice-log-row">'
-      + '<div class="dice-log-num">' + face + '</div>'
-      + '<div class="dice-log-info">'
-      +   '<span class="dice-log-player">' + esc(r.player) + '</span>'
-      +   '<span class="dice-log-time">' + timeStr + '</span>'
-      + '</div>'
-      + '<div class="dice-log-val">' + r.value + '</div>'
+      + '<div class="dice-log-num">' + r.value + '</div>'
+      + '<span class="dice-log-player">' + esc(r.player) + '</span>'
+      + '<span class="dice-log-time">' + face + ' ' + timeStr + '</span>'
       + '</div>';
   }).join('');
 }
@@ -2113,8 +2186,13 @@ var profileViewingUser = null; // username being viewed
 
 async function openProfile(username) {
   if (!username) return;
+  // Da pagine diverse da profile.html: naviga alla pagina dedicata
+  if (window.IS_CHAMP_PAGE || window.IS_DASHBOARD_PAGE) {
+    window.location.href = 'profile.html?u=' + encodeURIComponent(username);
+    return;
+  }
   profileViewingUser = username;
-  showPage('page-profile');
+  if (!window.IS_PROFILE_PAGE) showPage('page-profile');
 
   var myUsername = currentUser?.user_metadata?.username || currentUser?.email?.split('@')[0] || '';
   var isMe = (username === myUsername);

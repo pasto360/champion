@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="shortcut icon" href="favicon.svg">
+<title>RANKIT</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="mobile.css">
+<script src="mobile.js" defer></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<script>
+  // Apply saved theme immediately to avoid flash
+  (function(){
+    var t = localStorage.getItem('rankit_theme') || 'light';
+    document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+</head>
+<body>
+
+<div class="page" id="page-champ">
+  <!-- header -->
+  <!-- Champ nav header -->
+  <header class="app-header">
+    <div style="display:flex;align-items:center;">
+      <div style="display:flex;align-items:flex-end;gap:2px;margin-right:8px;">
+        <div style="width:7px;height:14px;border-radius:2px 2px 0 0;background:var(--gold2);"></div>
+        <div style="width:7px;height:19px;border-radius:2px 2px 0 0;background:var(--gold);"></div>
+        <div style="width:7px;height:10px;border-radius:2px 2px 0 0;background:#ead99a;"></div>
+      </div>
+      <span style="font-family:Georgia,serif;font-size:15px;letter-spacing:3px;color:var(--text);font-style:italic;">rank<em style="font-style:normal;color:var(--gold);">it</em></span>
+    </div>
+      
+    <div class="right" style="gap:6px;">
+      <!-- ☆ preferiti -->
+      <button class="champ-hdr-btn" id="btn-fav-champ" onclick="toggleFav()" title="Preferiti">
+        <i class="ti ti-star" style="font-size:14px;" aria-hidden="true"></i>
+      </button>
+      <!-- ⚙ gestisci (owner only) -->
+      <button class="champ-hdr-btn gold" id="btn-manage-champ" onclick="openManagePanel()" style="display:none;">
+        <i class="ti ti-settings" style="font-size:13px;" aria-hidden="true"></i> Gestisci
+      </button>
+      <!-- user chip -->
+      <button onclick="openMyProfile()" class="user-chip" title="Il mio profilo">
+        <div class="user-chip-av" id="champ-username-av">?</div>
+        <span class="user-chip-name" id="champ-nav-username"></span>
+      </button>
+      <button class="hbtn-icon" id="notif-btn-champ" onclick="openNotifPanel()" aria-label="Notifiche">
+        <i class="ti ti-bell" aria-hidden="true"></i>
+        <span class="notif-dot-badge" id="notif-badge-champ" style="display:none;"></span>
+      </button>
+      <button class="hbtn-icon" onclick="openFriendsPanel()" aria-label="Amici">
+        <i class="ti ti-users" aria-hidden="true"></i>
+      </button>
+      <button class="hbtn-icon theme-toggle-btn" onclick="toggleTheme()" aria-label="Tema">
+        <i class="ti ti-sun" aria-hidden="true"></i>
+      </button>
+      <div class="nav-vsep"></div>
+      <button class="hbtn" onclick="goHome()">Home</button>
+      <button class="hbtn" onclick="window.location.href='dashboard.html'">Dashboard</button>
+      <button class="hbtn red" onclick="doLogout()">Esci</button>
+    </div>
+  </header>
+  <!-- Champ title strip -->
+  <div class="champ-page-header">
+    <div style="min-width:0;flex:1;">
+      <div class="champ-eyebrow" id="champ-hdr-eyebrow">
+        <span class="champ-eyebrow-line"></span>
+        <span>Campionato</span>
+      </div>
+      <div>
+        <h1 id="champ-hdr-title" style="font-family:Georgia,serif;font-size:20px;font-weight:400;display:inline;">Campionato</h1>
+        <span id="champ-hdr-season" class="champ-season-inline"></span>
+      </div>
+      <div class="champ-hdr-meta" id="champ-hdr-meta"></div>
+    </div>
+  </div>
+
+  <!-- mobile tab bar -->
+  <nav class="tab-bar">
+    <div class="tab-bar-inner">
+      <button class="tab-btn active" id="tab-races-btn" onclick="switchTab('races')">
+        <i class="ti ti-flag" aria-hidden="true"></i><span>Gare</span>
+      </button>
+      <button class="tab-btn" id="tab-live-btn" onclick="switchTab('live')" style="position:relative;">
+        <i class="ti ti-radio" aria-hidden="true"></i><span>Live</span>
+      </button>
+      <button class="tab-btn" id="tab-elim-btn" onclick="switchTab('elim')" style="display:none;">
+        <i class="ti ti-tournament" aria-hidden="true"></i><span>Bracket</span>
+      </button>
+      <button class="tab-btn" id="tab-standings-btn" onclick="switchTab('standings')">
+        <i class="ti ti-trophy" aria-hidden="true"></i><span>Classifica</span>
+      </button>
+    </div>
+  </nav>
+
+  <div class="champ-layout">
+    <!-- GARE -->
+    <div class="col-races c-page active" id="c-page-races">
+      <div class="sec-hdr"><span class="sec-lbl">Gare</span><span id="races-count" style="font-size:11px;color:#bbb;"></span></div>
+      <div id="join-banner-races"></div>
+      <div class="races-grid" id="races-grid"></div>
+    </div>
+    <!-- RIGHT COL -->
+    <div class="col-right c-page" id="c-page-standings">
+      <!-- live desktop widget -->
+      <div id="live-widget-desktop" style="margin-top:14px;margin-bottom:14px;border-radius:12px;overflow:hidden;background:#000;aspect-ratio:16/9;display:none;">
+        <iframe id="live-iframe-desktop" src="" allowfullscreen allow="autoplay;encrypted-media" style="width:100%;height:100%;border:none;display:block;"></iframe>
+      </div>
+      <!-- share bar -->
+      <div class="share-bar" id="champ-share-bar">
+        <span class="share-bar-label">Condividi</span>
+        <div class="share-btns">
+          <a id="share-wa"  class="share-btn whatsapp"  href="#" target="_blank" title="WhatsApp">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.532 5.855L.057 23.243a.5.5 0 0 0 .634.634l5.388-1.475A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.959 0-3.799-.524-5.385-1.44l-.385-.229-3.997 1.093 1.093-3.997-.229-.385A9.946 9.946 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+          </a>
+          <a id="share-tg"  class="share-btn telegram"  href="#" target="_blank" title="Telegram">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="#fff"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.17 13.949l-2.96-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.978.61z"/></svg>
+          </a>
+          <a id="share-ig"  class="share-btn instagram" href="#" target="_blank" title="Instagram">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="#fff"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/></svg>
+          </a>
+          <button id="share-copy" class="share-btn copy-link" onclick="copyChampLink()" title="Copia link">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          </button>
+        </div>
+      </div>
+      <!-- dado -->
+      <div class="dice-widget" id="dice-widget" style="display:none;margin-bottom:14px;">
+        <div class="dice-header">
+          <span class="dice-title"><i class="ti ti-dice-6" aria-hidden="true"></i> Dado</span>
+          <span class="dice-sub">Tira per tutti</span>
+        </div>
+        <div class="dice-body">
+          <button class="dice-roll-btn" id="dice-roll-btn" onclick="rollDice()">
+            <span id="dice-face">🎲</span>
+            <span id="dice-label">Tira il dado</span>
+          </button>
+        </div>
+        <div class="dice-log" id="dice-log"></div>
+      </div>
+
+      <!-- classifica -->
+      <div class="sec-hdr" style="margin-top:8px;"><span class="sec-lbl">Classifica</span><span id="races-progress" style="font-size:11px;color:#bbb;"></span></div>
+      <div class="standings-card" id="standings-container"></div>
+      <!-- download classifica -->
+      <div id="share-image-bar" style="display:flex;justify-content:flex-end;margin-top:10px;">
+        <button onclick="shareStandingsImage('download')" class="share-btn copy-link" title="Scarica classifica come immagine"
+          style="display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;width:auto;">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Scarica classifica
+        </button>
+      </div>
+      <div class="prog-bar"><div class="prog-fill" id="progress-fill" style="width:0%"></div></div>
+      <div class="prog-lbl" id="progress-label"></div>
+      <!-- premi -->
+      <div class="sec-hdr" style="margin-top:16px;"><span class="sec-lbl">Premi</span></div>
+      <div class="prizes-card" id="prizes-container"></div>
+      <div id="join-banner"></div>
+    </div>
+    <!-- CHART -->
+    <div class="col-chart" id="chart-section">
+      <div class="sec-hdr"><span class="sec-lbl">Andamento Punti</span></div>
+      <div class="chart-card">
+        <div class="chart-legend" id="chart-legend"></div>
+        <div class="chart-wrap"><canvas id="chart-canvas"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- mobile live page -->
+  <div class="c-page" id="c-page-live" style="padding:16px;display:none;">
+    <div class="sec-hdr"><span class="sec-lbl">Live</span></div>
+    <div class="live-card" id="live-card-mobile"></div>
+  </div>
+  <!-- Round Robin page (hidden — matches shown in c-page-races) -->
+  <div class="c-page" id="c-page-rr" style="display:none!important;">
+    <div id="rr-content"></div>
+  </div>
+  <!-- Elimination page -->
+  <div class="c-page" id="c-page-elim" style="padding:16px;">
+    <div id="elim-content"></div>
+  </div>
+</div>
+
+<div class="overlay" id="replay-overlay" onclick="if(event.target===this)closeReplay()">
+  <div style="position:relative;width:90%;max-width:860px;aspect-ratio:16/9;background:#000;border-radius:14px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5);">
+    <button onclick="closeReplay()" style="position:absolute;top:10px;right:14px;z-index:10;background:rgba(0,0,0,.6);border:none;color:#fff;font-size:22px;cursor:pointer;border-radius:50%;width:34px;height:34px;display:flex;align-items:center;justify-content:center;line-height:1;">×</button>
+    <iframe id="replay-iframe" src="" allowfullscreen allow="autoplay;encrypted-media" style="width:100%;height:100%;border:none;"></iframe>
+  </div>
+</div>
+
+<div class="overlay" id="access-overlay">
+  <div class="sheet">
+    <div class="drag-bar"></div>
+    <button class="sheet-close" onclick="closeOverlay('access-overlay')">×</button>
+    <h2 id="access-title">Accedi al campionato</h2>
+    <p id="access-sub">Inserisci la password per visualizzare</p>
+    <div class="field"><label>Password campionato</label><input type="password" id="access-pass" placeholder="••••••"/></div>
+
+    <button class="btn-primary" onclick="submitAccess()">Entra</button>
+    <div class="auth-err" id="access-err"></div>
+  </div>
+</div>
+
+<div class="manage-panel" id="manage-panel">
+  <div class="manage-inner">
+    <div class="manage-drag"></div>
+    <div class="manage-hdr">
+      <h2>Gestisci</h2>
+      <button style="background:none;border:none;font-size:22px;cursor:pointer;color:#888;" onclick="closeManagePanel()">×</button>
+    </div>
+    <div class="manage-tabs" id="manage-tabs-row"></div>
+    <div class="manage-body" id="manage-body"></div>
+  </div>
+</div>
+
+<div class="overlay result-modal" id="result-overlay">
+  <div class="sheet">
+    <div class="drag-bar"></div>
+    <button class="sheet-close" onclick="closeOverlay('result-overlay')">×</button>
+    <h2 id="result-title">Risultato</h2>
+    <p class="modal-sub" id="result-sub" style="font-size:12px;color:#aaa;margin-bottom:18px;"></p>
+    <div id="result-selects"></div>
+    <button class="btn-primary" onclick="saveResult()">Salva Risultato</button>
+  </div>
+</div>
+
+<div class="overlay" id="rr-result-overlay">
+  <div class="sheet">
+    <div class="drag-bar"></div>
+    <button class="sheet-close" onclick="closeOverlay('rr-result-overlay')">×</button>
+    <h2 id="rr-result-title">Risultato match</h2>
+    <p class="modal-sub" style="font-size:12px;color:#aaa;margin-bottom:16px;" id="rr-result-sub"></p>
+    <div id="rr-result-body"></div>
+    <button class="btn-primary" onclick="saveRRResult()">Salva</button>
+  </div>
+</div>
+
+<div class="overlay" id="elim-result-overlay">
+  <div class="sheet">
+    <div class="drag-bar"></div>
+    <button class="sheet-close" onclick="closeOverlay('elim-result-overlay')">×</button>
+    <h2 id="elim-result-title">Risultato sfida</h2>
+    <div id="elim-result-body"></div>
+
+  </div>
+</div>
+
+<div class="overlay" id="add-race-overlay">
+  <div class="sheet">
+    <div class="drag-bar"></div>
+    <button class="sheet-close" onclick="closeOverlay('add-race-overlay')">×</button>
+    <h2>Nuovo Circuito</h2>
+    <p style="margin-bottom:16px;font-size:13px;color:#aaa;">Aggiungi un circuito al campionato</p>
+    <div class="field"><label>Nome circuito</label><input type="text" id="ar-name" placeholder="Es. Barcellona"/></div>
+    <div class="field"><label>Data gara (opzionale)</label><input type="date" id="ar-date" style="width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:10px;font-size:15px;outline:none;background:#fff;"/></div>
+    <button class="btn-primary" onclick="saveNewRace()">Aggiungi circuito</button>
+    <div class="auth-err" id="ar-err" style="margin-top:10px;"></div>
+  </div>
+</div>
+
+<div class="overlay" id="edit-race-overlay">
+  <div class="sheet">
+    <div class="drag-bar"></div>
+    <button class="sheet-close" onclick="closeOverlay('edit-race-overlay')">×</button>
+    <h2>Modifica Circuito</h2>
+    <p style="margin-bottom:16px;font-size:13px;color:#aaa;">Modifica nome e data della gara</p>
+    <input type="hidden" id="er-id"/>
+    <div class="field"><label>Nome circuito</label><input type="text" id="er-name" placeholder="Es. Barcellona"/></div>
+    <div class="field"><label>Data gara</label><input type="date" id="er-date" style="width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:10px;font-size:15px;outline:none;background:#fff;"/></div>
+    <button class="btn-primary" onclick="saveEditRace()">Salva modifiche</button>
+    <div class="auth-err" id="er-err" style="margin-top:10px;"></div>
+  </div>
+</div>
+
+<!-- Notif panel -->
+<div class="notif-panel" id="notif-panel"></div>
+<!-- Friends panel -->
+<div class="friends-panel" id="friends-panel"></div>
+
+</body>
+<script>window.IS_CHAMP_PAGE = true;</script>
+<script src="app.js"></script>
+</html>

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="shortcut icon" href="favicon.svg">
+<title>RANKIT</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="mobile.css">
+<script src="mobile.js" defer></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<script>
+  // Apply saved theme immediately to avoid flash
+  (function(){
+    var t = localStorage.getItem('rankit_theme') || 'light';
+    document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+</head>
+<body>
+
+<div class="page" id="page-dashboard">
+  <header class="app-header">
+    <div style="display:flex;align-items:center;">
+      <div style="display:flex;align-items:flex-end;gap:2px;margin-right:8px;">
+        <div style="width:7px;height:14px;border-radius:2px 2px 0 0;background:var(--gold2);"></div>
+        <div style="width:7px;height:19px;border-radius:2px 2px 0 0;background:var(--gold);"></div>
+        <div style="width:7px;height:10px;border-radius:2px 2px 0 0;background:#ead99a;"></div>
+      </div>
+      <span style="font-family:Georgia,serif;font-size:15px;letter-spacing:3px;color:var(--text);font-style:italic;">rank<em style="font-style:normal;color:var(--gold);">it</em></span>
+    </div>
+      
+    <div class="right" style="gap:6px;">
+      <button onclick="openMyProfile()" class="user-chip" title="Il mio profilo">
+        <div class="user-chip-av" id="dash-username-av">?</div>
+        <span class="user-chip-name" id="dash-username"></span>
+      </button>
+      <button class="hbtn-icon" id="notif-btn-dash" onclick="openNotifPanel()" aria-label="Notifiche">
+        <i class="ti ti-bell" aria-hidden="true"></i>
+        <span class="notif-dot-badge" id="notif-badge-dash" style="display:none;"></span>
+      </button>
+      <button class="hbtn-icon" onclick="openFriendsPanel()" aria-label="Amici">
+        <i class="ti ti-users" aria-hidden="true"></i>
+      </button>
+      <button class="hbtn-icon theme-toggle-btn" id="theme-toggle-btn-dash" onclick="toggleTheme()" aria-label="Tema">
+        <i class="ti ti-sun" aria-hidden="true"></i>
+      </button>
+      <div class="nav-vsep"></div>
+      <button class="hbtn" onclick="goHome()">Home</button>
+      <button class="hbtn red" onclick="doLogout()">Esci</button>
+    </div>
+  </header>
+  <div class="dash-container">
+    <!-- Campionati con classifica -->
+    <div class="sec-title" style="margin-bottom:12px;">I miei campionati</div>
+    <div id="dash-champs-list"></div>
+
+      <!-- Archivio -->
+      <div id="dash-archive-section" style="display:none;margin-top:28px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border);">
+          <span style="font-size:16px;">📦</span>
+          <span style="font-size:14px;font-weight:700;color:var(--muted);">Archivio</span>
+        </div>
+        <div id="dash-archive-list"></div>
+      </div>
+    <!-- Account -->
+    <div class="sec-title" style="margin:28px 0 12px;">Impostazioni account</div>
+    <div style="background:var(--card);border-radius:14px;border:1px solid var(--border);padding:20px;max-width:420px;">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:14px;padding:10px 12px;background:var(--bg);border-radius:8px;border:1px solid var(--border);">
+        ℹ️ Il nome utente non è modificabile dopo la registrazione.
+      </div>
+      <div class="field">
+        <label>Nuova email</label>
+        <input type="email" id="acc-email" placeholder="nuova@email.com" style="width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:10px;font-size:15px;outline:none;background:var(--bg);color:var(--text);"/>
+      </div>
+      <div class="field">
+        <label>Nuova password</label>
+        <input type="password" id="acc-pass" placeholder="min. 6 caratteri" style="width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:10px;font-size:15px;outline:none;background:var(--bg);color:var(--text);"/>
+      </div>
+      <div class="field">
+        <label>Conferma password</label>
+        <input type="password" id="acc-pass2" placeholder="ripeti la password" style="width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:10px;font-size:15px;outline:none;background:var(--bg);color:var(--text);"/>
+      </div>
+      <button class="btn-primary" onclick="saveAccountSettings()" style="margin-top:4px;">Salva modifiche</button>
+      <div class="auth-err" id="acc-msg" style="margin-top:10px;"></div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Notif panel -->
+<div class="notif-panel" id="notif-panel"></div>
+<!-- Friends panel -->
+<div class="friends-panel" id="friends-panel"></div>
+
+</body>
+<script>window.IS_DASHBOARD_PAGE = true;</script>
+<script src="app.js"></script>
+</html>
