@@ -138,19 +138,39 @@ window.addEventListener('DOMContentLoaded', async () => {
       setTimeout(function(){ var ae = document.getElementById('auth-err'); if (ae) ae.textContent = "Account sospeso. Contatta l'amministratore."; }, 100);
     } else {
       currentUser = session.user;
-      // Check if URL has ?champ= param — open directly
-      var urlParams = new URLSearchParams(window.location.search);
-      var champParam = urlParams.get('champ');
-      if (champParam) {
-        // Clean URL first to avoid re-opening on next showHome
-        history.replaceState(null, '', window.location.pathname);
-        await showHome();
-        await openChampionship(champParam);
+      // Pagine standalone: init leggero, niente showHome
+      if (window.IS_CHAMP_PAGE) {
+        var champParams = new URLSearchParams(window.location.search);
+        await initChampPage(champParams.get('champ'));
+      } else if (window.IS_PROFILE_PAGE) {
+        var profParams = new URLSearchParams(window.location.search);
+        await initProfilePage(profParams.get('u'));
+      } else if (window.IS_DASHBOARD_PAGE) {
+        await initDashboardPage();
       } else {
-        await showHome();
+        // Check if URL has ?champ= param — open directly (index.html)
+        var urlParams = new URLSearchParams(window.location.search);
+        var champParam = urlParams.get('champ');
+        if (champParam) {
+          history.replaceState(null, '', window.location.pathname);
+          await showHome();
+          await openChampionship(champParam);
+        } else {
+          await showHome();
+        }
       }
     }
   } else {
+    if (window.IS_CHAMP_PAGE) {
+      var backParams = new URLSearchParams(window.location.search);
+      var backChampId = backParams.get('champ') || '';
+      window.location.href = 'index.html?champ=' + encodeURIComponent(backChampId);
+      return;
+    }
+    if (window.IS_PROFILE_PAGE || window.IS_DASHBOARD_PAGE) {
+      window.location.href = 'index.html';
+      return;
+    }
     showPage('page-auth');
   }
   hideGlobalLoading();
@@ -177,7 +197,11 @@ window.addEventListener('DOMContentLoaded', async () => {
 
 // ── PAGE ROUTING ──────────────────────────────────
 async function goHome() {
-  window.location.href = window.location.pathname;
+  if (window.IS_CHAMP_PAGE || window.IS_PROFILE_PAGE || window.IS_DASHBOARD_PAGE) {
+    window.location.href = 'index.html';
+  } else {
+    window.location.href = window.location.pathname;
+  }
 }
 
 function showPage(id) {
@@ -340,7 +364,9 @@ async function acceptInvite(champId, notifId) {
   await sb.from('notifications').update({ read: true }).eq('id', notifId);
   showToast('Iscrizione confermata!');
   checkBadges('join');
-  await loadChampionshipsHome();
+  if (!window.IS_CHAMP_PAGE && !window.IS_PROFILE_PAGE && !window.IS_DASHBOARD_PAGE) {
+    await loadChampionshipsHome();
+  }
   closeNotifPanel();
   openChampionship(champId);
 }
@@ -353,6 +379,51 @@ async function declineInvite(champId, notifId) {
   await sb.from('notifications').update({ read: true }).eq('id', notifId);
   showToast('Invito rifiutato');
   closeNotifPanel();
+}
+
+
+// ── INIT PAGINA CAMPIONATO STANDALONE (champ.html) ──
+async function initChampPage(champId) {
+  applyTheme(getTheme());
+  startOnlineTracking();
+  await loadSiteTheme();
+  startNotifPolling();
+  loadFriendships().then(cacheFriendProfiles);
+  if (!champId) {
+    window.location.href = 'index.html';
+    return;
+  }
+  await openChampionship(champId);
+}
+
+// ── INIT PAGINA PROFILO STANDALONE (profile.html) ──
+async function initProfilePage(username) {
+  applyTheme(getTheme());
+  startOnlineTracking();
+  await loadSiteTheme();
+  startNotifPolling();
+  loadFriendships().then(cacheFriendProfiles);
+  var target = username || currentUser?.user_metadata?.username || currentUser?.email?.split('@')[0] || '';
+  if (!target) {
+    window.location.href = 'index.html';
+    return;
+  }
+  await openProfile(target);
+}
+
+// ── INIT PAGINA DASHBOARD STANDALONE (dashboard.html) ──
+async function initDashboardPage() {
+  applyTheme(getTheme());
+  startOnlineTracking();
+  await loadSiteTheme();
+  startNotifPolling();
+  loadFriendships().then(cacheFriendProfiles);
+  var username = currentUser?.user_metadata?.username || currentUser?.email?.split('@')[0] || 'Utente';
+  var navU = document.getElementById('dash-username');
+  if (navU) navU.textContent = username;
+  var navAv = document.getElementById('dash-username-av');
+  if (navAv) navAv.textContent = username.substring(0,2).toUpperCase();
+  await loadDashboard();
 }
 
 async function showHome() {
@@ -372,6 +443,14 @@ async function showHome() {
   showPage('page-home');
   await loadChampionshipsHome();
   await loadDashboard();
+  // Apertura automatica modale nuovo campionato (da FAB mobile su altre pagine)
+  var npParams = new URLSearchParams(window.location.search);
+  if (npParams.get('newchamp') === '1') {
+    history.replaceState(null, '', window.location.pathname);
+    setTimeout(function() {
+      if (typeof openNewChampModal === 'function') openNewChampModal();
+    }, 200);
+  }
 }
 
 // ── HOME ──────────────────────────────────────────
@@ -496,7 +575,9 @@ async function loadChampionshipsHome() {
   const mine = allChampsRaw.filter(c=>c.owner_id===currentUser.id);
 
   const myGrid = document.getElementById('my-champs-grid');
-  document.getElementById('my-champs-title').style.display = mine.length?'block':'none';
+  if (!myGrid) return; // elemento non presente in questa pagina
+  var myTitleEl = document.getElementById('my-champs-title');
+  if (myTitleEl) myTitleEl.style.display = mine.length?'block':'none';
   myGrid.style.display = mine.length?'':'none';
   myGrid.innerHTML = mine.map(c=>champCard(c)).join('');
   setTimeout(attachChampCardListeners, 0);
@@ -796,7 +877,12 @@ function showChampLoading(show) {
 
 async function openChampionship(id) {
   if (!id) { showToast('ID campionato non valido'); return; }
-  if (!currentUser) { showToast('Sessione scaduta, effettua di nuovo il login'); showPage('page-auth'); return; }
+  // Da index.html/dashboard/profilo: naviga alla pagina dedicata champ.html
+  if (!window.IS_CHAMP_PAGE) {
+    window.location.href = 'champ.html?champ=' + encodeURIComponent(id);
+    return;
+  }
+  if (!currentUser) { showToast('Sessione scaduta, effettua di nuovo il login'); return; }
   // Show immediate feedback so user knows click was registered
   showChampLoading(true);
   try {
@@ -2112,8 +2198,12 @@ var profileViewingUser = null; // username being viewed
 
 async function openProfile(username) {
   if (!username) return;
+  // Da qualsiasi pagina che non sia profile.html: naviga alla pagina dedicata
+  if (!window.IS_PROFILE_PAGE) {
+    window.location.href = 'profile.html?u=' + encodeURIComponent(username);
+    return;
+  }
   profileViewingUser = username;
-  showPage('page-profile');
 
   var myUsername = currentUser?.user_metadata?.username || currentUser?.email?.split('@')[0] || '';
   var isMe = (username === myUsername);
