@@ -31,22 +31,15 @@ async function getIpHash() {
 
 // ── DARK / LIGHT MODE ─────────────────────────────
 function getTheme() {
-  return localStorage.getItem('rankit_theme') || 'light';
+  return 'light'; // Dark mode rimosso
 }
 
 function applyTheme(theme) {
-  document.documentElement.setAttribute('data-theme', theme);
-  var isDark = theme === 'dark';
-  // Update all theme toggle icon classes
-  document.querySelectorAll('.theme-toggle-btn i').forEach(function(i) {
-    i.className = isDark ? 'ti ti-moon' : 'ti ti-sun';
-  });
+  document.documentElement.setAttribute('data-theme', 'light');
 }
 
 function toggleTheme() {
-  var next = getTheme() === 'dark' ? 'light' : 'dark';
-  localStorage.setItem('rankit_theme', next);
-  applyTheme(next);
+  // Dark mode rimosso — nessuna azione
 }
 
 // Apply immediately on load (before DOM paint to avoid flash)
@@ -457,11 +450,25 @@ async function showHome() {
 
 // ── HOME ──────────────────────────────────────────
 let allChamps = []; // cache completa per search+pagination
-let currentPage   = 1;
+let currentPage   = 1;   // pagina tab "Esistenti"
+let joinedPage    = 1;   // pagina tab "Partecipo"
+let createdPage   = 1;   // pagina tab "Creati"
 let activeFilterCat = '';   // '' | 'soccer' | 'racing' | 'dice' | 'shooter'
 let activeFilterFmt = '';   // '' | 'standard' | 'roundrobin' | 'elimination' | 'timetrial'
+let activeHomeTab = 'joined'; // 'joined' | 'created' | 'all'
 
 const PAGE_SIZE = 10;
+
+// ── HOME TAB SWITCHING ────────────────────────────
+function switchHomeTab(tab) {
+  activeHomeTab = tab;
+  ['joined','created','all'].forEach(function(t) {
+    var btn  = document.getElementById('home-tab-'+t+'-btn');
+    var page = document.getElementById('home-tab-'+t);
+    if (btn)  btn.classList.toggle('active', t === tab);
+    if (page) page.classList.toggle('active', t === tab);
+  });
+}
 
 // ── FAVOURITES (Supabase) ─────────────────────────
 let userFavIds = []; // cache locale — array di champ_id (string)
@@ -535,6 +542,8 @@ function renderFavs() {
   setTimeout(attachChampCardListeners, 0);
 }
 
+let cachedJoinedChamps = [];
+
 async function renderJoinedChamps() {
   // Get champ_ids where current user is player (not owner)
   const { data: memberships } = await sb.from('champ_members')
@@ -543,15 +552,85 @@ async function renderJoinedChamps() {
     .eq('role', 'player');
 
   const joinedIds = (memberships||[]).map(m => m.champ_id);
-  const joined = allChamps.filter(c => joinedIds.includes(c.id) && c.owner_id !== currentUser.id);
+  cachedJoinedChamps = allChamps.filter(c => joinedIds.includes(c.id) && c.owner_id !== currentUser.id);
+  renderJoinedGrid();
+}
 
-  const title = document.getElementById('my-joined-title');
-  const grid  = document.getElementById('my-joined-grid');
-  if (!title || !grid) return;
-  title.style.display = joined.length ? 'block' : 'none';
-  grid.style.display  = joined.length ? '' : 'none';
-  grid.innerHTML = joined.map(c => champCard(c)).join('');
+let cachedCreatedChamps = [];
+
+function renderCreatedGrid() {
+  const grid = document.getElementById('created-champs-grid');
+  if (!grid) return;
+  const query = (document.getElementById('champ-search')?.value||'').toLowerCase().trim();
+  const filtered = cachedCreatedChamps.filter(function(c) {
+    if (query && !c.name.toLowerCase().includes(query)) return false;
+    if (activeFilterCat) {
+      var cat = (c.data && c.data.category) || c.category || '';
+      if (cat !== activeFilterCat) return false;
+    }
+    if (activeFilterFmt) {
+      var fmt = (c.data && c.data.format) || 'standard';
+      if (fmt !== activeFilterFmt) return false;
+    }
+    return true;
+  });
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  if (createdPage > totalPages) createdPage = totalPages;
+  const start = (createdPage-1)*PAGE_SIZE;
+  const slice = filtered.slice(start, start+PAGE_SIZE);
+
+  grid.innerHTML = slice.length
+    ? slice.map(c => champCard(c)).join('')
+    : `<div class="empty-state"><div class="big">👑</div><p>${query?'Nessun campionato trovato':'Non hai ancora creato nessun campionato'}</p></div>`;
   setTimeout(attachChampCardListeners, 0);
+
+  renderTabPagination('created-pagination', createdPage, totalPages, function(p){ createdPage = p; renderCreatedGrid(); });
+}
+
+// ── Paginazione condivisa per le tab home ──────────
+function renderTabPagination(containerId, page, totalPages, onGoPage) {
+  const pag = document.getElementById(containerId);
+  if (!pag) return;
+  if (totalPages <= 1) { pag.innerHTML = ''; return; }
+  window['_tabPageHandler_' + containerId] = onGoPage;
+  let html = `<button class="page-btn" onclick="window._tabPageHandler_${containerId}(${page-1})" ${page===1?'disabled':''}>‹</button>`;
+  for (let i=1;i<=totalPages;i++) {
+    html += `<button class="page-btn ${i===page?'active-pg':''}" onclick="window._tabPageHandler_${containerId}(${i})">${i}</button>`;
+  }
+  html += `<button class="page-btn" onclick="window._tabPageHandler_${containerId}(${page+1})" ${page===totalPages?'disabled':''}>›</button>`;
+  html += `<span class="page-info">${page}/${totalPages}</span>`;
+  pag.innerHTML = html;
+}
+
+function renderJoinedGrid() {
+  const grid = document.getElementById('joined-champs-grid');
+  if (!grid) return;
+  const query = (document.getElementById('champ-search')?.value||'').toLowerCase().trim();
+  const filtered = cachedJoinedChamps.filter(function(c) {
+    if (query && !c.name.toLowerCase().includes(query)) return false;
+    if (activeFilterCat) {
+      var cat = (c.data && c.data.category) || c.category || '';
+      if (cat !== activeFilterCat) return false;
+    }
+    if (activeFilterFmt) {
+      var fmt = (c.data && c.data.format) || 'standard';
+      if (fmt !== activeFilterFmt) return false;
+    }
+    return true;
+  });
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  if (joinedPage > totalPages) joinedPage = totalPages;
+  const start = (joinedPage-1)*PAGE_SIZE;
+  const slice = filtered.slice(start, start+PAGE_SIZE);
+
+  grid.innerHTML = slice.length
+    ? slice.map(c => champCard(c)).join('')
+    : `<div class="empty-state"><div class="big">🎮</div><p>${query?'Nessun campionato trovato':'Non partecipi ancora a nessun campionato'}</p></div>`;
+  setTimeout(attachChampCardListeners, 0);
+
+  renderTabPagination('joined-pagination', joinedPage, totalPages, function(p){ joinedPage = p; renderJoinedGrid(); });
 }
 
 async function loadChampionshipsHome() {
@@ -576,16 +655,11 @@ async function loadChampionshipsHome() {
   allChamps = allChampsRaw;
   const mine = allChampsRaw.filter(c=>c.owner_id===currentUser.id);
 
-  const myGrid = document.getElementById('my-champs-grid');
-  if (!myGrid) return;
-  var myTitleEl = document.getElementById('my-champs-title');
-  if (myTitleEl) myTitleEl.style.display = mine.length?'block':'none';
-  myGrid.style.display = mine.length?'':'none';
-  myGrid.innerHTML = mine.map(c=>champCard(c)).join('');
-  setTimeout(attachChampCardListeners, 0);
+  cachedCreatedChamps = mine;
+  renderCreatedGrid();
 
   // Aggiorna il pulsante "Nuovo campionato" con contatore
-  var btnNew = document.querySelector('.btn-new');
+  var btnNew = document.getElementById('btn-new-champ');
   if (btnNew) {
     if (mine.length >= MAX_OWNED_CHAMPS) {
       btnNew.textContent = 'Limite raggiunto (' + mine.length + '/' + MAX_OWNED_CHAMPS + ')';
@@ -607,24 +681,30 @@ async function loadChampionshipsHome() {
 }
 
 
+function renderAllHomeTabs() {
+  renderJoinedGrid();
+  renderCreatedGrid();
+  renderAllChamps();
+}
+
 function setFilterCat(cat, btn) {
   activeFilterCat = cat;
   document.querySelectorAll('[data-filter-cat]').forEach(function(b){ b.classList.remove('active'); });
   if (btn) btn.classList.add('active');
-  currentPage = 1;
-  renderAllChamps();
+  currentPage = 1; joinedPage = 1; createdPage = 1;
+  renderAllHomeTabs();
 }
 
 function setFilterFmt(fmt, btn) {
   activeFilterFmt = fmt;
   document.querySelectorAll('[data-filter-fmt]').forEach(function(b){ b.classList.remove('active'); });
   if (btn) btn.classList.add('active');
-  currentPage = 1;
-  renderAllChamps();
+  currentPage = 1; joinedPage = 1; createdPage = 1;
+  renderAllHomeTabs();
 }
 function onSearchInput() {
-  currentPage = 1;
-  renderAllChamps();
+  currentPage = 1; joinedPage = 1; createdPage = 1;
+  renderAllHomeTabs();
 }
 
 function renderAllChamps() {
@@ -655,22 +735,13 @@ function renderAllChamps() {
   const slice = filtered.slice(start, start+PAGE_SIZE);
 
   const allGrid = document.getElementById('all-champs-grid');
+  if (!allGrid) return;
   allGrid.innerHTML = slice.length
     ? slice.map(champCard).join('')
     : `<div class="empty-state"><div class="big">🔍</div><p>${query?'Nessun campionato trovato':'Nessun campionato disponibile'}</p></div>`;
 
-  // Attach click listeners via delegation
   setTimeout(attachChampCardListeners, 0);
-  // Pagination
-  const pag = document.getElementById('pagination');
-  if (totalPages <= 1) { pag.innerHTML=''; return; }
-  let html = `<button class="page-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}>‹</button>`;
-  for (let i=1;i<=totalPages;i++) {
-    html+=`<button class="page-btn ${i===currentPage?'active-pg':''}" onclick="goPage(${i})">${i}</button>`;
-  }
-  html+=`<button class="page-btn" onclick="goPage(${currentPage+1})" ${currentPage===totalPages?'disabled':''}>›</button>`;
-  html+=`<span class="page-info">${currentPage}/${totalPages}</span>`;
-  pag.innerHTML = html;
+  renderTabPagination('pagination', currentPage, totalPages, function(p){ currentPage = p; renderAllChamps(); });
 }
 
 function isMemberOf(champId) {

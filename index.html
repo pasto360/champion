@@ -13,13 +13,6 @@
 <link rel="stylesheet" href="mobile.css">
 <script src="mobile.js" defer></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
-<script>
-  // Apply saved theme immediately to avoid flash
-  (function(){
-    var t = localStorage.getItem('rankit_theme') || 'light';
-    document.documentElement.setAttribute('data-theme', t);
-  })();
-</script>
 </head>
 <body>
 <!-- ── LOADING ── -->
@@ -94,9 +87,6 @@
       <button class="hbtn-icon" onclick="openFriendsPanel()" aria-label="Amici">
         <i class="ti ti-users" aria-hidden="true"></i>
       </button>
-      <button class="hbtn-icon theme-toggle-btn" id="theme-toggle-btn" onclick="toggleTheme()" aria-label="Tema">
-        <i class="ti ti-sun" id="theme-icon" aria-hidden="true"></i>
-      </button>
       <div class="nav-vsep"></div>
       <button class="hbtn" onclick="window.location.href='dashboard.html'">Dashboard</button>
       <button class="hbtn red" onclick="doLogout()">Esci</button>
@@ -105,38 +95,30 @@
   <div class="home-container">
     <div class="welcome-greet">Bentornato, <em id="home-username-greet"></em></div>
     <div class="welcome-count" id="home-champ-count"></div>
-    <div class="sec-header" id="my-champs-title" style="display:none;">
+
+    <!-- Pulsante nuovo campionato — sempre visibile sopra le tab -->
+    <div class="sec-header" style="margin-bottom:14px;">
       <div class="sec-header-left">
         <div class="sec-header-rule"></div>
-        <div><div class="sec-eyebrow">I miei</div><div class="sec-title">Campionati creati</div></div>
+        <div><div class="sec-eyebrow">Rankit</div><div class="sec-title">I tuoi campionati</div></div>
       </div>
       <button class="sec-action btn-new-champ-gold" onclick="openNewChampModal()" id="btn-new-champ">+ Nuovo campionato</button>
     </div>
-    <div class="champ-grid list-grid" id="my-champs-grid"></div>
 
-    <div class="sec-title" id="my-favs-title" style="display:none;">⭐ Preferiti</div>
-    <div class="champ-grid list-grid" id="my-favs-grid"></div>
-
-    <div class="sec-title" id="my-joined-title" style="display:none;">🎮 Partecipazione</div>
-    <div class="champ-grid list-grid" id="my-joined-grid"></div>
-
-    <!-- SEARCH + FILTRI -->
+    <!-- SEARCH + FILTRI (condivisi da tutte le tab) -->
     <div class="search-bar">
       <div class="search-inner-wrap">
         <div class="search-icon-wrap"><i class="ti ti-search" style="font-size:15px;" aria-hidden="true"></i></div>
         <input class="search-input" type="text" id="champ-search" placeholder="Cerca campionato..." oninput="onSearchInput()"/>
       </div>
     </div>
-    <!-- Filtri rapidi -->
     <div id="search-filters" style="display:flex;flex-wrap:wrap;gap:7px;margin:10px 0 4px;">
-      <!-- Categoria -->
       <button class="filter-pill active" data-filter-cat="" onclick="setFilterCat('',this)">Tutte</button>
       <button class="filter-pill" data-filter-cat="soccer" onclick="setFilterCat('soccer',this)">⚽</button>
       <button class="filter-pill" data-filter-cat="racing" onclick="setFilterCat('racing',this)">🏎️</button>
       <button class="filter-pill" data-filter-cat="dice" onclick="setFilterCat('dice',this)">🎲</button>
       <button class="filter-pill" data-filter-cat="shooter" onclick="setFilterCat('shooter',this)">🔫</button>
       <div style="width:1px;background:var(--border);margin:0 4px;"></div>
-      <!-- Tipo -->
       <button class="filter-pill" data-filter-fmt="" onclick="setFilterFmt('',this)" style="font-size:11px;">Tutti i tipi</button>
       <button class="filter-pill" data-filter-fmt="standard" onclick="setFilterFmt('standard',this)" style="font-size:11px;">Standard</button>
       <button class="filter-pill" data-filter-fmt="roundrobin" onclick="setFilterFmt('roundrobin',this)" style="font-size:11px;">Round Robin</button>
@@ -144,14 +126,37 @@
       <button class="filter-pill" data-filter-fmt="timetrial" onclick="setFilterFmt('timetrial',this)" style="font-size:11px;">Time Trial</button>
     </div>
 
-    <div class="sec-header" style="border-top:1px solid var(--border);padding-top:1.5rem;">
-      <div class="sec-header-left">
-        <div class="sec-header-rule"></div>
-        <div><div class="sec-eyebrow">Esplora</div><div class="sec-title">Tutti i campionati</div></div>
-      </div>
+    <!-- TAB BAR -->
+    <div class="home-tab-bar">
+      <button class="home-tab-btn active" id="home-tab-joined-btn" onclick="switchHomeTab('joined')">
+        <i class="ti ti-users" aria-hidden="true"></i> Partecipo
+      </button>
+      <button class="home-tab-btn" id="home-tab-created-btn" onclick="switchHomeTab('created')">
+        <i class="ti ti-crown" aria-hidden="true"></i> Creati
+      </button>
+      <button class="home-tab-btn" id="home-tab-all-btn" onclick="switchHomeTab('all')">
+        <i class="ti ti-list" aria-hidden="true"></i> Esistenti
+      </button>
     </div>
-    <div class="champ-grid list-grid" id="all-champs-grid"></div>
-    <div class="pagination" id="pagination"></div>
+
+    <!-- TAB: PARTECIPO -->
+    <div class="home-tab-page active" id="home-tab-joined">
+      <div class="champ-grid list-grid" id="joined-champs-grid"></div>
+      <div class="pagination" id="joined-pagination"></div>
+    </div>
+
+    <!-- TAB: CREATI -->
+    <div class="home-tab-page" id="home-tab-created">
+      <div class="champ-grid list-grid" id="created-champs-grid"></div>
+      <div class="pagination" id="created-pagination"></div>
+    </div>
+
+    <!-- TAB: ESISTENTI -->
+    <div class="home-tab-page" id="home-tab-all">
+      <div class="champ-grid list-grid" id="all-champs-grid"></div>
+      <div class="pagination" id="pagination"></div>
+    </div>
+
   </div>
 </div>
 

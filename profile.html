@@ -13,13 +13,6 @@
 <link rel="stylesheet" href="mobile.css">
 <script src="mobile.js" defer></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
-<script>
-  // Apply saved theme immediately to avoid flash
-  (function(){
-    var t = localStorage.getItem('rankit_theme') || 'light';
-    document.documentElement.setAttribute('data-theme', t);
-  })();
-</script>
 </head>
 <body>
 
@@ -44,9 +37,6 @@
       </button>
       <button class="hbtn-icon" onclick="openFriendsPanel()" aria-label="Amici">
         <i class="ti ti-users" aria-hidden="true"></i>
-      </button>
-      <button class="hbtn-icon theme-toggle-btn" onclick="toggleTheme()" aria-label="Tema">
-        <i class="ti ti-sun" aria-hidden="true"></i>
       </button>
       <div class="nav-vsep"></div>
       <button class="hbtn" onclick="window.location.href='index.html'">Home</button>
@@ -92,9 +82,46 @@
 </div>
 
 <!-- Notif panel -->
-<div class="notif-panel" id="notif-panel"></div>
+<div class="notif-overlay" id="notif-overlay" onclick="if(event.target===this)closeNotifPanel()">
+  <div class="notif-panel">
+    <div class="notif-panel-header">
+      <h3>🔔 Notifiche</h3>
+      <button class="notif-mark-all" onclick="markAllNotifsRead()">Segna tutte come lette</button>
+    </div>
+    <div class="notif-list" id="notif-list">
+      <div class="notif-empty">Nessuna notifica</div>
+    </div>
+  </div>
+</div>
 <!-- Friends panel -->
-<div class="friends-panel" id="friends-panel"></div>
+<!-- Friends panel overlay -->
+<div class="friends-overlay" id="friends-overlay" onclick="if(event.target===this)closeFriendsPanel()">
+  <div class="friends-panel">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <h3 style="margin:0;">👥 Amici</h3>
+      <button onclick="closeFriendsPanel()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#bbb;">×</button>
+    </div>
+    <!-- Cerca e aggiungi -->
+    <div class="search-friend-row">
+      <input type="text" id="friend-search-input" placeholder="Username..." onkeydown="if(event.key==='Enter')searchAndAddFriend()"/>
+      <button onclick="searchAndAddFriend()">Cerca</button>
+    </div>
+    <div id="friend-search-result" style="font-size:12px;margin-bottom:10px;min-height:16px;"></div>
+    <!-- Richieste in arrivo -->
+    <div id="friends-pending-section" style="display:none;">
+      <div style="font-size:11px;font-weight:700;color:#e06000;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">Richieste in arrivo</div>
+      <div id="friends-pending-list"></div>
+    </div>
+    <!-- Amici accettati -->
+    <div style="font-size:11px;font-weight:700;color:#aaa;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;margin-top:12px;">I miei amici</div>
+    <div id="friends-accepted-list"><div style="color:#bbb;font-size:13px;">Nessun amico ancora</div></div>
+    <!-- Richieste inviate -->
+    <div id="friends-sent-section" style="display:none;margin-top:12px;">
+      <div style="font-size:11px;font-weight:700;color:#aaa;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">Richieste inviate</div>
+      <div id="friends-sent-list"></div>
+    </div>
+  </div>
+</div>
 
 </body>
 <script>window.IS_PROFILE_PAGE = true;</script>
