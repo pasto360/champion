@@ -575,4 +575,37 @@ body::before {
   .dice-log-val { color: #ffe600 !important; }
   .dice-log-empty { color: #7a7a8a !important; }
 
+
+  /* ── HOME TAB BAR (Partecipo/Creati/Esistenti) ─── */
+  .home-tab-bar {
+    display: flex !important;
+    gap: 4px !important;
+    border-bottom: 1px solid #3a3a46 !important;
+    margin-bottom: 14px !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+  .home-tab-btn {
+    flex: 1 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 5px !important;
+    padding: 10px 8px !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    color: #b9b9c1 !important;
+    background: none !important;
+    border: none !important;
+    border-bottom: 2px solid transparent !important;
+    white-space: nowrap !important;
+  }
+  .home-tab-btn i { font-size: 15px !important; }
+  .home-tab-btn.active {
+    color: #ffe600 !important;
+    border-bottom-color: #ffe600 !important;
+  }
+  .home-tab-page { display: none; }
+  .home-tab-page.active { display: block; }
+
 } /* end @media (max-width: 767px) */
